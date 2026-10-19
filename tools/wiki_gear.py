@@ -63,6 +63,19 @@ def png_size(path):
     return struct.unpack(">II", head[16:24])
 
 
+
+def _heal_line(verb, amount, what, ms):
+    """'Heals <b>10-60 HP</b> every 3s (about 12 a second)' for a pet's heal ("10-60" or "76"
+    each time, every `ms`); None when it doesn't."""
+    nums = [int(x) for x in re.findall(r"\d+", amount or "")][:2]
+    if not nums or not any(nums):
+        return None
+    text = "&ndash;".join(str(n) for n in nums)
+    if ms <= 0:
+        return "%s <b>%s %s</b>" % (verb, text, what)
+    per_second = sum(nums) / len(nums) / (ms / 1000)
+    return "%s <b>%s %s</b> every %gs (about %s a second)" % (verb, text, what, ms / 1000, "%.0f" % per_second if per_second >= 1 else "%.1f" % per_second)
+
 class Gear:
     """`h` is build_wiki itself, for its helpers (slugify, esc, pct, who, unique, HIDDEN_MONSTER)."""
 
@@ -561,10 +574,10 @@ class Gear:
             nums = []
             if p["dps"]:
                 nums.append("Damage a second <b>%d</b>" % p["dps"])
-            if p["hp"]:
-                nums.append("Heals <b>%d HP</b> every %gs" % (p["hp"], p["hpms"] / 1000))
-            if p["mp"]:
-                nums.append("Restores <b>%d MP</b> every %gs" % (p["mp"], p["mpms"] / 1000))
+            for key, what, verb in (("hp", "HP", "Heals"), ("mp", "MP", "Restores")):
+                line = _heal_line(verb, p[key], what, p[key + "ms"])
+                if line:
+                    nums.append(line)
             lines = ['<p class="it-nums">%s</p>' % ' <span class="sep">&middot;</span> '.join(nums)] if nums else []
             pet = d.name(p["pet"]) if p["pet"] else ""
             if pet and pet != p["name"]:
@@ -575,7 +588,7 @@ class Gear:
             flags = [x for x, on in (("Soulbound", d.objects[oid]["soulbound"]), ("From Doomed Realms", p["doomed"])) if on]
             search = " ".join([p["name"], pet, "pet generator"] + [re.sub(r"<[^>]+>", "", v) for _, v in src])
             cards.append(self._pet_card(self._anchor("pet-" + oid, ids), d.texture(p["pet"]) or d.texture(oid), edge,
-                                        p["name"], "%d DPS" % p["dps"] if p["dps"] else "Pet", lines,
+                                        p["name"], "%d DPS" % p["dps"] if p["dps"] else ("Healer" if p["hp"] or p["mp"] else "Pet"), lines,
                                         d.objects[oid]["desc"].strip(), src, flags, search))
         return (self._filter_box("pet-filter", "Pet, monster or shop", "#pet-list .it")
                 + '<div class="its" id="pet-list">%s</div>' % "".join(cards))

@@ -8266,9 +8266,9 @@
 			<Index>0x26</Index>
 		</Texture>
 		<SlotType>10</SlotType>
-		<Description>A rare potion that permanently raises maximum health by 30.</Description>
+		<Description>A rare potion that permanently maxes health. At full maximum health, it adds 30 health to your potion storage instead.</Description>
 		<Sound>use_potion</Sound>
-		<Activate stat="0" amount="30">IncrementStat</Activate>
+		<Activate stat="0" amount="1000" storeAmount="30">IncrementStat</Activate>
 		<Consumable />
 		<Potion />
 		<BagType>6</BagType>
