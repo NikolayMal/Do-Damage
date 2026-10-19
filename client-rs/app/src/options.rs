@@ -274,8 +274,6 @@ pub struct Settings {
     pub preferred_server: String,
     /// The last version the player was told about (the "updated" note shows once a version).
     pub seen_version: String,
-    /// The character card (portrait, name, stats) open under the HP and MP bars.
-    pub character_card: bool,
     /// Lines this version doesn't know (from a newer or older one), kept as they were, and
     /// keys it couldn't read, kept as written.
     extra: Vec<String>,
@@ -315,7 +313,6 @@ impl Default for Settings {
             camera_angle: None,
             preferred_server: String::new(),
             seen_version: String::new(),
-            character_card: true,
             extra: Vec::new(),
             raw_keys: vec![None; BINDS.len()],
         }
@@ -395,7 +392,6 @@ impl Settings {
         flag("cameraCentered", self.centered);
         flag("showStatistics", self.show_fps);
         flag("unlockFps", self.unlock_fps);
-        flag("characterCard", self.character_card);
         flag("playSFX", self.sound.sfx);
         flag("playPewPew", self.sound.shots);
         flag("playMusic", self.sound.music);
@@ -455,7 +451,6 @@ impl Settings {
                 "cameraCentered" => s.centered = on,
                 "showStatistics" => s.show_fps = on,
                 "unlockFps" => s.unlock_fps = on,
-                "characterCard" => s.character_card = on,
                 "playSFX" => s.sound.sfx = on,
                 "playPewPew" => s.sound.shots = on,
                 "playMusic" => s.sound.music = on,

@@ -165,13 +165,13 @@ For example, the Battle Arena (its monsters come 60 s after you enter):
   item to the other page (inventory, backpack); Ctrl+right-click breaks it down.
 - **Layout:** `hud::Layout` works everything out from the window size each frame: the world
   fills the window and the HUD is one bar down the right (200 HUD units wide, 780 fitted to the
-  height, at most 30% of the width). Its top: the minimap square in the corner, the bars, the
-  menu button that opens the character card (portrait, name, then the Stats or Records tab;
-  `characterCard` in the settings). Its foot, from the bottom: the interact area (a bag's loot,
+  height, at most 30% of the width). Its top: the minimap square in the corner, the bars, and
+  the character card (portrait, name, then the Stats or Records tab), which takes the space
+  down to the bar's foot and spreads its page to fit. Its foot, from the bottom: the interact area (a bag's loot,
   portals, shops, invitations, the players nearby), the inventory, the inventory/backpack tabs
   and the potions, the equipment, the Nexus button. Gold, fame and the frame rate sit beside
-  it; the boss (or the boss history) at the top left. The pieces (`group`, `hud_box`,
-  `grid_slot`, `burger_button`, `status_bar`, `draw_bars`, `draw_card`, `draw_stats`,
+  it; the boss (or the boss history, behind its menu button) at the top left. The pieces
+  (`group`, `hud_box`, `grid_slot`, `burger_button`, `status_bar`, `draw_bars`, `draw_card`, `draw_stats`,
   `draw_records`) take a rectangle, so they can go anywhere. Chat wraps to the space left of
   the bar. F11 or Alt+Enter toggles fullscreen.
 - **Swap-out row:** held back for a later release. The server already keeps slots 20-23 for it

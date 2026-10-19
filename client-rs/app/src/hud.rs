@@ -30,8 +30,6 @@ pub struct Layout {
     pub h: f32,
     /// HUD units (the AIR client's pixels) to screen pixels.
     pub s: f32,
-    /// The character card is open under the bars.
-    pub card: bool,
 }
 
 /// The HUD's design height: the bar's parts, top and bottom, fit in it.
@@ -45,7 +43,10 @@ const GAP: f32 = 4.0;
 const MAP_BOX: f32 = 200.0;
 const BARS_H: f32 = 74.0;
 const BURGER: f32 = 26.0;
-const CARD_H: f32 = 132.0;
+/// The card: its header (portrait, name, class and level), its tabs, and the least it takes.
+const CARD_HEADER: f32 = 46.0;
+const CARD_TAB_H: f32 = 20.0;
+const CARD_MIN_H: f32 = CARD_HEADER + CARD_TAB_H + 6.0 + 60.0 + 8.0;
 /// A slot, the space between slots, and a slot grid's padding (across, down).
 const SLOT: f32 = 40.0;
 const SLOT_GAP: f32 = 4.0;
@@ -86,11 +87,11 @@ pub fn grid_slot(r: [f32; 4], s: f32, cols: u32, i: u32) -> [f32; 4] {
 }
 
 impl Layout {
-    pub fn new(w: u32, h: u32, card: bool) -> Self {
+    pub fn new(w: u32, h: u32) -> Self {
         let (w, h) = (w.max(1) as f32, h.max(1) as f32);
         // The bar's parts fit the height, and the bar takes at most 30% of the width.
         let s = (h / HUD_H).min(w * 0.3 / COL_W).clamp(0.45, 4.0);
-        Layout { w, h, s, card }
+        Layout { w, h, s }
     }
 
     /// Width of the world's part of the window: all of it, under the HUD.
@@ -131,19 +132,24 @@ impl Layout {
         self.col(0.0, MAP_BOX, COL_W, BARS_H)
     }
 
-    /// The button that opens and closes the card, at the right under the bars.
-    pub fn burger(&self) -> [f32; 4] {
-        self.col(COL_W - BURGER - 4.0, MAP_BOX + BARS_H, BURGER, BURGER)
-    }
-
-    /// The character card, under the button, when it's open.
-    pub fn card_box(&self) -> Option<[f32; 4]> {
-        self.card.then(|| self.col(0.0, MAP_BOX + BARS_H + BURGER + GAP, COL_W, CARD_H))
+    /// The character card: all of the bar between the bars and the Nexus button (at least its
+    /// header, tabs and a few rows).
+    pub fn card_box(&self) -> [f32; 4] {
+        let top = self.col(0.0, MAP_BOX + BARS_H + GAP, COL_W, 0.0);
+        let bottom = self.nexus_button()[1] - GAP * self.s;
+        [top[0], top[1], top[2], (bottom - top[1]).max(CARD_MIN_H * self.s)]
     }
 
     /// The card's tab `i` (0 the stats, 1 the records).
-    pub fn card_tab(&self, i: usize) -> Option<[f32; 4]> {
-        self.card_box().map(|r| within(r, self.s, 8.0 + i as f32 * 64.0, 46.0, 60.0, 16.0))
+    pub fn card_tab(&self, i: usize) -> [f32; 4] {
+        within(self.card_box(), self.s, 8.0 + i as f32 * 92.0, CARD_HEADER, 88.0, CARD_TAB_H)
+    }
+
+    /// The card's page under its tabs: the stats or the records.
+    pub fn card_body(&self) -> [f32; 4] {
+        let (s, r) = (self.s, self.card_box());
+        let y = CARD_HEADER + CARD_TAB_H + 6.0;
+        [r[0] + 8.0 * s, r[1] + y * s, 184.0 * s, r[3] - (y + 8.0) * s]
     }
 
     /// Where the gold and fame end on the right: beside the bar.
@@ -690,8 +696,6 @@ pub enum Button {
     Menu(MenuOpt, i32),
     /// The minimap's zoom: in (-1) or out (+1).
     Zoom(i32),
-    /// Open or close the character card.
-    Card,
     /// The card's tab: 0 the stats, 1 the fame records.
     CardTab(usize),
     /// Open or close the boss history; show (or hide) who hit one of its bosses.
@@ -1031,11 +1035,8 @@ impl Panel {
             panel.history = hl.areas();
             panel.buttons.extend(hl.buttons);
         }
-        panel.buttons.push((Button::Card, lay.burger()));
         for i in 0..2 {
-            if let Some(r) = lay.card_tab(i) {
-                panel.buttons.push((Button::CardTab(i), r));
-            }
+            panel.buttons.push((Button::CardTab(i), lay.card_tab(i)));
         }
         // The minimap: zoom buttons in its corner, and the players on it.
         let mini = MiniView::new(lay, world, me, state.minimap_zoom);
@@ -1286,12 +1287,10 @@ pub fn draw_panel(ui: &mut Ui, lay: &Layout, world: &World, camera_angle: f64, c
     let Some(me) = world.player() else { return };
 
     // The bar down the right, one piece, its sections divided.
-    let (mb, burger) = (lay.minimap_box(), lay.burger());
+    let mb = lay.minimap_box();
     group(ui, &[lay.column()], s);
     let (div_x, div_w) = (mb[0] + 8.0 * s, mb[2] - 16.0 * s);
-    if let Some(card) = lay.card_box() {
-        divider(ui, div_x, card[1] - GAP * s / 2.0, div_w, 0.0, s);
-    }
+    divider(ui, div_x, lay.card_box()[1] - GAP * s / 2.0, div_w, 0.0, s);
     let mini = panel.minimap.unwrap_or_else(|| MiniView::new(lay, world, me, state.minimap_zoom));
     draw_minimap(ui, lay, world, me, camera_angle, colors, &mini);
     // A square map in the corner, edged where it meets the screen's middle.
@@ -1317,12 +1316,9 @@ pub fn draw_panel(ui: &mut Ui, lay: &Layout, world: &World, camera_angle: f64, c
         ui.label(label, r[0] + (r[2] - w) / 2.0, r[1] + (r[3] - size * 1.22) / 2.0, size, true, if usable { color::TEXT } else { color::TEXT_MUTED });
     }
 
-    // The bars under it, the character card under them when open, and the button for it.
+    // The bars under it, and the character card under them.
     draw_bars(ui, lay, me, lay.bars_box());
-    if let Some(card) = lay.card_box() {
-        draw_card(ui, lay, me, card, state.card_tab, social.fame, mouse);
-    }
-    burger_button(ui, burger, lay.card, inside(burger, mouse), s);
+    draw_card(ui, lay, me, state.card_tab, social.fame, mouse);
 
     // The bar's foot, from the top: the Nexus button, the equipment, the tabs and potions, the
     // inventory, the interact area.
@@ -1494,10 +1490,11 @@ pub fn draw_bars(ui: &mut Ui, lay: &Layout, me: &GameObj, r: [f32; 4]) {
     }
 }
 
-/// The character card in `r` (on a box or group drawn under it): the portrait, name, class and
-/// level, then two tabs (`tab`) for the stats or the fame records.
-pub fn draw_card(ui: &mut Ui, lay: &Layout, me: &GameObj, r: [f32; 4], tab: usize, fame: &HashMap<u8, i32>, mouse: (f64, f64)) {
+/// The character card (on the bar): the portrait, name, class and level, then two tabs (`tab`)
+/// for the stats or the fame records, the page filling the rest of its space.
+pub fn draw_card(ui: &mut Ui, lay: &Layout, me: &GameObj, tab: usize, fame: &HashMap<u8, i32>, mouse: (f64, f64)) {
     let s = lay.s;
+    let r = lay.card_box();
     draw_portrait(ui, lay, me, r[0] + 22.0 * s, r[1] + 24.0 * s);
     let name = me.name().unwrap_or("").to_owned();
     ui.label(&name, r[0] + 44.0 * s, r[1] + 6.0 * s, lay.font(17.0), true, color::TEXT);
@@ -1505,15 +1502,15 @@ pub fn draw_card(ui: &mut Ui, lay: &Layout, me: &GameObj, r: [f32; 4], tab: usiz
     let class = ui.data.objects.get(&me.object_type).map_or("", |d| d.display_id.as_str()).to_owned();
     ui.label(&format!("{class}  ·  Level {level}"), r[0] + 44.0 * s, r[1] + 26.0 * s, lay.font(11.0), false, color::TEXT_DIM);
     for (i, label) in ["Stats", "Records"].into_iter().enumerate() {
-        let tr = within(r, s, 8.0 + i as f32 * 64.0, 46.0, 60.0, 16.0);
+        let tr = lay.card_tab(i);
         let on = i == tab;
         let bg = if on { color::ACCENT } else if inside(tr, mouse) { color::SECONDARY } else { color::CHIP };
         theme::fill(ui.renderer, tr, tr[3] / 2.0, bg, 1.0);
-        let size = lay.font(10.0);
+        let size = lay.font(11.0);
         let w = ui.measure(label, size, true);
         ui.label(label, tr[0] + (tr[2] - w) / 2.0, tr[1] + (tr[3] - size * 1.22) / 2.0, size, true, if on { color::ACCENT_TEXT } else { color::TEXT_DIM });
     }
-    let body = within(r, s, 8.0, 66.0, 184.0, 60.0);
+    let body = lay.card_body();
     if tab == 0 {
         draw_stats(ui, lay, me, body);
     } else {
@@ -1548,12 +1545,21 @@ pub fn draw_records(ui: &mut Ui, lay: &Layout, fame: &HashMap<u8, i32>, r: [f32;
         ("Potions", group_digits(get(5))),
         ("Played", format!("{}h {}m", played / 60, played % 60)),
     ];
-    let (label_size, value_size) = (lay.font(10.0), lay.font(11.0));
+    // One column of eight when the page is tall enough for rows 16 units apart, else two
+    // columns of four; the rows spread down the page (at most 24 units apart), centred in it.
+    let one_column = r[3] >= (8.0 * 16.0 + 8.0) * s;
+    let (cols, per_col) = if one_column { (1, 8) } else { (2, 4) };
+    let row_h = ((r[3] - 8.0 * s) / per_col as f32).min(24.0 * s);
+    let (label_size, value_size) = (lay.font(11.0), lay.font(12.0));
+    let col_w = (r[2] - 12.0 * s) / cols as f32;
+    let top = r[1] + (r[3] - per_col as f32 * row_h) / 2.0;
     for (i, (label, value)) in rows.iter().enumerate() {
-        let (cx, ty) = (r[0] + (6.0 + 90.0 * (i % 2) as f32) * s, r[1] + (3.0 + 13.5 * (i / 2) as f32) * s);
-        ui.label(label, cx, ty, label_size, true, color::TEXT_MUTED);
+        let (col, row) = if one_column { (0, i) } else { (i % 2, i / 2) };
+        let cx = r[0] + 6.0 * s + col as f32 * col_w;
+        let ty = top + row as f32 * row_h + (row_h - value_size * 1.22) / 2.0;
+        ui.label(label, cx + 2.0 * s, ty + (value_size - label_size) * 0.6, label_size, true, color::TEXT_MUTED);
         let vw = ui.measure(value, value_size, true);
-        ui.label(value, cx + 84.0 * s - vw, ty - (value_size - label_size) * 0.5, value_size, true, color::TEXT);
+        ui.label(value, cx + col_w - 6.0 * s - vw, ty, value_size, true, color::TEXT);
     }
 }
 
@@ -1575,7 +1581,10 @@ pub fn draw_stats(ui: &mut Ui, lay: &Layout, me: &GameObj, r: [f32; 4]) {
     ];
     for (i, (label, id, boost_id, tag)) in stats.into_iter().enumerate() {
         let (value, boost) = (stat(id), stat(boost_id));
-        let (tx, ty) = (r[0] + (8.0 + 90.0 * (i % 2) as f32) * s, r[1] + (5.0 + 17.0 * (i / 2) as f32) * s);
+        // Three rows spread down the page (at most 28 units apart), centred in it.
+        let row_h = ((r[3] - 10.0 * s) / 3.0).min(28.0 * s);
+        let top = r[1] + (r[3] - 3.0 * row_h) / 2.0 + (row_h - 17.0 * s) / 2.0;
+        let (tx, ty) = (r[0] + (8.0 + 90.0 * (i % 2) as f32) * s, top + row_h * (i / 2) as f32);
         let size = lay.font(12.0);
         ui.label(label, tx, ty, size, true, color::TEXT_MUTED);
         let maxed = max_of(tag).is_some_and(|m| value - boost >= m);
@@ -3049,23 +3058,22 @@ mod tests {
     #[test]
     fn layout_fits_any_window() {
         for (w, h) in [(800, 600), (1920, 1080), (3840, 2160), (640, 1200), (1200, 400), (320, 240)] {
-            for card in [false, true] {
-                let l = Layout::new(w, h, card);
-                let small = l.s == 0.45;
-                assert!(HUD_H * l.s <= h as f32 + 0.5 || small, "{w}×{h}: HUD too tall");
-                // The bar's top (with the card) ends above its foot (the Nexus button).
-                let top_end = l.card_box().map_or(l.burger()[1] + l.burger()[3], |c| c[1] + c[3]);
-                assert!(top_end <= l.nexus_button()[1] + 0.5 || small, "{w}×{h}: the bar's parts overlap");
-                assert!(l.column()[0] >= 0.0, "{w}×{h}: the bar is off the window");
-                assert!(l.credits_right() > 0.0);
-                assert_eq!(l.view_w(), w as f32);
-            }
+            let l = Layout::new(w, h);
+            let small = l.s == 0.45;
+            assert!(HUD_H * l.s <= h as f32 + 0.5 || small, "{w}×{h}: HUD too tall");
+            // The card fills the space down to the Nexus button, and has room for its page.
+            let card = l.card_box();
+            assert!(card[1] + card[3] <= l.nexus_button()[1] + 0.5 || small, "{w}×{h}: the card runs into the Nexus button");
+            assert!(l.card_body()[3] >= 60.0 * l.s - 0.5, "{w}×{h}: the card's page is too short");
+            assert!(l.column()[0] >= 0.0, "{w}×{h}: the bar is off the window");
+            assert!(l.credits_right() > 0.0);
+            assert_eq!(l.view_w(), w as f32);
         }
     }
 
     #[test]
     fn grids_line_up() {
-        let l = Layout::new(1920, 1080, true);
+        let l = Layout::new(1920, 1080);
         // The equipment and the inventory line up slot for slot, inside the bar.
         for i in 0..4 {
             let (e, v) = (grid_slot(l.equip_box(), l.s, 4, i), grid_slot(l.inventory_box(), l.s, 4, i));

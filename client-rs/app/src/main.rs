@@ -409,7 +409,7 @@ fn apply_action(game: &mut Game, panel: &hud::Panel, action: hud::Action, now: i
         Action::Button(Button::TradeAccept) => game.trade_accept(now),
         Action::Button(Button::TradeCancel) => game.trade_cancel(),
         Action::Button(Button::Member(_)) => {}
-        Action::Button(Button::Page(_) | Button::Npc(_) | Button::Zoom(_) | Button::Card | Button::CardTab(_) | Button::History | Button::HistoryBoss(_)) => {}
+        Action::Button(Button::Page(_) | Button::Npc(_) | Button::Zoom(_) | Button::CardTab(_) | Button::History | Button::HistoryBoss(_)) => {}
     }
     None
 }
@@ -1533,7 +1533,7 @@ impl App {
             }
             self.frame_start = Instant::now();
         }
-        let lay = hud::Layout::new(renderer.size().0, renderer.size().1, self.settings.character_card);
+        let lay = hud::Layout::new(renderer.size().0, renderer.size().1);
         let mut ability = false;
         let mut panel = None;
         let mut to_chars = false;
@@ -1854,11 +1854,6 @@ impl App {
                     }
                 }
                 for action in actions {
-                    if let hud::Action::Button(hud::Button::Card) = action {
-                        self.settings.character_card = !self.settings.character_card;
-                        self.settings.save();
-                        continue;
-                    }
                     if let hud::Action::Button(hud::Button::Npc(kind)) = action {
                         to_chars |= npc_open(kind, game, &mut self.npcs, &mut self.market, self.front.list.as_ref(), data);
                         self.keys.clear();

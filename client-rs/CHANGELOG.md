@@ -20,10 +20,9 @@ version number itself is in `client-rs/Cargo.toml`.
   the Nexus button (the Nexus portal and its key), your equipment, your inventory with two
   small buttons to switch to your backpack, your potions, and a space for bags you stand on,
   portals, shops and invitations. Your gold, fame and frame rate sit beside the minimap.
-- The menu button under your HP and MP opens your character card: your name, class and level,
-  and two tabs, your stats or your records (kills, god and Oryx kills, quests, dungeons,
-  accuracy, potions drunk and time played, as they stand). Leave it open or close it, and the
-  game remembers which.
+- Under your HP and MP, your character card: your name, class and level, and two tabs, your
+  stats or your records (kills, god and Oryx kills, quests, dungeons, accuracy, potions drunk
+  and time played, as they stand), filling the bar down to the Nexus button.
 - The boss you're after shows at the top left: its picture, name and health, with the five
   players who did the most damage just under it: their class, exact damage and share.
 - With no boss around, a small menu button at the top left opens your last 3 bosses. Click one
