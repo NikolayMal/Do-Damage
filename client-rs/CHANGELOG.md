@@ -8,6 +8,16 @@ version (`python tools/build_client_rs.py --publish`) needs a section for that v
 refuses while an `Unreleased` one is left, so rename it to `## <version> (<date>)` then. The
 version number itself is in `client-rs/Cargo.toml`.
 
+## Unreleased
+- Arenas: everyone is invulnerable for 2.5 seconds as each wave starts, so monsters that appear
+  right on top of you can't kill you before you can move.
+- The Potion of Max Life now raises your maximum health by 30 instead of filling it to the top.
+  It's much rarer (1 in 100 from each Elder Tomb boss, was 1 in 10) and drops in a white bag.
+- A Portal of Cowardice takes you back the way you came: to a realm from a dungeon opened in a
+  realm, and to the Nexus from one opened in the Nexus or in another dungeon (it always went to
+  a realm).
+- Hovering the inventory or backpack tab shows the key that switches between them, on the tab.
+
 ## 1.3.3 (2026-10-21)
 - Changing your name at the Name Changer now costs 50,000 fame instead of 100 gold. Choosing
   your first name is still free.
