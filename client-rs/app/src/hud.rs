@@ -2654,6 +2654,8 @@ enum HistoryRow {
     Boss(usize, [f32; 4]),
     Hitter(usize, usize, [f32; 4]),
     More(usize, [f32; 4]),
+    /// Behind a boss's list of who hit it.
+    Backing([f32; 4]),
 }
 
 impl HistoryLayout {
@@ -2687,6 +2689,11 @@ pub fn history_layout(lay: &Layout, history: &[crate::game::BossFight], state: &
         hl.rows.push(HistoryRow::Boss(i, r));
         y += r[3];
         if state.history_pick == Some(i) {
+            // A little space under the boss, then who hit it on a lighter backing.
+            y += 4.0 * s;
+            let backing = hl.rows.len();
+            let start = y;
+            y += 3.0 * s;
             for k in 0..fight.hitters.len().min(HISTORY_HITTERS) {
                 hl.rows.push(HistoryRow::Hitter(i, k, [x, y, w, HITTER_ROW * s]));
                 y += HITTER_ROW * s;
@@ -2695,6 +2702,8 @@ pub fn history_layout(lay: &Layout, history: &[crate::game::BossFight], state: &
                 hl.rows.push(HistoryRow::More(i, [x, y, w, 16.0 * s]));
                 y += 16.0 * s;
             }
+            y += 3.0 * s;
+            hl.rows.insert(backing, HistoryRow::Backing([x, start, w, y - start]));
             y += 4.0 * s;
         }
     }
@@ -2716,6 +2725,7 @@ pub fn draw_history(ui: &mut Ui, lay: &Layout, hl: &HistoryLayout, history: &[cr
     let ds = lay.font(11.0);
     for row in &hl.rows {
         match *row {
+            HistoryRow::Backing(r) => theme::fill(ui.renderer, r, 4.0 * s, 0xFFFFFF, 0.04),
             HistoryRow::Title(r) => ui.label("Recent bosses", r[0] + 6.0 * s, r[1], ds, true, color::TEXT_MUTED),
             HistoryRow::Empty(r) => ui.label("Empty", r[0] + 6.0 * s, r[1], ds, false, color::TEXT_DIM),
             HistoryRow::Boss(i, r) => {
