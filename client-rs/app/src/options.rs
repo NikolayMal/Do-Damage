@@ -27,6 +27,9 @@ pub enum Bind {
     MagicPotion,
     /// Inventory slots 1-8.
     Slot(u8),
+    /// Swap an equipment slot (1-4) with its swap-out slot, or all four.
+    Swap(u8),
+    SwapAll,
     Chat,
     Command,
     Tell,
@@ -52,7 +55,7 @@ pub enum Bind {
 }
 
 /// Every binding: what, its label, its name in the file, its default key.
-pub const BINDS: [(Bind, &str, &str, Option<KeyCode>); 39] = [
+pub const BINDS: [(Bind, &str, &str, Option<KeyCode>); 44] = [
     (Bind::MoveUp, "Move up", "moveUp", Some(KeyCode::KeyW)),
     (Bind::MoveLeft, "Move left", "moveLeft", Some(KeyCode::KeyA)),
     (Bind::MoveDown, "Move down", "moveDown", Some(KeyCode::KeyS)),
@@ -74,6 +77,11 @@ pub const BINDS: [(Bind, &str, &str, Option<KeyCode>); 39] = [
     (Bind::Slot(6), "Item 6", "useInvSlot6", Some(KeyCode::Digit6)),
     (Bind::Slot(7), "Item 7", "useInvSlot7", Some(KeyCode::Digit7)),
     (Bind::Slot(8), "Item 8", "useInvSlot8", Some(KeyCode::Digit8)),
+    (Bind::SwapAll, "Swap all gear", "swapAll", None),
+    (Bind::Swap(1), "Swap weapon", "swapSlot1", None),
+    (Bind::Swap(2), "Swap ability", "swapSlot2", None),
+    (Bind::Swap(3), "Swap armor", "swapSlot3", None),
+    (Bind::Swap(4), "Swap ring", "swapSlot4", None),
     (Bind::Chat, "Chat", "chat", Some(KeyCode::Enter)),
     (Bind::Command, "Command", "chatCommand", Some(KeyCode::Slash)),
     (Bind::Tell, "Whisper", "tell", Some(KeyCode::Tab)),
@@ -274,6 +282,8 @@ pub struct Settings {
     pub preferred_server: String,
     /// The last version the player was told about (the "updated" note shows once a version).
     pub seen_version: String,
+    /// The character card (portrait, name, stats) open under the HP and MP bars.
+    pub character_card: bool,
     /// Lines this version doesn't know (from a newer or older one), kept as they were, and
     /// keys it couldn't read, kept as written.
     extra: Vec<String>,
@@ -313,6 +323,7 @@ impl Default for Settings {
             camera_angle: None,
             preferred_server: String::new(),
             seen_version: String::new(),
+            character_card: true,
             extra: Vec::new(),
             raw_keys: vec![None; BINDS.len()],
         }
@@ -392,6 +403,7 @@ impl Settings {
         flag("cameraCentered", self.centered);
         flag("showStatistics", self.show_fps);
         flag("unlockFps", self.unlock_fps);
+        flag("characterCard", self.character_card);
         flag("playSFX", self.sound.sfx);
         flag("playPewPew", self.sound.shots);
         flag("playMusic", self.sound.music);
@@ -451,6 +463,7 @@ impl Settings {
                 "cameraCentered" => s.centered = on,
                 "showStatistics" => s.show_fps = on,
                 "unlockFps" => s.unlock_fps = on,
+                "characterCard" => s.character_card = on,
                 "playSFX" => s.sound.sfx = on,
                 "playPewPew" => s.sound.shots = on,
                 "playMusic" => s.sound.music = on,

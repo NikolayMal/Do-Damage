@@ -96,6 +96,10 @@ public enum MessageId : byte
     // never asks, so it never gets QUEST_DAMAGE.
     QUEST_DAMAGE_SUBSCRIBE = 89,
     QUEST_DAMAGE = 90,
+    // The same for everyone who hit the quest, with their classes, its maximum health and
+    // whether it has died (the client keeps the bosses it fought).
+    QUEST_DAMAGE_FULL_SUBSCRIBE = 91,
+    QUEST_DAMAGE_FULL = 92,
     // From the world proxy (tools/world_proxy.py), before the client's first message: the
     // client's address. Only taken on a connection from this PC; clients never send it.
     PROXY_INFO = 250

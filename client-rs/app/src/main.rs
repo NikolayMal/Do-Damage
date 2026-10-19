@@ -361,7 +361,7 @@ fn apply_action(game: &mut Game, panel: &hud::Panel, action: hud::Action, now: i
                     .iter()
                     .find(|e| matches!(e.kind, SlotKind::Equip(t) if t == item_type && t != 0) && !e.is(&s));
                 match (target, s.kind) {
-                    (Some(e), SlotKind::Inventory(_)) => game.inv_swap(now, slot_of(&s), slot_of(e)),
+                    (Some(e), SlotKind::Inventory(_) | SlotKind::Swap(_)) => game.inv_swap(now, slot_of(&s), slot_of(e)),
                     _ => {
                         game.use_item(now, s.owner, s.index, s.item, data);
                     }
@@ -409,7 +409,7 @@ fn apply_action(game: &mut Game, panel: &hud::Panel, action: hud::Action, now: i
         Action::Button(Button::TradeAccept) => game.trade_accept(now),
         Action::Button(Button::TradeCancel) => game.trade_cancel(),
         Action::Button(Button::Member(_)) => {}
-        Action::Button(Button::Page(_) | Button::Npc(_) | Button::Zoom(_)) => {}
+        Action::Button(Button::Page(_) | Button::Npc(_) | Button::Zoom(_) | Button::Card | Button::History | Button::HistoryBoss(_)) => {}
     }
     None
 }
@@ -1533,7 +1533,7 @@ impl App {
             }
             self.frame_start = Instant::now();
         }
-        let lay = hud::Layout::new(renderer.size().0, renderer.size().1);
+        let lay = hud::Layout::new(renderer.size().0, renderer.size().1, self.settings.character_card);
         let mut ability = false;
         let mut panel = None;
         let mut to_chars = false;
@@ -1645,6 +1645,8 @@ impl App {
                 locked: &game.locked,
                 ignored: &game.ignored,
                 now,
+                quest: game.quest,
+                history: &game.boss_history,
             };
             let built = game.world.as_ref().map(|w| hud::Panel::new(&lay, w, data, &self.hud, &social));
             let mut actions = Vec::new();
@@ -1714,6 +1716,25 @@ impl App {
                     Some(Bind::Options) => {
                         self.options_ui.show();
                         self.keys.clear();
+                    }
+                    // Swap what's worn with what waits in its swap-out slot (one, or all four);
+                    // an empty swap-out slot leaves what's worn alone.
+                    Some(Bind::Swap(_) | Bind::SwapAll) => {
+                        let which = match bind {
+                            Some(Bind::Swap(n)) => (n - 1)..n,
+                            _ => 0..4,
+                        };
+                        if let Some(p) = &built {
+                            for i in which {
+                                let equip = p.slots.iter().find(|s| matches!(s.kind, hud::SlotKind::Equip(_)) && s.index == i);
+                                let swap = p.slots.iter().find(|s| matches!(s.kind, hud::SlotKind::Swap(_)) && s.index == hud::SWAP_FIRST + i);
+                                if let (Some(e), Some(w)) = (equip, swap) {
+                                    if w.item > 0 {
+                                        actions.push(hud::Action::Swap(*w, *e));
+                                    }
+                                }
+                            }
+                        }
                     }
                     // Equip or use what's in that inventory slot (MapUserInput.useItem).
                     Some(Bind::Slot(n)) => {
@@ -1851,6 +1872,11 @@ impl App {
                     }
                 }
                 for action in actions {
+                    if let hud::Action::Button(hud::Button::Card) = action {
+                        self.settings.character_card = !self.settings.character_card;
+                        self.settings.save();
+                        continue;
+                    }
                     if let hud::Action::Button(hud::Button::Npc(kind)) = action {
                         to_chars |= npc_open(kind, game, &mut self.npcs, &mut self.market, self.front.list.as_ref(), data);
                         self.keys.clear();
@@ -1908,6 +1934,8 @@ impl App {
         }
 
         let wants_fire = (self.mouse_down && self.hud.drag.is_none()) || wants_fire_scripted;
+        // Over the HUD's boxes (and the interact area while it shows), not the world.
+        let on_hud = |pos: (f64, f64)| panel.as_ref().map_or(lay.on_panel(pos.0, pos.1), |p| p.on_hud(&lay, pos));
         renderer.begin();
         let (_, h) = renderer.size();
         let status = match &self.phase {
@@ -1916,8 +1944,6 @@ impl App {
         };
         let mut view_radius = None;
         let mut fire = None;
-        // How far down the gold and fame reach (the frame rate goes under them).
-        let mut credits_bottom = 0.0f32;
         let mut ability_at = None;
         match &self.phase {
             Phase::Menu => {}
@@ -1943,7 +1969,7 @@ impl App {
                             fire = match (scripted_fire, script_aim) {
                                 (true, Some(screen_angle)) => Some(game.camera_angle + screen_angle),
                                 (true, None) => nearest_enemy_angle(world, data),
-                                _ if lay.on_panel(mouse.0, mouse.1) => None,
+                                _ if on_hud(mouse) => None,
                                 _ => Some(game.camera_angle + (mouse.1 - camera.cy).atan2(mouse.0 - camera.cx)),
                             };
                         }
@@ -1986,7 +2012,7 @@ impl App {
                         };
                         renderer.world_done(filter);
                         let mut ui = hud::Ui { renderer: &mut *renderer, sprites, data, redrawer: &mut *redrawer, fonts, text: &mut *text };
-                        hud::draw_quest(&mut ui, &lay, world, &camera, game.quest, &game.keys, &game.dealt, game.quest_damage.as_ref());
+                        hud::draw_quest(&mut ui, &lay, world, &camera, game.quest, &game.keys, &game.dealt, game.quest_damage.as_ref(), &game.boss_history, &self.hud, mouse);
                         prof::mark("quest");
                     }
                     if let Some(p) = &panel {
@@ -1997,6 +2023,8 @@ impl App {
                             locked: &game.locked,
                             ignored: &game.ignored,
                             now,
+                            quest: game.quest,
+                            history: &game.boss_history,
                         };
                         self.hud.nexus_key = options::key_label(self.settings.key(options::Bind::Nexus));
                         self.hud.potion_keys = [
@@ -2013,7 +2041,12 @@ impl App {
                 prof::mark("pre-chat");
                 self.chat_names = hud::draw_chat(&mut ui, &lay, &game.chat, &me, self.chat_input.as_ref(), self.chat_scroll, now);
                 if let Some(p) = game.world.as_ref().and_then(|w| w.player()) {
-                    credits_bottom = hud::draw_credits(&mut ui, &lay, p, game.show_displays && game.arena.is_none());
+                    // The frame rate and the ping (L), under the gold and fame.
+                    let fps = self.settings.show_fps.then(|| match game.ping {
+                        Some(ms) => format!("{:.0} fps  ·  {ms} ms", self.fps_shown),
+                        None => format!("{:.0} fps", self.fps_shown),
+                    });
+                    hud::draw_credits(&mut ui, &lay, p, game.show_displays && game.arena.is_none(), fps.as_deref());
                 }
                 if let Some(arena) = game.arena {
                     hud::draw_arena(&mut ui, &lay, arena, now);
@@ -2029,16 +2062,6 @@ impl App {
                 game.use_ability(now, x, y, angle, data);
             }
         }
-        // The frame rate and the ping, top right of the view (L), under the gold and fame.
-        if let (true, Phase::Playing(game)) = (self.settings.show_fps, &self.phase) {
-            let t = match game.ping {
-                Some(ms) => format!("{:.0} fps  ·  {ms} ms", self.fps_shown),
-                None => format!("{:.0} fps", self.fps_shown),
-            };
-            let style = text::Style { size: (13.0 * lay.s).round().max(10.0), bold: true, color: 0xB0FFB0 };
-            let w = text.measure(fonts, renderer, &t, style);
-            text.draw(fonts, renderer, &t, lay.view_w() - w - 10.0 * lay.s, credits_bottom + 4.0 * lay.s, style);
-        }
         if !status.is_empty() {
             let style = text::Style { size: 18.0, bold: true, color: 0xFFFFFF };
             text.draw_centered(fonts, renderer, &status, lay.view_w() / 2.0, h as f32 / 2.0 + 40.0, style);
@@ -2053,6 +2076,8 @@ impl App {
                     locked: &game.locked,
                     ignored: &game.ignored,
                     now,
+                    quest: game.quest,
+                    history: &game.boss_history,
                 };
                 hud::draw_windows(&mut ui, &lay, world, p, &social, mouse);
                 self.npcs.draw(&mut ui, &lay, world.player(), mouse, now);
@@ -2066,7 +2091,7 @@ impl App {
         // while it shows.
         let crosshair = self.settings.crosshair
             && matches!(&self.phase, Phase::Playing(g) if g.world.is_some())
-            && !lay.on_panel(mouse.0, mouse.1)
+            && !on_hud(mouse)
             && !self.game_menu
             && !self.options_ui.open
             && !self.changelog.open

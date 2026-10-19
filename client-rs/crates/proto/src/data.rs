@@ -48,6 +48,15 @@ wire_struct! {
 }
 
 wire_struct! {
+    /// Someone who hit the quest, with their class (`QuestDamageFull`).
+    pub struct DamageHit {
+        pub name: String,
+        pub class: u16,
+        pub damage: i32,
+    }
+}
+
+wire_struct! {
     pub struct TradeItem {
         pub item: i32,
         pub slot_type: i32,

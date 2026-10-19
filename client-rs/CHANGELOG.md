@@ -15,6 +15,27 @@ version number itself is in `client-rs/Cargo.toml`.
 - Options: the sliders now come first on each tab, above the switches.
 - A new Master volume slider on the Sound tab turns all sound and music up or down together.
 - Resetting the camera (Z) now always turns it back to north at the top.
+- A new look for the screen: the world fills the whole window, and the HUD floats over it in
+  the corners. Your gold and fame sit beside the minimap, with your experience, HP and MP under
+  it. At the bottom right: your equipment, inventory and potions, and in the corner a space for
+  bags you stand on, portals, shops and invitations. Two small buttons above the inventory
+  switch between it and your backpack.
+- The HUD's parts join up into one piece in each corner, with a thin edge and an ember accent,
+  and your gold, fame and frame rate float beside the minimap without a box.
+- The boss you're after shows at the top left: its picture, name and health, with the five
+  players who did the most damage just under it: their class, exact damage and share.
+- With no boss around, a small menu button at the top left opens your last 3 bosses. Click one
+  to see everyone who hit it, with their class, damage and share.
+- The Nexus button shows the Nexus portal and its key. The minimap sits square in the top right
+  corner.
+- New hotkeys in Options to swap your gear with the swap-out row: one for all four slots and one
+  for each slot. They start unassigned.
+- Potions in the potion bar can come back out: drag one onto an empty inventory slot.
+- Boss and class pictures fill their space.
+- The menu button under your HP and MP opens your character card (your name, class, level and
+  stats). Leave it open or close it, and the game remembers which.
+- A swap-out row under your equipment: keep a spare weapon, ability, armor and ring there, one
+  for each equipment slot. Double-click one to swap it with what you're wearing.
 
 ## 1.2.8 (2026-10-19)
 - Realms are much easier to close with a few people. A realm closes after 8 events for 1 to 3

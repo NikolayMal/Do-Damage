@@ -163,10 +163,25 @@ For example, the Battle Arena (its monsters come 60 s after you enter):
   log out). Items drag between slots, onto the
   world to drop; double-click equips, uses or takes from a bag; shift-click uses; Ctrl+click moves an
   item to the other page (inventory, backpack); Ctrl+right-click breaks it down.
-- **Layout:** `hud::Layout` works everything out from the window size each frame: one scale for
-  the HUD (the AIR client's 200×600 panel plus stats, potions and the interact area: 200×700,
-  fitted to the height, at most 28% of the width), the world in
-  the rest, and chat wrapped to the space. F11 or Alt+Enter toggles fullscreen.
+- **Layout:** `hud::Layout` works everything out from the window size each frame: the world
+  fills the window and the HUD floats over it in boxes anchored to the right-hand corners, at
+  one scale (700 HUD units fitted to the height, the bottom group at most 60% of the width).
+  Top right: gold and fame (and the frame rate) beside the minimap, the bars under it, then the
+  menu button that opens the character card (portrait, name, stats; `characterCard` in the
+  settings). Bottom right: the interact area in the corner (a bag's loot, portals, shops,
+  invitations, the players nearby), the inventory above it with the inventory/backpack tabs and
+  the potions above that, and the equipment over its swap-out row to the left. The pieces (`hud_box`,
+  `slot_grid_box`, `grid_slot`, `burger_button`, `status_bar`, `draw_bars`, `draw_card`,
+  `draw_stats`) take a rectangle, so they can go anywhere. Chat wraps to the space left of the
+  equipment. F11 or Alt+Enter toggles fullscreen.
+- **Swap-out row:** slots 20-23, one for each equipment slot and taking the same items, sent as
+  stats 144-147 (`hud::SWAP_FIRST`, `stat::SWAP_0`; the server's `InventoryConstants`).
+  Double-click one to swap it with what's worn; the Swap hotkeys (unbound by default) do the
+  same for one slot or all four.
+- **Boss damage:** the client asks for `QuestDamageFull` (91/92) as well as `QuestDamage`
+  (89/90): everyone who hit the quest with their class, its maximum health, and a last message
+  marked `dead` when it dies. The client keeps the last 3 bosses it hit
+  (`Game::boss_history`), listed at the top left while no boss shows there.
 - **Async loading:** everything that touches files or the GPU at startup is `async`, because the
   browser can't block. On desktop it runs under `pollster::block_on`.
 
