@@ -64,17 +64,19 @@ def png_size(path):
 
 
 
-def _heal_line(verb, amount, what, ms):
-    """'Heals <b>10-60 HP</b> every 3s (about 12 a second)' for a pet's heal ("10-60" or "76"
-    each time, every `ms`); None when it doesn't."""
+def _heal_row(amount, what, ms):
+    """A pet's heal as a row of its card's healing block: ('HP', '<b>10-60</b> every 3s
+    &middot; <b>12</b> a second') for "10-60" (or "76") each time, every `ms`; None when it
+    doesn't heal that."""
     nums = [int(x) for x in re.findall(r"\d+", amount or "")][:2]
     if not nums or not any(nums):
         return None
-    text = "&ndash;".join(str(n) for n in nums)
-    if ms <= 0:
-        return "%s <b>%s %s</b>" % (verb, text, what)
-    per_second = sum(nums) / len(nums) / (ms / 1000)
-    return "%s <b>%s %s</b> every %gs (about %s a second)" % (verb, text, what, ms / 1000, "%.0f" % per_second if per_second >= 1 else "%.1f" % per_second)
+    value = "<b>%s</b>" % "&ndash;".join(str(n) for n in nums)
+    if ms > 0:
+        per_second = sum(nums) / len(nums) / (ms / 1000)
+        value += ' every %gs <span class="sep">&middot;</span> <b>%s</b> a second' % (
+            ms / 1000, "%.0f" % per_second if per_second >= 1 else "%.1f" % per_second)
+    return what, value
 
 class Gear:
     """`h` is build_wiki itself, for its helpers (slugify, esc, pct, who, unique, HIDDEN_MONSTER)."""
@@ -571,17 +573,15 @@ class Gear:
         cards = []
         for p in sorted(d.pets(), key=lambda p: (-p["dps"], p["name"].lower())):
             oid = p["item"]
-            nums = []
-            if p["dps"]:
-                nums.append("Damage a second <b>%d</b>" % p["dps"])
-            for key, what, verb in (("hp", "HP", "Heals"), ("mp", "MP", "Restores")):
-                line = _heal_line(verb, p[key], what, p[key + "ms"])
-                if line:
-                    nums.append(line)
-            lines = ['<p class="it-nums">%s</p>' % ' <span class="sep">&middot;</span> '.join(nums)] if nums else []
+            lines = ['<p class="it-nums">Damage a second <b>%d</b></p>' % p["dps"]] if p["dps"] else []
             pet = d.name(p["pet"]) if p["pet"] else ""
             if pet and pet != p["name"]:
                 lines.append('<p class="it-line"><span>Pet</span> %s</p>' % h.esc(pet))
+            # healing, its own block: what one heal restores, how often, and about how much a second
+            heals = [r for r in (_heal_row(p["hp"], "HP", p["hpms"]), _heal_row(p["mp"], "MP", p["mpms"])) if r]
+            if heals:
+                lines.append('<dl class="it-heal"><span>Heals</span>%s</dl>' % "".join(
+                    '<div class="%s"><dt>%s</dt><dd>%s</dd></div>' % (what.lower(), what, value) for what, value in heals))
             src = self._item_sources(oid)
             if oid in sold and price and not any("Nexus Bazaar" in v for _, v in src):
                 src.append(("Shop", "Nexus Bazaar (pets), %d fame" % price))
