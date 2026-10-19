@@ -11,8 +11,11 @@ version number itself is in `client-rs/Cargo.toml`.
 ## Unreleased
 - Arenas: everyone is invulnerable for 2.5 seconds as each wave starts, so monsters that appear
   right on top of you can't kill you before you can move.
-- The Potion of Max Life now raises your maximum health by 30 instead of filling it to the top.
-  It's much rarer (1 in 100 from each Elder Tomb boss, was 1 in 10) and drops in a white bag.
+- The Potion of Max Life still fills your health to your class's maximum, but if it's already
+  maxed it now adds 30 health to your potion storage (it used to add 1,000). It's also much
+  rarer (1 in 100 from each Elder Tomb boss, was 1 in 10) and drops in a white bag.
+- The wiki's Pets page shows how much each pet heals and restores (for example 10-60 HP every
+  3 seconds, about 12 a second); healing pets showed nothing before.
 - A Portal of Cowardice takes you back the way you came: to a realm from a dungeon opened in a
   realm, and to the Nexus from one opened in the Nexus or in another dungeon (it always went to
   a realm).

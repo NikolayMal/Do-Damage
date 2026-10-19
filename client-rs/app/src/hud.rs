@@ -2386,7 +2386,15 @@ fn activate_detail(a: &bsk_data::xml::Element) -> String {
         "Magic" => format!("Restores {} MP", num("amount")),
         "HealNova" => format!("Heals {} HP to you and allies within {} sqrs", num("amount"), num("range")),
         "MagicNova" => format!("Restores {} MP to you and allies within {} sqrs", num("amount"), num("range")),
-        "IncrementStat" => format!("Permanently +{} {}", a.attr_int("amount", 0), stat_name(a.attr_int("stat", -1))),
+        "IncrementStat" => {
+            let mut s = format!("Permanently +{} {}", a.attr_int("amount", 0), stat_name(a.attr_int("stat", -1)));
+            // what it stores when the stat is already maxed, when that isn't the whole amount
+            let store = a.attr_int("storeAmount", 0);
+            if store > 0 {
+                s += &format!(" (+{store} to potion storage when maxed)");
+            }
+            s
+        }
         // Poison ignores defense (the server's `PoisonEnemy`).
         "PoisonGrenade" => {
             let mut s = format!("Poison: {} damage over {} secs, within {} sqrs", num("totalDamage"), num("duration"), num("radius"));
