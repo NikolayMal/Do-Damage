@@ -588,7 +588,7 @@ class Gear:
             flags = [x for x, on in (("Soulbound", d.objects[oid]["soulbound"]), ("From Doomed Realms", p["doomed"])) if on]
             search = " ".join([p["name"], pet, "pet generator"] + [re.sub(r"<[^>]+>", "", v) for _, v in src])
             cards.append(self._pet_card(self._anchor("pet-" + oid, ids), d.texture(p["pet"]) or d.texture(oid), edge,
-                                        p["name"], "%d DPS" % p["dps"] if p["dps"] else ("Healer" if p["hp"] or p["mp"] else "Pet"), lines,
+                                        p["name"], "%d DPS" % p["dps"] if p["dps"] else "Pet", lines,
                                         d.objects[oid]["desc"].strip(), src, flags, search))
         return (self._filter_box("pet-filter", "Pet, monster or shop", "#pet-list .it")
                 + '<div class="its" id="pet-list">%s</div>' % "".join(cards))
