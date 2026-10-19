@@ -48,9 +48,10 @@ running a copy on a Windows PC (`Run Server.bat`) or an isolated test stack
 
 `Dev Test.bat` (Windows) runs everything on your own PC, away from the live game: test servers
 on their own ports and the Rust client signed in to them, or the website with its wiki.
+Double-click it for a menu of the four, or give one from a terminal:
 
 ```
-"Dev Test.bat"           # build and start the test servers, then build and open the client
+"Dev Test.bat" all       # build and start the test servers, then build and open the client
 "Dev Test.bat" server    # rebuild and restart the servers only (sign in again in your client)
 "Dev Test.bat" client    # build and open the client only
 "Dev Test.bat" site      # build the website and wiki and open http://127.0.0.1:8000/wiki/

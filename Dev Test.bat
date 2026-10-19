@@ -3,7 +3,8 @@ rem Local development: rebuilds and restarts an isolated test stack (slot 1: Red
 rem account 8082, world 2053), then builds and opens the Rust client against it; or builds the
 rem website and its wiki and opens them in your browser. Nothing here touches the live game.
 rem
-rem   Dev Test.bat          servers and client
+rem   Dev Test.bat          a menu of the four below (what a double-click shows)
+rem   Dev Test.bat all      servers and client
 rem   Dev Test.bat server   servers only
 rem   Dev Test.bat client   client only
 rem   Dev Test.bat site     the website and wiki, at http://127.0.0.1:8000/wiki/
@@ -22,6 +23,18 @@ set MODE=%~1
 rem The .NET SDK and Cargo, when a shell doesn't have them on its PATH.
 where dotnet >nul 2>nul || if exist "%ProgramFiles%\dotnet\dotnet.exe" set "PATH=%ProgramFiles%\dotnet;%PATH%"
 where cargo >nul 2>nul || if exist "%USERPROFILE%\.cargo\bin\cargo.exe" set "PATH=%USERPROFILE%\.cargo\bin;%PATH%"
+
+if "%MODE%"=="" (
+    echo Do Damage local development
+    echo.
+    echo   1  Test servers and the client
+    echo   2  Test servers only ^(restart them^)
+    echo   3  The client only
+    echo   4  The website and wiki, in your browser
+    echo.
+    choice /c 1234 /n /m "Pick 1-4: "
+    if errorlevel 4 (set "MODE=site") else if errorlevel 3 (set "MODE=client") else if errorlevel 2 (set "MODE=server") else (set "MODE=all")
+)
 
 if /i "%MODE%"=="client" goto client
 if /i "%MODE%"=="site" goto site
