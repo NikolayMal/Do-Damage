@@ -361,7 +361,7 @@ fn apply_action(game: &mut Game, panel: &hud::Panel, action: hud::Action, now: i
                     .iter()
                     .find(|e| matches!(e.kind, SlotKind::Equip(t) if t == item_type && t != 0) && !e.is(&s));
                 match (target, s.kind) {
-                    (Some(e), SlotKind::Inventory(_) | SlotKind::Swap(_)) => game.inv_swap(now, slot_of(&s), slot_of(e)),
+                    (Some(e), SlotKind::Inventory(_)) => game.inv_swap(now, slot_of(&s), slot_of(e)),
                     _ => {
                         game.use_item(now, s.owner, s.index, s.item, data);
                     }
@@ -409,7 +409,7 @@ fn apply_action(game: &mut Game, panel: &hud::Panel, action: hud::Action, now: i
         Action::Button(Button::TradeAccept) => game.trade_accept(now),
         Action::Button(Button::TradeCancel) => game.trade_cancel(),
         Action::Button(Button::Member(_)) => {}
-        Action::Button(Button::Page(_) | Button::Npc(_) | Button::Zoom(_) | Button::Card | Button::History | Button::HistoryBoss(_)) => {}
+        Action::Button(Button::Page(_) | Button::Npc(_) | Button::Zoom(_) | Button::Card | Button::CardTab(_) | Button::History | Button::HistoryBoss(_)) => {}
     }
     None
 }
@@ -1647,6 +1647,7 @@ impl App {
                 now,
                 quest: game.quest,
                 history: &game.boss_history,
+                fame: &game.fame_stats,
             };
             let built = game.world.as_ref().map(|w| hud::Panel::new(&lay, w, data, &self.hud, &social));
             let mut actions = Vec::new();
@@ -1716,25 +1717,6 @@ impl App {
                     Some(Bind::Options) => {
                         self.options_ui.show();
                         self.keys.clear();
-                    }
-                    // Swap what's worn with what waits in its swap-out slot (one, or all four);
-                    // an empty swap-out slot leaves what's worn alone.
-                    Some(Bind::Swap(_) | Bind::SwapAll) => {
-                        let which = match bind {
-                            Some(Bind::Swap(n)) => (n - 1)..n,
-                            _ => 0..4,
-                        };
-                        if let Some(p) = &built {
-                            for i in which {
-                                let equip = p.slots.iter().find(|s| matches!(s.kind, hud::SlotKind::Equip(_)) && s.index == i);
-                                let swap = p.slots.iter().find(|s| matches!(s.kind, hud::SlotKind::Swap(_)) && s.index == hud::SWAP_FIRST + i);
-                                if let (Some(e), Some(w)) = (equip, swap) {
-                                    if w.item > 0 {
-                                        actions.push(hud::Action::Swap(*w, *e));
-                                    }
-                                }
-                            }
-                        }
                     }
                     // Equip or use what's in that inventory slot (MapUserInput.useItem).
                     Some(Bind::Slot(n)) => {
@@ -2025,6 +2007,7 @@ impl App {
                             now,
                             quest: game.quest,
                             history: &game.boss_history,
+                            fame: &game.fame_stats,
                         };
                         self.hud.nexus_key = options::key_label(self.settings.key(options::Bind::Nexus));
                         self.hud.potion_keys = [
@@ -2078,6 +2061,7 @@ impl App {
                     now,
                     quest: game.quest,
                     history: &game.boss_history,
+                    fame: &game.fame_stats,
                 };
                 hud::draw_windows(&mut ui, &lay, world, p, &social, mouse);
                 self.npcs.draw(&mut ui, &lay, world.player(), mouse, now);

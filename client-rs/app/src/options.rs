@@ -27,9 +27,6 @@ pub enum Bind {
     MagicPotion,
     /// Inventory slots 1-8.
     Slot(u8),
-    /// Swap an equipment slot (1-4) with its swap-out slot, or all four.
-    Swap(u8),
-    SwapAll,
     Chat,
     Command,
     Tell,
@@ -55,7 +52,7 @@ pub enum Bind {
 }
 
 /// Every binding: what, its label, its name in the file, its default key.
-pub const BINDS: [(Bind, &str, &str, Option<KeyCode>); 44] = [
+pub const BINDS: [(Bind, &str, &str, Option<KeyCode>); 39] = [
     (Bind::MoveUp, "Move up", "moveUp", Some(KeyCode::KeyW)),
     (Bind::MoveLeft, "Move left", "moveLeft", Some(KeyCode::KeyA)),
     (Bind::MoveDown, "Move down", "moveDown", Some(KeyCode::KeyS)),
@@ -77,11 +74,6 @@ pub const BINDS: [(Bind, &str, &str, Option<KeyCode>); 44] = [
     (Bind::Slot(6), "Item 6", "useInvSlot6", Some(KeyCode::Digit6)),
     (Bind::Slot(7), "Item 7", "useInvSlot7", Some(KeyCode::Digit7)),
     (Bind::Slot(8), "Item 8", "useInvSlot8", Some(KeyCode::Digit8)),
-    (Bind::SwapAll, "Swap all gear", "swapAll", None),
-    (Bind::Swap(1), "Swap weapon", "swapSlot1", None),
-    (Bind::Swap(2), "Swap ability", "swapSlot2", None),
-    (Bind::Swap(3), "Swap armor", "swapSlot3", None),
-    (Bind::Swap(4), "Swap ring", "swapSlot4", None),
     (Bind::Chat, "Chat", "chat", Some(KeyCode::Enter)),
     (Bind::Command, "Command", "chatCommand", Some(KeyCode::Slash)),
     (Bind::Tell, "Whisper", "tell", Some(KeyCode::Tab)),

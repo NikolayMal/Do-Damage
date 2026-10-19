@@ -164,20 +164,21 @@ For example, the Battle Arena (its monsters come 60 s after you enter):
   world to drop; double-click equips, uses or takes from a bag; shift-click uses; Ctrl+click moves an
   item to the other page (inventory, backpack); Ctrl+right-click breaks it down.
 - **Layout:** `hud::Layout` works everything out from the window size each frame: the world
-  fills the window and the HUD floats over it in boxes anchored to the right-hand corners, at
-  one scale (700 HUD units fitted to the height, the bottom group at most 60% of the width).
-  Top right: gold and fame (and the frame rate) beside the minimap, the bars under it, then the
-  menu button that opens the character card (portrait, name, stats; `characterCard` in the
-  settings). Bottom right: the interact area in the corner (a bag's loot, portals, shops,
-  invitations, the players nearby), the inventory above it with the inventory/backpack tabs and
-  the potions above that, and the equipment over its swap-out row to the left. The pieces (`hud_box`,
-  `slot_grid_box`, `grid_slot`, `burger_button`, `status_bar`, `draw_bars`, `draw_card`,
-  `draw_stats`) take a rectangle, so they can go anywhere. Chat wraps to the space left of the
-  equipment. F11 or Alt+Enter toggles fullscreen.
-- **Swap-out row:** slots 20-23, one for each equipment slot and taking the same items, sent as
-  stats 144-147 (`hud::SWAP_FIRST`, `stat::SWAP_0`; the server's `InventoryConstants`).
-  Double-click one to swap it with what's worn; the Swap hotkeys (unbound by default) do the
-  same for one slot or all four.
+  fills the window and the HUD is one bar down the right (200 HUD units wide, 780 fitted to the
+  height, at most 30% of the width). Its top: the minimap square in the corner, the bars, the
+  menu button that opens the character card (portrait, name, then the Stats or Records tab;
+  `characterCard` in the settings). Its foot, from the bottom: the interact area (a bag's loot,
+  portals, shops, invitations, the players nearby), the inventory, the inventory/backpack tabs
+  and the potions, the equipment, the Nexus button. Gold, fame and the frame rate sit beside
+  it; the boss (or the boss history) at the top left. The pieces (`group`, `hud_box`,
+  `grid_slot`, `burger_button`, `status_bar`, `draw_bars`, `draw_card`, `draw_stats`,
+  `draw_records`) take a rectangle, so they can go anywhere. Chat wraps to the space left of
+  the bar. F11 or Alt+Enter toggles fullscreen.
+- **Swap-out row:** held back for a later release. The server already keeps slots 20-23 for it
+  (one for each equipment slot, taking the same items, sent as stats 144-147; `hud::SWAP_FIRST`,
+  `stat::SWAP_0`, the server's `InventoryConstants`); the client doesn't show them yet.
+- **Fame records:** the client asks for `FameStats` (93/94): the character's `FameStats` (an
+  id and a count each), every few seconds while they change, for the card's Records tab.
 - **Boss damage:** the client asks for `QuestDamageFull` (91/92) as well as `QuestDamage`
   (89/90): everyone who hit the quest with their class, its maximum health, and a last message
   marked `dead` when it dies. The client keeps the last 3 bosses it hit

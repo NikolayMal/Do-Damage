@@ -66,6 +66,9 @@ pub struct Game {
     pub quest_damage: Option<QuestDamage>,
     /// The last bosses (quests) we hit that died, newest first (`BOSS_HISTORY` of them).
     pub boss_history: Vec<BossFight>,
+    /// The character's fame records by id (`FameStats`: kills, dungeons, shots...), as the
+    /// server last sent them.
+    pub fame_stats: std::collections::HashMap<u8, i32>,
     /// Who we've whispered with, newest last (Tab cycles through them).
     pub tellers: Vec<String>,
     /// The arena's wave and clock (`ArenaMenu`): wave, seconds, since when, running.
@@ -244,6 +247,7 @@ impl Game {
             dealt: Default::default(),
             quest_damage: None,
             boss_history: Vec::new(),
+            fame_stats: Default::default(),
             arena: None,
             show_displays: false,
             particles: Default::default(),
@@ -458,6 +462,7 @@ impl Game {
                 self.fallback_to_nexus = false;
                 self.socket.send(&bsk_proto::QuestDamageSubscribe {}.into());
                 self.socket.send(&bsk_proto::QuestDamageFullSubscribe {}.into());
+                self.socket.send(&bsk_proto::FameStatsSubscribe {}.into());
                 self.status.clear();
             }
             Some(Event::Failure { description, .. }) => {
@@ -498,6 +503,7 @@ impl Game {
                 let hitters = d.top.iter().map(|s| Hitter { name: s.name.clone(), class: 0, damage: s.damage }).collect();
                 self.set_quest_damage(d.object_id, None, hitters, d.mine, data);
             }
+            ServerMessage::FameStats(f) => self.fame_stats = f.stats.iter().map(|s| (s.id, s.value)).collect(),
             ServerMessage::QuestDamageFull(d) => {
                 let hitters = d.hitters.iter().map(|h| Hitter { name: h.name.clone(), class: h.class, damage: h.damage }).collect();
                 self.set_quest_damage(d.object_id, Some(d.object_type), hitters, d.mine, data);

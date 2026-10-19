@@ -100,6 +100,10 @@ public enum MessageId : byte
     // whether it has died (the client keeps the bosses it fought).
     QUEST_DAMAGE_FULL_SUBSCRIBE = 91,
     QUEST_DAMAGE_FULL = 92,
+    // The client asks for its character's fame records (kills, dungeons, accuracy...), and gets
+    // them every few seconds while they change.
+    FAME_STATS_SUBSCRIBE = 93,
+    FAME_STATS = 94,
     // From the world proxy (tools/world_proxy.py), before the client's first message: the
     // client's address. Only taken on a connection from this PC; clients never send it.
     PROXY_INFO = 250

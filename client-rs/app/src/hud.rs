@@ -1,14 +1,12 @@
 //! The HUD (`HUDView`) and chat (`TextBox`), laid out for whatever size the window is.
 //!
 //! The AIR client's HUD is a 200×600 panel beside a 600×600 view. Here the world fills the
-//! whole window and the HUD floats over it in two groups of boxes, scaled by one factor
-//! (`Layout::s`) chosen from the window's width and height:
-//!
-//! - top right: the gold and fame beside the minimap, the experience, HP and MP bars under it,
-//!   and a menu button that opens the character card (portrait, name, stats) under the bars;
-//! - bottom right: the inventory with the potions above it, and beside it the equipment over
-//!   its swap-out row (an item kept ready for each equipment slot); bags, portals and the
-//!   players nearby show above the potions.
+//! whole window and the HUD is one bar down its right, scaled by one factor (`Layout::s`)
+//! chosen from the window's width and height: the minimap square in the top corner, the
+//! experience, HP and MP bars, a menu button that opens the character card (portrait, name, and
+//! the stats or the fame records); and from the bottom, the interact area (bags, portals,
+//! invitations, the players nearby), the inventory, the tabs and potions, the equipment and the
+//! Nexus button. Gold and fame sit beside it, the boss (or the boss history) at the top left.
 //!
 //! Everything is worked out each frame from the current size, so resizing or going fullscreen
 //! just works.
@@ -36,17 +34,18 @@ pub struct Layout {
     pub card: bool,
 }
 
-/// The HUD's design height: both groups, one above the other, fit in it.
-const HUD_H: f32 = 700.0;
-/// From the window's edge to the boxes, and between boxes.
-const EDGE: f32 = 0.0;
-const GAP: f32 = 0.0;
-/// The top right column: the minimap's box, the bars, the card, the menu button.
+/// The HUD's design height: the bar's parts, top and bottom, fit in it.
+const HUD_H: f32 = 780.0;
+/// The bar down the right: its width, and where its slot grids sit in it.
 const COL_W: f32 = 200.0;
+const GRID_X: f32 = 8.0;
+/// Space between the bar's sections, and below the last.
+const GAP: f32 = 4.0;
+/// The top of the bar: the minimap, the bars, the menu button's row, the card.
 const MAP_BOX: f32 = 200.0;
 const BARS_H: f32 = 74.0;
-const CARD_H: f32 = 116.0;
 const BURGER: f32 = 26.0;
+const CARD_H: f32 = 132.0;
 /// A slot, the space between slots, and a slot grid's padding (across, down).
 const SLOT: f32 = 40.0;
 const SLOT_GAP: f32 = 4.0;
@@ -72,8 +71,13 @@ pub const fn grid_size(cols: u32, rows: u32) -> (f32, f32) {
 const BAR4: (f32, f32) = grid_size(4, 1);
 const GRID8: (f32, f32) = grid_size(4, 2);
 const POTION_BOX: (f32, f32) = grid_size(2, 1);
-/// The bottom right group's width: equipment and swaps beside the inventory.
-const BOTTOM_W: f32 = BAR4.0 + GAP + GRID8.0;
+
+/// From the screen's bottom up to the top of each of the bar's bottom sections.
+const INTERACT_UP: f32 = GAP + GRID8.1;
+const INVENTORY_UP: f32 = INTERACT_UP + GAP + GRID8.1;
+const ROW_UP: f32 = INVENTORY_UP + GAP + POTION_BOX.1;
+const EQUIP_UP: f32 = ROW_UP + GAP + BAR4.1;
+const NEXUS_UP: f32 = EQUIP_UP + GAP + BURGER;
 
 /// Slot `i` of a grid of `cols` across whose box is `r`.
 pub fn grid_slot(r: [f32; 4], s: f32, cols: u32, i: u32) -> [f32; 4] {
@@ -84,8 +88,8 @@ pub fn grid_slot(r: [f32; 4], s: f32, cols: u32, i: u32) -> [f32; 4] {
 impl Layout {
     pub fn new(w: u32, h: u32, card: bool) -> Self {
         let (w, h) = (w.max(1) as f32, h.max(1) as f32);
-        // Both groups fit the height, and the bottom one takes at most 60% of the width.
-        let s = (h / HUD_H).min(w * 0.6 / (BOTTOM_W + 2.0 * EDGE)).clamp(0.45, 4.0);
+        // The bar's parts fit the height, and the bar takes at most 30% of the width.
+        let s = (h / HUD_H).min(w * 0.3 / COL_W).clamp(0.45, 4.0);
         Layout { w, h, s, card }
     }
 
@@ -94,73 +98,83 @@ impl Layout {
         self.w
     }
 
-    /// A box at the right edge, `from_right` HUD units in from it to its left side.
-    fn right_box(&self, from_right: f32, y: f32, w: f32, h: f32) -> [f32; 4] {
-        let s = self.s;
-        [(self.w - (EDGE + from_right) * s).round(), y.round(), w * s, h * s]
+    /// The bar's left edge.
+    fn col_x(&self) -> f32 {
+        (self.w - COL_W * self.s).round()
     }
 
-    /// A box in the top right column, `y` HUD units below the top of the minimap's box.
+    /// The whole bar down the right of the window.
+    pub fn column(&self) -> [f32; 4] {
+        let x = self.col_x();
+        [x, 0.0, self.w - x, self.h]
+    }
+
+    /// A box in the bar, `y` HUD units below its top.
     fn col(&self, x: f32, y: f32, w: f32, h: f32) -> [f32; 4] {
         let s = self.s;
-        let x0 = (self.w - (EDGE + COL_W) * s).round();
-        [x0 + x * s, ((EDGE + y) * s).round(), w * s, h * s]
+        [self.col_x() + x * s, (y * s).round(), w * s, h * s]
     }
 
-    /// The minimap's box.
+    /// A box in the bar whose top is `up` HUD units above the screen's bottom.
+    fn col_up(&self, x: f32, up: f32, w: f32, h: f32) -> [f32; 4] {
+        let s = self.s;
+        [self.col_x() + x * s, (self.h - up * s).round(), w * s, h * s]
+    }
+
+    /// The minimap's box, square in the top right corner.
     pub fn minimap_box(&self) -> [f32; 4] {
         self.col(0.0, 0.0, COL_W, MAP_BOX)
     }
 
     /// The experience, HP and MP bars' box, under the minimap.
     pub fn bars_box(&self) -> [f32; 4] {
-        self.col(0.0, MAP_BOX + GAP, COL_W, BARS_H)
+        self.col(0.0, MAP_BOX, COL_W, BARS_H)
     }
 
-    /// The character card, under the bars, when it's open.
-    pub fn card_box(&self) -> Option<[f32; 4]> {
-        self.card.then(|| self.col(0.0, MAP_BOX + GAP + BARS_H + GAP, COL_W, CARD_H))
-    }
-
-    /// The button that opens and closes the card: under the bars, or under the card.
+    /// The button that opens and closes the card, at the right under the bars.
     pub fn burger(&self) -> [f32; 4] {
-        let y = MAP_BOX + GAP + BARS_H + GAP + if self.card { CARD_H + GAP } else { 0.0 };
-        self.col(COL_W - BURGER, y, BURGER, BURGER)
+        self.col(COL_W - BURGER - 4.0, MAP_BOX + BARS_H, BURGER, BURGER)
     }
 
-    /// Where the gold and fame's box ends on the right: beside the minimap.
+    /// The character card, under the button, when it's open.
+    pub fn card_box(&self) -> Option<[f32; 4]> {
+        self.card.then(|| self.col(0.0, MAP_BOX + BARS_H + BURGER + GAP, COL_W, CARD_H))
+    }
+
+    /// The card's tab `i` (0 the stats, 1 the records).
+    pub fn card_tab(&self, i: usize) -> Option<[f32; 4]> {
+        self.card_box().map(|r| within(r, self.s, 8.0 + i as f32 * 64.0, 46.0, 60.0, 16.0))
+    }
+
+    /// Where the gold and fame end on the right: beside the bar.
     pub fn credits_right(&self) -> f32 {
-        self.minimap_box()[0] - GAP * self.s
+        self.col_x()
     }
 
-    /// The interact area, in the bottom right corner: a bag's loot, a portal, a shop, an
-    /// invitation (trade, party, guild), or the players nearby.
-    pub fn interact_box(&self) -> [f32; 4] {
-        self.right_box(GRID8.0, self.h - (EDGE + GRID8.1) * self.s, GRID8.0, GRID8.1)
+    /// The Nexus button, at the left over the equipment.
+    pub fn nexus_button(&self) -> [f32; 4] {
+        self.col_up(GRID_X, NEXUS_UP, NEXUS_W, BURGER)
     }
 
-    /// The inventory, above the interact area.
-    pub fn inventory_box(&self) -> [f32; 4] {
-        let ib = self.interact_box();
-        self.right_box(GRID8.0, ib[1] - (GAP + GRID8.1) * self.s, GRID8.0, GRID8.1)
+    /// The equipment, over the tabs and potions.
+    pub fn equip_box(&self) -> [f32; 4] {
+        self.col_up(GRID_X, EQUIP_UP, BAR4.0, BAR4.1)
     }
 
-    /// The potion stacks, above the inventory at the right.
+    /// The row over the inventory: the tabs at the left, the potions at the right.
+    pub fn bottom_row(&self) -> [f32; 4] {
+        self.col_up(GRID_X, ROW_UP, GRID8.0, POTION_BOX.1)
+    }
+
+    /// The potion stacks, at the right of the row over the inventory.
     pub fn potion_box(&self) -> [f32; 4] {
-        let inv = self.inventory_box();
-        self.right_box(POTION_BOX.0, inv[1] - (GAP + POTION_BOX.1) * self.s, POTION_BOX.0, POTION_BOX.1)
+        self.col_up(GRID_X + GRID8.0 - POTION_BOX.0, ROW_UP, POTION_BOX.0, POTION_BOX.1)
     }
 
-    /// The inventory and backpack tabs' box, in the row above the inventory at the left.
+    /// The inventory and backpack tabs' box, at the left of the row over the inventory.
     pub fn tabs_box(&self) -> [f32; 4] {
         let (s, row) = (self.s, self.bottom_row());
         [row[0], row[1] + (row[3] - TABS_BOX.1 * s) / 2.0, TABS_BOX.0 * s, TABS_BOX.1 * s]
-    }
-
-    /// The row above the inventory: the tabs at the left, the potions at the right.
-    pub fn bottom_row(&self) -> [f32; 4] {
-        let (inv, pot) = (self.inventory_box(), self.potion_box());
-        [inv[0], pot[1], inv[2], pot[3]]
     }
 
     /// Tab `i` (0 the inventory, 1 the backpack) in the tabs' box.
@@ -168,48 +182,25 @@ impl Layout {
         within(self.tabs_box(), self.s, TAB_PAD + i as f32 * (TAB + SLOT_GAP), TAB_PAD, TAB, TAB)
     }
 
-    /// The equipment, left of the interact area, over the swap-out row.
-    pub fn equip_box(&self) -> [f32; 4] {
-        let swap = self.swap_box();
-        [swap[0], swap[1] - BAR4.1 * self.s, swap[2], swap[3]]
+    /// The inventory, over the interact area.
+    pub fn inventory_box(&self) -> [f32; 4] {
+        self.col_up(GRID_X, INVENTORY_UP, GRID8.0, GRID8.1)
     }
 
-    /// The swap-out row: one slot for each equipment slot, under the equipment.
-    pub fn swap_box(&self) -> [f32; 4] {
-        let s = self.s;
-        let ib = self.interact_box();
-        [ib[0] - (GAP + BAR4.0) * s, self.h - (EDGE + BAR4.1) * s, BAR4.0 * s, BAR4.1 * s]
+    /// The interact area, at the bottom: a bag's loot, a portal, a shop, an invitation (trade,
+    /// party, guild), or the players nearby.
+    pub fn interact_box(&self) -> [f32; 4] {
+        self.col_up(GRID_X, INTERACT_UP, GRID8.0, GRID8.1)
     }
 
-    /// The Nexus button, above the equipment at its right.
-    pub fn nexus_button(&self) -> [f32; 4] {
-        let s = self.s;
-        let e = self.equip_box();
-        [e[0] + e[2] - NEXUS_W * s, e[1] - (GAP + BURGER) * s, NEXUS_W * s, BURGER * s]
-    }
-
-    /// The space the chat has at the bottom left, clear of the equipment.
+    /// The space the chat has at the bottom left, clear of the bar.
     pub fn chat_right(&self) -> f32 {
-        self.swap_box()[0] - GAP * self.s
+        self.col_x()
     }
 
-    /// The HUD's boxes.
+    /// The HUD's boxes: the bar.
     fn hud_boxes(&self) -> impl Iterator<Item = [f32; 4]> {
-        [
-            Some(self.minimap_box()),
-            Some(self.bars_box()),
-            self.card_box(),
-            Some(self.burger()),
-            Some(self.interact_box()),
-            Some(self.inventory_box()),
-            Some(self.potion_box()),
-            Some(self.bottom_row()),
-            Some(self.equip_box()),
-            Some(self.swap_box()),
-            Some(self.nexus_button()),
-        ]
-        .into_iter()
-        .flatten()
+        std::iter::once(self.column())
     }
 
     /// Pixels per tile: the AIR client's 50, so a bigger window shows more of the world (as
@@ -564,8 +555,6 @@ const MINIMAP_FILL: u32 = 0x1B1B1B;
 pub enum SlotKind {
     /// One of the four equipment slots, with the class's slot type.
     Equip(i32),
-    /// The swap-out slot for an equipment slot, with its slot type.
-    Swap(i32),
     /// Inventory or backpack, with its number key (1-8).
     Inventory(u8),
     /// A bag's.
@@ -670,7 +659,7 @@ pub fn item_slot_type(data: &GameData, item: i32) -> i32 {
 pub fn can_hold(data: &GameData, kind: SlotKind, item: i32) -> bool {
     match kind {
         _ if item <= 0 => true,
-        SlotKind::Equip(t) | SlotKind::Swap(t) => t == 0 || item_slot_type(data, item) == t,
+        SlotKind::Equip(t) => t == 0 || item_slot_type(data, item) == t,
         SlotKind::Potion(_) | SlotKind::Shop => false,
         _ => true,
     }
@@ -703,6 +692,8 @@ pub enum Button {
     Zoom(i32),
     /// Open or close the character card.
     Card,
+    /// The card's tab: 0 the stats, 1 the fame records.
+    CardTab(usize),
     /// Open or close the boss history; show (or hide) who hit one of its bosses.
     History,
     HistoryBoss(usize),
@@ -755,6 +746,8 @@ pub struct Social<'a> {
     /// The quest, and the bosses we hit lately (the history at the top left).
     pub quest: Option<i32>,
     pub history: &'a [crate::game::BossFight],
+    /// The character's fame records (`Game::fame_stats`).
+    pub fame: &'a HashMap<u8, i32>,
 }
 
 /// A player's account id (`ACCOUNT_ID_STAT`), as the account lists hold it.
@@ -891,6 +884,8 @@ pub struct HudState {
     /// The boss history is open, and which boss in it shows everyone who hit it.
     pub history_open: bool,
     pub history_pick: Option<usize>,
+    /// The character card's tab: 0 the stats, 1 the fame records.
+    pub card_tab: usize,
 }
 
 /// The minimap's design size (HUD units).
@@ -999,12 +994,10 @@ impl Panel {
         let item = |o: &GameObj, slot: u8| o.stat_int(slot_stat(slot)).unwrap_or(-1);
         let s = lay.s;
         let types = class_slot_types(data.objects.get(&me.object_type));
-        let (equip, swap) = (lay.equip_box(), lay.swap_box());
+        let equip = lay.equip_box();
         for i in 0..4u8 {
             let t = types.get(i as usize).copied().unwrap_or(0);
             panel.slots.push(Slot { owner: me.id, index: i, item: item(me, i), kind: SlotKind::Equip(t), rect: grid_slot(equip, s, 4, i as u32) });
-            let k = SWAP_FIRST + i;
-            panel.slots.push(Slot { owner: me.id, index: k, item: item(me, k), kind: SlotKind::Swap(t), rect: grid_slot(swap, s, 4, i as u32) });
         }
         panel.has_backpack = me.stat_int(stat::HAS_BACKPACK).unwrap_or(0) != 0;
         let page = if panel.has_backpack { page } else { Page::Inventory };
@@ -1039,6 +1032,11 @@ impl Panel {
             panel.buttons.extend(hl.buttons);
         }
         panel.buttons.push((Button::Card, lay.burger()));
+        for i in 0..2 {
+            if let Some(r) = lay.card_tab(i) {
+                panel.buttons.push((Button::CardTab(i), r));
+            }
+        }
         // The minimap: zoom buttons in its corner, and the players on it.
         let mini = MiniView::new(lay, world, me, state.minimap_zoom);
         panel.minimap = Some(mini);
@@ -1196,6 +1194,10 @@ impl Panel {
                 state.history_open = !state.history_open;
                 return true;
             }
+            Some(Button::CardTab(i)) => {
+                state.card_tab = i;
+                return true;
+            }
             Some(Button::HistoryBoss(i)) => {
                 state.history_pick = if state.history_pick == Some(i) { None } else { Some(i) };
                 return true;
@@ -1276,23 +1278,19 @@ impl Panel {
     }
 }
 
-/// The HUD over the world: the top right group (minimap, bars, the character card) and the
-/// bottom right one (equipment and swaps, inventory, potions, the interact area).
+/// The bar down the right: the minimap, bars and character card at the top; the Nexus
+/// button, equipment, tabs and potions, inventory and interact area at the foot.
 #[allow(clippy::too_many_arguments)]
 pub fn draw_panel(ui: &mut Ui, lay: &Layout, world: &World, camera_angle: f64, colors: &mut MapColors, panel: &Panel, state: &HudState, social: &Social, mouse: (f64, f64)) {
     let s = lay.s;
     let Some(me) = world.player() else { return };
 
-    // The top right group: minimap, bars and card in one column, the menu button on a tab
-    // under it.
-    let radius = 6.0 * s;
-    let (mb, bars, burger) = (lay.minimap_box(), lay.bars_box(), lay.burger());
-    let col_bottom = lay.card_box().map_or(bars[1] + bars[3], |c| c[1] + c[3]);
-    let column = [mb[0], mb[1], mb[2], col_bottom - mb[1]];
-    group_shaped(ui, &[(column, false), ([burger[0], burger[1] - radius, burger[2], burger[3] + radius], true)], s);
-    divider(ui, mb[0] + 8.0 * s, bars[1], mb[2] - 16.0 * s, 0.0, s);
+    // The bar down the right, one piece, its sections divided.
+    let (mb, burger) = (lay.minimap_box(), lay.burger());
+    group(ui, &[lay.column()], s);
+    let (div_x, div_w) = (mb[0] + 8.0 * s, mb[2] - 16.0 * s);
     if let Some(card) = lay.card_box() {
-        divider(ui, mb[0] + 8.0 * s, card[1], mb[2] - 16.0 * s, 0.0, s);
+        divider(ui, div_x, card[1] - GAP * s / 2.0, div_w, 0.0, s);
     }
     let mini = panel.minimap.unwrap_or_else(|| MiniView::new(lay, world, me, state.minimap_zoom));
     draw_minimap(ui, lay, world, me, camera_angle, colors, &mini);
@@ -1322,22 +1320,16 @@ pub fn draw_panel(ui: &mut Ui, lay: &Layout, world: &World, camera_angle: f64, c
     // The bars under it, the character card under them when open, and the button for it.
     draw_bars(ui, lay, me, lay.bars_box());
     if let Some(card) = lay.card_box() {
-        draw_card(ui, lay, me, card);
+        draw_card(ui, lay, me, card, state.card_tab, social.fame, mouse);
     }
     burger_button(ui, burger, lay.card, inside(burger, mouse), s);
 
-    // The bottom right group: the column (tabs and potions, inventory, interact area), the
-    // equipment and swap-out rows joined on at the left, the Nexus button on a tab over them.
-    let (row, inv, ib, equip, swap, nexus) = (lay.bottom_row(), lay.inventory_box(), lay.interact_box(), lay.equip_box(), lay.swap_box(), lay.nexus_button());
-    let column = [row[0], row[1], row[2], lay.h - row[1]];
-    let block = [equip[0], equip[1], equip[2] + radius, lay.h - equip[1]];
-    let pad = 3.0 * s;
-    let tab = [nexus[0] - pad, nexus[1] - pad, nexus[2] + 2.0 * pad, nexus[3] + pad + radius];
-    group(ui, &[block, column, tab], s);
-    divider(ui, row[0] + 8.0 * s, inv[1], row[2] - 16.0 * s, 0.0, s);
-    divider(ui, row[0] + 8.0 * s, ib[1], row[2] - 16.0 * s, 0.0, s);
-    divider(ui, equip[0] + 8.0 * s, swap[1], equip[2] - 16.0 * s, 0.0, s);
-    divider(ui, row[0], equip[1] + 8.0 * s, 0.0, lay.h - equip[1] - 16.0 * s, s);
+    // The bar's foot, from the top: the Nexus button, the equipment, the tabs and potions, the
+    // inventory, the interact area.
+    let (row, inv, ib, equip) = (lay.bottom_row(), lay.inventory_box(), lay.interact_box(), lay.equip_box());
+    for y in [equip[1], row[1], inv[1], ib[1]] {
+        divider(ui, div_x, y - GAP * s / 2.0, div_w, 0.0, s);
+    }
 
     // The inventory and backpack tabs: a bag and the backpack, the page showing edged in the
     // accent; the backpack's dim until there is one.
@@ -1503,8 +1495,8 @@ pub fn draw_bars(ui: &mut Ui, lay: &Layout, me: &GameObj, r: [f32; 4]) {
 }
 
 /// The character card in `r` (on a box or group drawn under it): the portrait, name, class and
-/// level, and the stats.
-pub fn draw_card(ui: &mut Ui, lay: &Layout, me: &GameObj, r: [f32; 4]) {
+/// level, then two tabs (`tab`) for the stats or the fame records.
+pub fn draw_card(ui: &mut Ui, lay: &Layout, me: &GameObj, r: [f32; 4], tab: usize, fame: &HashMap<u8, i32>, mouse: (f64, f64)) {
     let s = lay.s;
     draw_portrait(ui, lay, me, r[0] + 22.0 * s, r[1] + 24.0 * s);
     let name = me.name().unwrap_or("").to_owned();
@@ -1512,7 +1504,57 @@ pub fn draw_card(ui: &mut Ui, lay: &Layout, me: &GameObj, r: [f32; 4]) {
     let level = me.stat_int(stat::LEVEL).unwrap_or(0);
     let class = ui.data.objects.get(&me.object_type).map_or("", |d| d.display_id.as_str()).to_owned();
     ui.label(&format!("{class}  ·  Level {level}"), r[0] + 44.0 * s, r[1] + 26.0 * s, lay.font(11.0), false, color::TEXT_DIM);
-    draw_stats(ui, lay, me, within(r, s, 8.0, 48.0, 184.0, 60.0));
+    for (i, label) in ["Stats", "Records"].into_iter().enumerate() {
+        let tr = within(r, s, 8.0 + i as f32 * 64.0, 46.0, 60.0, 16.0);
+        let on = i == tab;
+        let bg = if on { color::ACCENT } else if inside(tr, mouse) { color::SECONDARY } else { color::CHIP };
+        theme::fill(ui.renderer, tr, tr[3] / 2.0, bg, 1.0);
+        let size = lay.font(10.0);
+        let w = ui.measure(label, size, true);
+        ui.label(label, tr[0] + (tr[2] - w) / 2.0, tr[1] + (tr[3] - size * 1.22) / 2.0, size, true, if on { color::ACCENT_TEXT } else { color::TEXT_DIM });
+    }
+    let body = within(r, s, 8.0, 66.0, 184.0, 60.0);
+    if tab == 0 {
+        draw_stats(ui, lay, me, body);
+    } else {
+        draw_records(ui, lay, fame, body);
+    }
+}
+
+/// The fame records (`FameStats`, as the death screen counts them) in a box `r`: kills, god
+/// and Oryx kills, quests, dungeons, accuracy, potions drunk and time played.
+pub fn draw_records(ui: &mut Ui, lay: &Layout, fame: &HashMap<u8, i32>, r: [f32; 4]) {
+    let s = lay.s;
+    theme::frame(ui.renderer, r, 7.0 * s, s.max(1.0), (color::BORDER, 0.9), ((color::INSET_TOP, 0.9), (color::INSET_BOTTOM, 0.9)));
+    if fame.is_empty() {
+        let size = lay.font(11.0);
+        let t = "No records yet";
+        let w = ui.measure(t, size, false);
+        ui.label(t, r[0] + (r[2] - w) / 2.0, r[1] + (r[3] - size * 1.22) / 2.0, size, false, color::TEXT_DIM);
+        return;
+    }
+    let get = |id: u8| fame.get(&id).copied().unwrap_or(0);
+    // The dungeons the records count: the pirate cave to the manor.
+    let dungeons: i32 = [13u8, 14, 15, 16, 17, 18, 21, 22, 23, 24].iter().map(|&id| get(id)).sum();
+    let accuracy = if get(0) > 0 { format!("{}%", (get(1) as f64 / get(0) as f64 * 100.0).round() as i32) } else { "-".to_owned() };
+    let played = get(20);
+    let rows = [
+        ("Kills", group_digits(get(6))),
+        ("God kills", group_digits(get(8))),
+        ("Oryx kills", group_digits(get(11))),
+        ("Quests", group_digits(get(12))),
+        ("Dungeons", group_digits(dungeons)),
+        ("Accuracy", accuracy),
+        ("Potions", group_digits(get(5))),
+        ("Played", format!("{}h {}m", played / 60, played % 60)),
+    ];
+    let (label_size, value_size) = (lay.font(10.0), lay.font(11.0));
+    for (i, (label, value)) in rows.iter().enumerate() {
+        let (cx, ty) = (r[0] + (6.0 + 90.0 * (i % 2) as f32) * s, r[1] + (3.0 + 13.5 * (i / 2) as f32) * s);
+        ui.label(label, cx, ty, label_size, true, color::TEXT_MUTED);
+        let vw = ui.measure(value, value_size, true);
+        ui.label(value, cx + 84.0 * s - vw, ty - (value_size - label_size) * 0.5, value_size, true, color::TEXT);
+    }
 }
 
 /// The six stats in a box `r`, two columns of three: gold at the class maximum, the boost
@@ -1571,11 +1613,9 @@ fn draw_slot(ui: &mut Ui, lay: &Layout, slot: &Slot, dragged: bool, target: bool
     };
     ui.slot_box(slot.rect, edge, hover, s);
     if empty {
-        if let SlotKind::Equip(t) | SlotKind::Swap(t) = slot.kind {
+        if let SlotKind::Equip(t) = slot.kind {
             if let Some((set, index)) = slot_type_icon(t) {
-                // A swap-out slot's shape fainter: it isn't worn.
-                let c = if matches!(slot.kind, SlotKind::Swap(_)) { theme::shade(color::SILHOUETTE, -0.3) } else { color::SILHOUETTE };
-                ui.silhouette(set, index, x + 6.0 * s, y + 6.0 * s, 28.0 * s, c);
+                ui.silhouette(set, index, x + 6.0 * s, y + 6.0 * s, 28.0 * s, color::SILHOUETTE);
             }
         }
     }
@@ -1816,14 +1856,9 @@ pub fn draw_overlay(ui: &mut Ui, lay: &Layout, world: &World, panel: &Panel, sta
     } else {
         let text = match slot.kind {
             SlotKind::Equip(t) => format!("Empty {} Slot", slot_type_name(t)),
-            SlotKind::Swap(t) => format!("Swap-out {} Slot", slot_type_name(t)),
             _ => "Empty item Slot".to_owned(),
         };
-        let mut lines = vec![Line::new(&text, 14.0, false, 0x9B9B9B)];
-        if let SlotKind::Swap(_) = slot.kind {
-            lines.push(Line::new("Keep an item here to swap in: double-click it", 11.0, false, color::TEXT_MUTED));
-        }
-        lines
+        vec![Line::new(&text, 14.0, false, 0x9B9B9B)]
     };
     let accent = if slot.item > 0 { crate::screens::tier_edge(ui.data, slot.item) } else { None };
     draw_tooltip(ui, lay, &lines, if slot.item > 0 { Some(slot.item) } else { None }, accent, mouse);
@@ -3018,10 +3053,10 @@ mod tests {
                 let l = Layout::new(w, h, card);
                 let small = l.s == 0.45;
                 assert!(HUD_H * l.s <= h as f32 + 0.5 || small, "{w}×{h}: HUD too tall");
-                // The top right column ends above the interact area, the highest of the bottom.
-                let top_end = l.burger()[1] + l.burger()[3];
-                assert!(top_end <= l.potion_box()[1].min(l.tabs_box()[1]) || small, "{w}×{h}: the groups overlap");
-                assert!(l.swap_box()[0] >= 0.0 || small, "{w}×{h}: the bottom group is off the window");
+                // The bar's top (with the card) ends above its foot (the Nexus button).
+                let top_end = l.card_box().map_or(l.burger()[1] + l.burger()[3], |c| c[1] + c[3]);
+                assert!(top_end <= l.nexus_button()[1] + 0.5 || small, "{w}×{h}: the bar's parts overlap");
+                assert!(l.column()[0] >= 0.0, "{w}×{h}: the bar is off the window");
                 assert!(l.credits_right() > 0.0);
                 assert_eq!(l.view_w(), w as f32);
             }
@@ -3031,15 +3066,16 @@ mod tests {
     #[test]
     fn grids_line_up() {
         let l = Layout::new(1920, 1080, true);
-        // The equipment and its swap-out row line up slot for slot.
+        // The equipment and the inventory line up slot for slot, inside the bar.
         for i in 0..4 {
-            let (e, w) = (grid_slot(l.equip_box(), l.s, 4, i), grid_slot(l.swap_box(), l.s, 4, i));
-            assert_eq!(e[0], w[0]);
-            assert!(w[1] > e[1]);
+            let (e, v) = (grid_slot(l.equip_box(), l.s, 4, i), grid_slot(l.inventory_box(), l.s, 4, i));
+            assert_eq!(e[0], v[0]);
+            assert!(v[1] > e[1]);
         }
-        // The last inventory slot sits inside its box.
+        // The last inventory slot sits inside its box, and the box inside the bar.
         let (inv, last) = (l.inventory_box(), grid_slot(l.inventory_box(), l.s, 4, 7));
         assert!(last[0] + last[2] <= inv[0] + inv[2] + 0.5 && last[1] + last[3] <= inv[1] + inv[3] + 0.5);
+        assert!(inv[0] + inv[2] <= l.w + 0.5);
         assert!(l.on_panel(inv[0] as f64 + 1.0, inv[1] as f64 + 1.0));
         assert!(!l.on_panel(l.w as f64 / 2.0, l.h as f64 / 2.0));
     }

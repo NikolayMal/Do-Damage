@@ -114,6 +114,9 @@ namespace WorldServer.core.objects
         // ... everyone who hit it, with classes (QUEST_DAMAGE_FULL_SUBSCRIBE).
         public bool WantsFullQuestDamage { get; set; }
         private string _questDamageSent;
+        // ... and its fame records (FAME_STATS_SUBSCRIBE), and what it was last sent.
+        public bool WantsFameStats { get; set; }
+        private string _fameStatsSent;
 
         public void HandleQuest(TickTime time)
         {
@@ -127,6 +130,9 @@ namespace WorldServer.core.objects
 
             if (WantsQuestDamage && time.TickCount % 5 == 0 && Quest is Enemy quest)
                 SendQuestDamage(quest, false);
+
+            if (WantsFameStats && time.TickCount % 25 == 0)
+                SendFameStats();
 
             if (Quest == null || time.TickCount % 10 == 0)
             {
@@ -167,6 +173,26 @@ namespace WorldServer.core.objects
                 });
             else
                 Client.SendPacket(new QuestDamage() { ObjectId = enemy.Id, Top = shown.Select(h => (h.Item1.Name, h.Item2)).ToArray(), Mine = mine });
+        }
+
+        // The fame records (FameStats.Write: an id byte and a count each), when they change.
+        private void SendFameStats()
+        {
+            var stats = FameCounter?.Stats;
+            if (stats == null)
+                return;
+            var bytes = stats.Write();
+            var key = System.Convert.ToBase64String(bytes);
+            if (key == _fameStatsSent)
+                return;
+            _fameStatsSent = key;
+            var pairs = new (byte, int)[bytes.Length / 5];
+            for (var i = 0; i < pairs.Length; i++)
+            {
+                var o = i * 5;
+                pairs[i] = (bytes[o], (bytes[o + 1] << 24) | (bytes[o + 2] << 16) | (bytes[o + 3] << 8) | bytes[o + 4]);
+            }
+            Client.SendPacket(new FameStatsUpdate() { Stats = pairs });
         }
 
         private bool CheckLevelUp()

@@ -57,6 +57,14 @@ wire_struct! {
 }
 
 wire_struct! {
+    /// One of the character's fame records (`FameStats`): its id and count.
+    pub struct FameStat {
+        pub id: u8,
+        pub value: i32,
+    }
+}
+
+wire_struct! {
     pub struct TradeItem {
         pub item: i32,
         pub slot_type: i32,

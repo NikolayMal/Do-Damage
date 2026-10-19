@@ -165,6 +165,9 @@ messages! {
         // For clients that asked (QuestDamageFullSubscribe), instead: everyone who hit the
         // quest, most first, its type and maximum health, whether it has just died, and our
         // damage.
+        // For clients that asked (FameStatsSubscribe): the character's fame records, every few
+        // seconds while they change.
+        94 => FameStats { stats: List8<FameStat> },
         92 => QuestDamageFull { object_id: i32, object_type: u16, max_hp: i32, dead: bool, hitters: List8<DamageHit>, mine: i32 },
     }
 }
@@ -225,5 +228,7 @@ messages! {
         // Ask for QuestDamageFull instead (a server without it ignores it, and still sends
         // QuestDamage for the first).
         91 => QuestDamageFullSubscribe {},
+        // Ask for FameStats (a server without it ignores it).
+        93 => FameStatsSubscribe {},
     }
 }
