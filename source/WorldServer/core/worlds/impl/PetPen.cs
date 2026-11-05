@@ -13,7 +13,7 @@ namespace WorldServer.core.worlds.impl
     public sealed class PetPen
     {
         private const string KEEPER = "The Pen Keeper";
-        private const int MAX_PETS = 6;
+        private const int MAX_PETS = 12;
         private const float SPEED = 0.8f;
 
         private sealed class PenPet
@@ -28,7 +28,7 @@ namespace WorldServer.core.worlds.impl
         private readonly List<(float X, float Y, float Z)> _floor = new();
         private readonly List<PenPet> _pets = new();
         private ushort[] _kinds = Array.Empty<ushort>();
-        private float _next = 2f;
+        private float _next;
         private bool _started;
         private float _clock;
 
@@ -66,7 +66,8 @@ namespace WorldServer.core.worlds.impl
             _next -= dt;
             if (_next <= 0)
             {
-                _next = 4f + (float)Random.Shared.NextDouble() * 6f;
+                // a full pen soon after a restart, then one every few seconds as others go
+                _next = _pets.Count < MAX_PETS / 2 ? 0.5f : 2f + (float)Random.Shared.NextDouble() * 4f;
                 if (_pets.Count < MAX_PETS)
                     Arrive();
             }

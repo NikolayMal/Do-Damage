@@ -592,9 +592,11 @@ The remotes `upstream` (HaloCelsius) and `aurusenth` share no history with `main
     stand, `The Collection`, is placed by `VaultWorld.PlaceCollection`.
   - The pet pen (`tools/build_nexus_islands.py` `PEN`, `lay_pen`; `PetPen.cs`; `Player.PetPen.cs`,
     `PetPenActHandler.cs`, the client's `petpen.rs`; the Pen Keeper's sprite in
-    `tools/draw_quest_npcs.py`): a raise is `char` `petUpgrade` / `petShards`, and a generator's
-    `ItemData.PetUpgrade` / `PetShards` once given back; `Pet.DamageScale` and `Pet.Heal` apply it
-    in `PetShoot`, `PetStrike`, `PetNova` and `PetHeal`.
+    `tools/draw_quest_npcs.py`): a raise is `char` `petUpgrade`, and a generator's
+    `ItemData.PetUpgrade` once given back (the client names the stone with its size,
+    `hud::raised_pet_size`); `Pet.DamageScale` and `Pet.Heal` apply it in `PetShoot`, `PetStrike`,
+    `PetNova` and `PetHeal`. The shards he keeps are the account's `penShards`; a Shard of the Mad
+    God is `<InvUse/>`, and using one gives the stack to him (`UseItem`, `GiveShards`).
   - The Nexus's places (`NexusPlaces.cs`, `NexusPlacesHandler.cs`, the client's
     `events::draw_nexus_places`): entities and the map's static objects of the classes it lists,
     on every floor, each with an object to draw (`Icons` for the invisible markers), places within

@@ -1036,5 +1036,6 @@
 "You have no pet stones with you.": "Tu n’as aucune pierre de familier sur toi.",
 "{from}, raised to {to}": "{from}, amélioré en {to}",
 "{have} of {all} collected": "{have} sur {all} obtenus",
-"{n} of {needed} shards given": "{n} éclats donnés sur {needed}"
+"Raise to Large ({n} of {needed} shards)": "Passer à Grand ({n} éclats sur {needed})",
+"The Pen Keeper keeps {n} of your shards": "Le gardien de l’enclos garde {n} de tes éclats"
 }

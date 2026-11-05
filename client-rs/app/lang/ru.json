@@ -1036,5 +1036,6 @@
 "You have no pet stones with you.": "У вас нет с собой камней питомцев.",
 "{from}, raised to {to}": "{from}, улучшен до {to}",
 "{have} of {all} collected": "Собрано {have} из {all}",
-"{n} of {needed} shards given": "Отдано осколков: {n} из {needed}"
+"Raise to Large ({n} of {needed} shards)": "Улучшить до Большого ({n} из {needed} осколков)",
+"The Pen Keeper keeps {n} of your shards": "Смотритель загона хранит ваши осколки: {n}"
 }

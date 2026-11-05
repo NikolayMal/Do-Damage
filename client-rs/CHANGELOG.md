@@ -21,8 +21,9 @@ details). Add to a group's line when a change adds to it, rather than adding ano
 - A pet pen east of the Herald and the Warcaller, down a path curving off the main path, where
   pets of every kind come and go. Its Pen
   Keeper takes your pet back, puts in another from its stone, and raises a Small pet to Medium for a
-  Superburger, or a Medium one to Large for 25 Shards of the Mad God (handed over a few at a time if
-  you like): it keeps its look and its shots, and hits and heals as the bigger size.
+  Superburger, or a Medium one to Large for 25 Shards of the Mad God: it keeps its look and its
+  shots, and hits and heals as the bigger size (its stone says so, as "Grey Wolf (Large)"). He
+  keeps the shards you give him, or use anywhere, for your whole account.
 - On the Sky Bar and the other upper floors, teleporting to a player brings you onto their floor
   instead of under it, and your pet, summons, traps, allies and the bags you drop stay on your floor
   too.

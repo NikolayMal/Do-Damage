@@ -1,8 +1,9 @@
 //! The Pen Keeper's window (the world server's `Player.PetPen.cs`), at the pet pen east of the
 //! Arena court: the pet you have out, taking it back into its stone, putting in the pet of a stone
 //! from the inventory, and raising its size: Small to Medium for a Superburger, Medium to Large for
-//! 25 Shards of the Mad God, given a few at a time. A raised pet keeps its look and its shots; it
-//! hits and heals as the size it's raised to.
+//! 25 Shards of the Mad God from those he keeps for the account (given in his window, or used
+//! anywhere). A raised pet keeps its look and its shots; it hits and heals as the size it's raised
+//! to.
 //!
 //! The window asks as it opens and after each act (`PetPenAct`); the server answers with the pet
 //! as it is (`PetPen`).
@@ -19,6 +20,7 @@ pub const TAKE_BACK: u8 = 1;
 pub const PUT_IN: u8 = 2;
 pub const TO_MEDIUM: u8 = 3;
 pub const SHARDS: u8 = 4;
+pub const TO_LARGE: u8 = 5;
 
 const BURGER: &str = "Superburger";
 const SHARD: &str = "Shard of the Mad God x";
@@ -40,6 +42,8 @@ pub struct PetPen {
     rect: Option<[f32; 4]>,
     hits: Vec<(Hit, [f32; 4])>,
     hover: Option<i32>,
+    /// The raised size of the stone hovered, if the Pen Keeper raised its pet.
+    hover_size: Option<&'static str>,
 }
 
 fn inside(r: [f32; 4], (x, y): (f64, f64)) -> bool {
@@ -106,11 +110,12 @@ impl PetPen {
     pub fn draw(&mut self, ui: &mut Ui, lay: &Layout, me: Option<&GameObj>, mouse: (f64, f64)) {
         self.hits.clear();
         self.hover = None;
+        self.hover_size = None;
         if !self.open {
             self.rect = None;
             return;
         }
-        let (dw, dh) = (560.0, 420.0);
+        let (dw, dh) = (560.0, 460.0);
         let s = lay.s * (lay.view_w() * 0.96 / (dw * lay.s)).min(lay.h * 0.96 / (dh * lay.s)).min(1.0);
         let r = [((lay.view_w() - dw * s) / 2.0).round(), ((lay.h - dh * s) / 2.0).round(), dw * s, dh * s];
         self.rect = Some(r);
@@ -146,13 +151,15 @@ impl PetPen {
                     size_name(p.size).to_owned()
                 };
                 ui.label(&size, card[0] + 96.0 * s, card[1] + 46.0 * s, font(14.0), true, color::ACCENT);
-                if p.size == 2 {
-                    let given = tf!("{n} of {needed} shards given", n = p.shards, needed = p.shards_needed);
-                    ui.label(&given, card[0] + 96.0 * s, card[1] + 68.0 * s, font(12.5), false, color::TEXT_DIM);
-                }
             }
             Some(_) => ui.label(tr("You have no pet out."), card[0] + 20.0 * s, card[1] + 38.0 * s, font(14.0), false, color::TEXT_MUTED),
             None => ui.label(tr("Asking the Pen Keeper..."), card[0] + 20.0 * s, card[1] + 38.0 * s, font(14.0), false, color::TEXT_MUTED),
+        }
+        // the shards he keeps for the account, whatever pet is out
+        if let Some(p) = &state {
+            let kept = tf!("The Pen Keeper keeps {n} of your shards", n = p.shards);
+            let kw = ui.measure(&kept, font(12.5), false);
+            ui.label(&kept, card[0] + card[2] - 16.0 * s - kw, card[1] + card[3] - 26.0 * s, font(12.5), false, color::TEXT_DIM);
         }
         y += card[3] + 14.0 * s;
 
@@ -174,23 +181,24 @@ impl PetPen {
             }
         }
 
-        // the three acts
-        let (size, has_pet) = state.as_ref().map_or((255, false), |p| (p.size, p.pet != 0));
+        // the four acts, two by two
+        let (size, has_pet, kept, needed) = state.as_ref().map_or((255, false, 0, 25), |p| (p.size, p.pet != 0, p.shards, p.shards_needed as i32));
         let bh = 32.0 * s;
-        let bw = (w - 16.0 * s) / 3.0;
+        let bw = (w - 8.0 * s) / 2.0;
         let acts = [
             (TAKE_BACK, tr("Take your pet back").to_owned(), has_pet),
+            (SHARDS, tf!("Give shards ({n} with you)", n = shards), shards > 0),
             (TO_MEDIUM, tf!("Raise to Medium ({n} Superburger)", n = burgers), has_pet && size == 1 && burgers > 0),
-            (SHARDS, tf!("Give shards ({n} with you)", n = shards), has_pet && size == 2 && shards > 0),
+            (TO_LARGE, tf!("Raise to Large ({n} of {needed} shards)", n = kept, needed), has_pet && size == 2 && kept >= needed),
         ];
         for (k, (act, label, on)) in acts.iter().enumerate() {
-            let br = [x0 + k as f32 * (bw + 8.0 * s), y, bw, bh];
+            let br = [x0 + (k % 2) as f32 * (bw + 8.0 * s), y + (k / 2) as f32 * (bh + 8.0 * s), bw, bh];
             ui.button(br, label, if *on { Kind::Primary } else { Kind::Secondary }, *on && inside(br, mouse), s * 0.72);
             if *on {
                 self.hits.push((Hit::Act(*act), br));
             }
         }
-        y += bh + 10.0 * s;
+        y += 2.0 * bh + 18.0 * s;
         ui.label_fit(tr("Raising keeps your pet's look and its shots: only its damage and healing grow."), x0, y, w, font(12.0), false, color::TEXT_MUTED);
         y += 26.0 * s;
 
@@ -207,8 +215,15 @@ impl PetPen {
             let over = inside(sr, mouse);
             ui.slot_box(sr, crate::screens::tier_edge(ui.data, item), over, s);
             ui.item_icon(item, 80, sr[0] + sr[2] / 2.0, sr[1] + sr[3] / 2.0, s);
+            let raised = me.and_then(|m| crate::hud::raised_pet_size(ui.data, item, m, slot));
+            if let Some(size) = raised {
+                // the raise, on the stone: the size's first letter in the corner
+                let tag = &size[..size.char_indices().nth(1).map_or(size.len(), |(i, _)| i)];
+                ui.label(tag, sr[0] + sr[2] - 12.0 * s, sr[1] + 2.0 * s, font(11.0), true, color::GOLD);
+            }
             if over {
                 self.hover = Some(item);
+                self.hover_size = raised;
             }
             self.hits.push((Hit::Stone(slot), sr));
         }
@@ -216,7 +231,10 @@ impl PetPen {
             ui.label_fit(m, x0, r[1] + r[3] - 34.0 * s, w, font(13.0), true, if *ok { color::GOOD } else { color::DANGER });
         }
         if let Some(item) = self.hover {
-            let lines = crate::hud::item_tooltip_imprinted(ui.data, item, me, crate::hud::SlotKind::Shop, [0; 3]);
+            let mut lines = crate::hud::item_tooltip_imprinted(ui.data, item, me, crate::hud::SlotKind::Shop, [0; 3]);
+            if let (Some(size), Some(title)) = (self.hover_size, lines.first_mut()) {
+                title.append(&format!(" ({size})"));
+            }
             crate::hud::draw_tooltip(ui, lay, &lines, Some(item), crate::screens::tier_edge(ui.data, item), mouse);
         }
     }

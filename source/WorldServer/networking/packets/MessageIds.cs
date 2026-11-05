@@ -196,8 +196,9 @@ public enum MessageId : byte
     COLLECTION = 135,
     // The Pen Keeper by the Arena court (Rust client 2.3.10, PetPen.cs): the client asks or acts
     // (PET_PEN_ACT: 0 asks, 1 takes the pet back, 2 puts in the pet of an inventory slot's
-    // generator, 3 raises it Small to Medium with a Superburger, 4 gives Shards of the Mad God
-    // towards Medium to Large) and gets the pet as it is now, with what happened (PET_PEN).
+    // generator, 3 raises it Small to Medium with a Superburger, 4 gives him the inventory's Shards
+    // of the Mad God, which he keeps for the account, 5 raises it Medium to Large with 25 of them)
+    // and gets the pet as it is now, with the shards he keeps and what happened (PET_PEN).
     PET_PEN_ACT = 136,
     PET_PEN = 137,
     // The Nexus's places on the minimap (Rust client 2.3.10, NexusPlaces.cs): the client asks on

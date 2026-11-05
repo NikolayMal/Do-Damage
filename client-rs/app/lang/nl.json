@@ -1036,5 +1036,6 @@
 "You have no pet stones with you.": "Je hebt geen huisdierstenen bij je.",
 "{from}, raised to {to}": "{from}, verbeterd tot {to}",
 "{have} of {all} collected": "{have} van {all} verzameld",
-"{n} of {needed} shards given": "{n} van {needed} scherven gegeven"
+"Raise to Large ({n} of {needed} shards)": "Naar Groot ({n} van {needed} scherven)",
+"The Pen Keeper keeps {n} of your shards": "De hoedster bewaart {n} van je scherven"
 }

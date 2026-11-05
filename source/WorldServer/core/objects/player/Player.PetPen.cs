@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Shared.database.character.inventory;
 using Shared.resources;
@@ -8,23 +9,36 @@ namespace WorldServer.core.objects
 {
     // The Pen Keeper by the Arena court (PetPen.cs places him): he takes a pet back (as /removepet),
     // puts in the pet of a generator, and raises a pet's size without changing its look or its
-    // shots: Small to Medium for a Superburger, Medium to Large once he's been given 25 Shards of the
-    // Mad God (a few at a time if need be). A raised pet hits as hard as the size it's raised to
-    // (twice as hard a size: SizeDamage) and heals as that size does (SizeHeal). The raise stays with
-    // the pet: on the character while it's out (PetUpgrade, PetShards), on its generator when it's
-    // given back (ItemData.PetUpgrade, PetShards).
+    // shots: Small to Medium for a Superburger, Medium to Large for 25 Shards of the Mad God from
+    // what he keeps for the account. Shards go to him whenever they're given (his window) or used
+    // (anywhere, UseItem), whatever pet is out, and he keeps them for the whole account
+    // (DbAccount.PenShards) until a raise to Large spends them. A raised pet hits as hard as the size
+    // it's raised to (twice as hard a size) and heals as that size does (SizeHeal). The raise stays
+    // with the pet: on the character while it's out (PetUpgrade), on its generator when it's given
+    // back (ItemData.PetUpgrade).
     partial class Player
     {
         public const int ShardsForLarge = 25;
         public const string PetBurger = "Superburger";
+        public const string PetShardPrefix = "Shard of the Mad God x";
         public static readonly string[] PetSizes = { "Tiny", "Small", "Medium", "Large" };
         // each size's healing of HP and MP, and how often (tools/port_doomed_pets.py PET_SIZES)
         private static readonly (int Amount, int Ms)[] SizeHeal = { (15, 2000), (20, 2000), (30, 2000), (45, 1500) };
 
         public int PetUpgrade { get; set; }
-        public int PetShards { get; set; }
         // the data of a pet generator being used (UseItem takes the item out of its slot first)
         private ItemData _usedPetData;
+
+        /// <summary>The shards the Pen Keeper keeps for the account.</summary>
+        private int PenShards
+        {
+            get => Client.Account.PenShards;
+            set
+            {
+                Client.Account.PenShards = value;
+                Client.Account.FlushAsync();
+            }
+        }
 
         /// <summary>The size a pet hatches at (its generator's petSize), 0 Tiny to 3 Large, -1 unknown.</summary>
         public int PetBaseSize(int petType)
@@ -51,7 +65,7 @@ namespace WorldServer.core.objects
                 Pet = (ushort)PetId,
                 BaseSize = (byte)(size < 0 ? 255 : size),
                 Size = (byte)(size < 0 ? 255 : Math.Min(size + PetUpgrade, 3)),
-                Shards = (byte)Math.Clamp(PetShards, 0, 255),
+                Shards = PenShards,
                 ShardsNeeded = ShardsForLarge,
                 Ok = ok,
                 Message = message ?? ""
@@ -59,8 +73,8 @@ namespace WorldServer.core.objects
         }
 
         /// <summary>The Pen Keeper's work (PetPenActHandler): 0 asks, 1 takes the pet back, 2 puts in
-        /// the pet of the generator in inventory slot `slot`, 3 raises it Small to Medium, 4 gives
-        /// shards towards Medium to Large.</summary>
+        /// the pet of the generator in inventory slot `slot`, 3 raises it Small to Medium, 4 gives him
+        /// the inventory's shards, 5 raises it Medium to Large with 25 of the shards he keeps.</summary>
         public PetPenData PetPenAct(int action, int slot)
         {
             switch (action)
@@ -88,7 +102,6 @@ namespace WorldServer.core.objects
                             Inventory.Data[slot] = null;
                         PetId = petType;
                         PetUpgrade = data?.PetUpgrade ?? 0;
-                        PetShards = data?.PetShards ?? 0;
                         SpawnPetIfAttached(World);
                         return PetPenState(true, $"{GameServer.Resources.GameData.ObjectDescs[petType].DisplayName} is yours now.");
                     }
@@ -108,30 +121,16 @@ namespace WorldServer.core.objects
                         return PetPenState(true, "Your pet grew to Medium strength!");
                     }
                 case 4:
+                    return GiveShards(Enumerable.Range(4, Inventory.Length - 4));
+                case 5:
                     {
                         if (PetId == 0)
                             return PetPenState(false, "Put a pet in first.");
                         if (PetBaseSize(PetId) + PetUpgrade != 2)
-                            return PetPenState(false, "Shards raise a Medium pet to Large: yours isn't Medium.");
-                        var given = 0;
-                        var gameData = GameServer.Resources.GameData;
-                        for (var s = 4; s < Inventory.Length && PetShards < ShardsForLarge; s++)
-                        {
-                            var it = Inventory[s];
-                            if (it == null || !it.ObjectId.StartsWith("Shard of the Mad God x"))
-                                continue;
-                            var have = Math.Max(1, it.Quantity);
-                            var take = Math.Min(have, ShardsForLarge - PetShards);
-                            var left = have - take;
-                            Inventory[s] = left > 0 && gameData.IdToObjectType.TryGetValue($"Shard of the Mad God x{left}", out var rest) ? gameData.Items[rest] : null;
-                            PetShards += take;
-                            given += take;
-                        }
-                        if (given == 0)
-                            return PetPenState(false, "You have no Shards of the Mad God with you.");
-                        if (PetShards < ShardsForLarge)
-                            return PetPenState(true, $"The Pen Keeper takes {given} shards: {ShardsForLarge - PetShards} more to raise your pet to Large.");
-                        PetShards = 0;
+                            return PetPenState(false, "Only a Medium pet can be raised to Large.");
+                        if (PenShards < ShardsForLarge)
+                            return PetPenState(false, $"The Pen Keeper needs {ShardsForLarge - PenShards} more shards for that.");
+                        PenShards -= ShardsForLarge;
                         PetUpgrade++;
                         SpawnPetIfAttached(World);
                         return PetPenState(true, "Your pet grew to Large strength!");
@@ -139,6 +138,25 @@ namespace WorldServer.core.objects
                 default:
                     return PetPenState();
             }
+        }
+
+        /// <summary>Every Shard of the Mad God in these inventory slots to the Pen Keeper, who keeps
+        /// them for the account. From his window, or a shard used anywhere (UseItem).</summary>
+        public PetPenData GiveShards(IEnumerable<int> slots)
+        {
+            var given = 0;
+            foreach (var s in slots)
+            {
+                var it = s >= 4 && s < Inventory.Length ? Inventory[s] : null;
+                if (it == null || !it.ObjectId.StartsWith(PetShardPrefix))
+                    continue;
+                given += Math.Max(1, it.Quantity);
+                Inventory[s] = null;
+            }
+            if (given == 0)
+                return PetPenState(false, "You have no Shards of the Mad God with you.");
+            PenShards += given;
+            return PetPenState(true, $"The Pen Keeper takes {given} shards: he keeps {PenShards} for you.");
         }
 
         private int FindInventory(Func<Item, bool> what)
@@ -153,14 +171,13 @@ namespace WorldServer.core.objects
         public void RemovePet()
         {
             var petType = PetId;
-            var (upgrade, shards) = (PetUpgrade, PetShards);
+            var upgrade = PetUpgrade;
             PetId = 0;
             PetUpgrade = 0;
-            PetShards = 0;
             if (Pet != null)
                 World.LeaveWorld(Pet);
             Pet = null;
-            if (!GivePetGeneratorBack(petType, upgrade, shards))
+            if (!GivePetGeneratorBack(petType, upgrade))
                 SendInfo("Your pet runs away.");
         }
     }

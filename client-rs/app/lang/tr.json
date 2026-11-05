@@ -1036,5 +1036,6 @@
 "You have no pet stones with you.": "Üzerinde evcil taşı yok.",
 "{from}, raised to {to}": "{from}, {to} boyuna yükseltildi",
 "{have} of {all} collected": "{all} parçadan {have} toplandı",
-"{n} of {needed} shards given": "{needed} kırıktan {n} verildi"
+"Raise to Large ({n} of {needed} shards)": "Büyük boya yükselt ({needed} kırıktan {n})",
+"The Pen Keeper keeps {n} of your shards": "Ağıl bekçisi senin {n} kırığını saklıyor"
 }

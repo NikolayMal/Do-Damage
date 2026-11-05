@@ -2199,7 +2199,12 @@ impl App {
             }
             if self.pet_pen.open {
                 for (down, pos) in std::mem::take(&mut self.clicks) {
-                    if let (true, Some((act, slot))) = (down, self.pet_pen.click(pos)) {
+                    // a press only: a release outside the window (after the press that opened it)
+                    // closed it
+                    if !down {
+                        continue;
+                    }
+                    if let Some((act, slot)) = self.pet_pen.click(pos) {
                         self.keeper_acts.push(KeeperAct::PetPen(act, slot));
                     }
                 }

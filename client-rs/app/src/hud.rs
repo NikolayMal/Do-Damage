@@ -610,6 +610,32 @@ pub fn slot_data_stat(slot: u8) -> u8 {
 }
 
 /// The imprints on the item in an object's slot.
+/// A pet generator the Pen Keeper raised (`ItemData.PetUpgrade` in its slot's data): the size it
+/// raises its pet to, to name after the item, as "Grey Wolf (Large)".
+pub fn raised_pet_size(data: &GameData, item: i32, o: &GameObj, slot: u8) -> Option<&'static str> {
+    let json = o.stat_str(slot_data_stat(slot))?;
+    let i = json.find("\"PetUpgrade\":")?;
+    let up: usize = json[i + 13..].chars().take_while(|c| c.is_ascii_digit()).collect::<String>().parse().ok()?;
+    let size = data.objects.get(&(item as u16))?.xml.children_named("Activate").find(|a| a.text.trim() == "PermaPet")?.attr("petSize")?;
+    let base = ["Tiny", "Small", "Medium", "Large"].iter().position(|&s| s == size)?;
+    match (base + up).min(3) {
+        0 => Some(tr("Tiny")),
+        1 => Some(tr("Small")),
+        2 => Some(tr("Medium")),
+        _ => Some(tr("Large")),
+    }
+    .filter(|_| up > 0)
+}
+
+impl Line {
+    /// The first piece's text with `more` after it (an item's title, raised pet's size).
+    pub fn append(&mut self, more: &str) {
+        if let Some(first) = self.pieces.first_mut() {
+            first.0.push_str(more);
+        }
+    }
+}
+
 pub fn slot_imprints(o: &GameObj, slot: u8) -> [u8; 3] {
     bsk_data::imprint::parse(o.stat_str(slot_data_stat(slot)).unwrap_or(""))
 }
@@ -2406,6 +2432,11 @@ pub fn draw_overlay(ui: &mut Ui, lay: &Layout, world: &World, panel: &Panel, sta
     let me = world.player();
     let lines = if slot.item > 0 {
         let mut lines = item_tooltip_imprinted(ui.data, slot.item, me, slot.kind, slot.imprints);
+        if let Some(size) = me.filter(|m| m.id == slot.owner).and_then(|m| raised_pet_size(ui.data, slot.item, m, slot.index)) {
+            if let Some(title) = lines.first_mut() {
+                title.append(&format!(" ({size})"));
+            }
+        }
         lines.extend(imprint_lines(ui.data, slot.item, slot.imprints));
         lines
     } else {

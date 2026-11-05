@@ -1036,5 +1036,6 @@
 "You have no pet stones with you.": "Nie masz przy sobie kamieni zwierzaków.",
 "{from}, raised to {to}": "{from}, ulepszony do {to}",
 "{have} of {all} collected": "Zebrano {have} z {all}",
-"{n} of {needed} shards given": "Oddano {n} z {needed} odłamków"
+"Raise to Large ({n} of {needed} shards)": "Ulepsz do Dużego ({n} z {needed} odłamków)",
+"The Pen Keeper keeps {n} of your shards": "Opiekun zagrody przechowuje twoje odłamki: {n}"
 }

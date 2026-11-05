@@ -1036,5 +1036,6 @@
 "You have no pet stones with you.": "No llevas piedras de mascota.",
 "{from}, raised to {to}": "{from}, mejorada a {to}",
 "{have} of {all} collected": "{have} de {all} conseguidos",
-"{n} of {needed} shards given": "{n} de {needed} fragmentos entregados"
+"Raise to Large ({n} of {needed} shards)": "Subir a Grande ({n} de {needed} fragmentos)",
+"The Pen Keeper keeps {n} of your shards": "El cuidador guarda {n} de tus fragmentos"
 }

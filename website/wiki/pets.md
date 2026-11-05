@@ -28,11 +28,13 @@ Arena island; pets of every kind come and go in the pen behind him. Talk to him 
 - **Raise your pet a size**, without changing its look or its shots: it hits and heals as the size
   it's raised to (twice as hard a size, and the size's healing in the table below).
   - **Small to Medium** for a **Superburger**.
-  - **Medium to Large** for **25 Shards of the Mad God**, which you can hand him a few at a time: he
-    keeps count, and the pet grows once he has 25.
+  - **Medium to Large** for **25 Shards of the Mad God** from those he keeps for you.
+- **Give him your Shards of the Mad God.** He keeps them for your whole account, whatever pet you
+  have, until a raise to Large spends 25. Using a stack of shards from your inventory, anywhere,
+  hands it to him too.
 
-Tiny pets can't be raised, and a raised pet's generator keeps its raise (and any shards given
-towards it) when you take the pet back.
+Tiny pets can't be raised. A raised pet's generator keeps its raise when you take the pet back,
+and its name says the size it's raised to, such as "Grey Wolf (Large)".
 
 ### Sizes
 

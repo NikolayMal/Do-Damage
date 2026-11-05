@@ -144,6 +144,23 @@ namespace WorldServer.core.objects
                 Client.SendPacket(new InvResult() { Result = 1 });
             }
 
+            // a Shard of the Mad God used from the inventory goes to the Pen Keeper, who keeps it for the
+            // account towards raising a pet to Large (Player.PetPen.cs), wherever you are
+            if (container == this && item.ObjectId.StartsWith(PetShardPrefix))
+            {
+                var answer = TradeTarget != null ? null : GiveShards(new[] { slot });
+                if (answer == null)
+                    Refuse("You can't use that while trading.");
+                else
+                {
+                    entity.ForceUpdate(slot);
+                    (answer.Ok ? (Action<string>)SendInfo : SendError)(answer.Message);
+                    if (answer.Ok)
+                        Client.SendPacket(answer);
+                }
+                return;
+            }
+
             // make sure not trading and trying to cunsume item
             if (TradeTarget != null && item.Consumable)
             {
@@ -1509,15 +1526,14 @@ namespace WorldServer.core.objects
             // generators are used up, so the pet this one replaces goes back into the inventory as
             // its generator: swapping pets never loses one
             var old = PetId;
-            var (oldUpgrade, oldShards) = (PetUpgrade, PetShards);
+            var oldUpgrade = PetUpgrade;
             PetId = desc.ObjectType;
             // a generator the Pen Keeper raised brings its raise back
             PetUpgrade = _usedPetData?.PetUpgrade ?? 0;
-            PetShards = _usedPetData?.PetShards ?? 0;
             _usedPetData = null;
             SpawnPetIfAttached(World);
             if (old != 0 && old != PetId)
-                GivePetGeneratorBack(old, oldUpgrade, oldShards);
+                GivePetGeneratorBack(old, oldUpgrade);
         }
 
         // The item that gives this pet (a PermaPet activate for it): a "... Generator" before the
@@ -1545,12 +1561,12 @@ namespace WorldServer.core.objects
 
         // Puts the pet's generator in the inventory (the gift chest when it's full); false when the
         // pet has no generator to give back.
-        public bool GivePetGeneratorBack(int petType, int upgrade = 0, int shards = 0)
+        public bool GivePetGeneratorBack(int petType, int upgrade = 0)
         {
             var generator = PetGenerator(petType);
             if (generator == null)
                 return false;
-            if (upgrade <= 0 && shards <= 0)
+            if (upgrade <= 0)
             {
                 GiveItem(generator);
                 return true;
@@ -1563,7 +1579,7 @@ namespace WorldServer.core.objects
                 GiveItem(generator);
                 return true;
             }
-            Inventory.Data[slot] = new Shared.database.character.inventory.ItemData { PetUpgrade = upgrade > 0 ? upgrade : null, PetShards = shards > 0 ? shards : null };
+            Inventory.Data[slot] = new Shared.database.character.inventory.ItemData { PetUpgrade = upgrade };
             Inventory[slot] = generator;
             SendInfo($"You received {generator.DisplayName}!");
             return true;

@@ -1036,5 +1036,6 @@
 "You have no pet stones with you.": "У вас немає з собою каменів улюбленців.",
 "{from}, raised to {to}": "{from}, покращено до {to}",
 "{have} of {all} collected": "Зібрано {have} з {all}",
-"{n} of {needed} shards given": "Віддано уламків: {n} з {needed}"
+"Raise to Large ({n} of {needed} shards)": "Покращити до Великого ({n} з {needed} уламків)",
+"The Pen Keeper keeps {n} of your shards": "Доглядач загону зберігає ваші уламки: {n}"
 }

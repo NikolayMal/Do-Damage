@@ -292,9 +292,9 @@ fn collection_and_pet_pen_match_their_handlers() {
     assert_eq!(ClientMessage::from(CollectionRequest {}).to_frame(), B::default().frame(134));
     // PetPenData.Write: pet, base size, size, shards, needed, ok, message; PetPenActHandler reads
     // the action and the slot.
-    let body = B::default().i16(0x1234).u8(1).u8(2).u8(3).u8(25).u8(1).utf("ok").0;
+    let body = B::default().i16(0x1234).u8(1).u8(2).i32(300).u8(25).u8(1).utf("ok").0;
     let ServerMessage::PetPen(p) = ServerMessage::decode(137, &body).unwrap() else { panic!() };
-    assert_eq!((p.pet, p.base_size, p.size, p.shards, p.shards_needed, p.ok, p.message.as_str()), (0x1234, 1, 2, 3, 25, true, "ok"));
+    assert_eq!((p.pet, p.base_size, p.size, p.shards, p.shards_needed, p.ok, p.message.as_str()), (0x1234, 1, 2, 300, 25, true, "ok"));
     assert_eq!(ClientMessage::from(PetPenAct { action: 2, slot: 5 }).to_frame(), B::default().u8(2).u8(5).frame(136));
     // NexusPlacesMessage.Write: a short count of places (name, kind, x, y, icon).
     let body = B::default().i16(1).utf("Divine Forge").u8(0).f32(164.5).f32(94.5).i16(0x497a).0;
