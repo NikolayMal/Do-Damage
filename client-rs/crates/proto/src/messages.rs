@@ -254,6 +254,15 @@ messages! {
         // above the one below, and the ground of the floors above the map (the map's own comes
         // in Update). From then on we walk at a height and say so before each Move (Height).
         132 => Layers { height: f32, tiles: List16<LayerTile> },
+        // The Collection (after CollectionRequest): every piece of gear there is to collect, the ones
+        // the account has had, and where the untiered gear comes from.
+        135 => Collection { all: List16<u16>, have: List16<u16>, groups: List16<CollectionGroup> },
+        // The Pen Keeper's answer (after PetPenAct): the pet (0 for none), its size as it hatched
+        // and now (0 Tiny to 3 Large, 255 unknown), the shards given towards Large and how many it
+        // takes, whether the act worked and what to say about it (empty for a plain ask).
+        137 => PetPen { pet: u16, base_size: u8, size: u8, shards: u8, shards_needed: u8, ok: bool, message: String },
+        // The Nexus's places for the minimap (after NexusPlacesRequest): its NPCs and portals.
+        139 => NexusPlaces { places: List16<NexusPlace> },
     }
 }
 
@@ -372,5 +381,13 @@ messages! {
         // How high we walk, in tiles, just before each Move in a world of stacked floors (only
         // once Layers came, so never to a server without it).
         133 => Height { z: f32 },
+        // The Collection in the vault: ask for Collection (an older server doesn't know it).
+        134 => CollectionRequest {},
+        // The Pen Keeper: 0 asks, 1 takes the pet back, 2 puts in the pet of the generator in
+        // inventory slot `slot`, 3 raises it Small to Medium (a Superburger), 4 gives Shards of the
+        // Mad God towards Large. Answered by PetPen.
+        136 => PetPenAct { action: u8, slot: u8 },
+        // Ask for NexusPlaces, in the Nexus (an older server doesn't know it).
+        138 => NexusPlacesRequest {},
     }
 }

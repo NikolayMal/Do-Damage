@@ -282,6 +282,28 @@ fn forge_messages_match_forge_handlers() {
 }
 
 #[test]
+fn collection_and_pet_pen_match_their_handlers() {
+    // CollectionContents.Write: short-counted types (all, have), then short-counted groups (name,
+    // icon, level, short-counted items).
+    let body = B::default().i16(2).i16(0x0a01).i16(0x0a02).i16(1).i16(0x0a02).i16(1).utf("Lost Halls").i16(0x0712).u8(5).i16(1).i16(0x0a01).0;
+    let ServerMessage::Collection(c) = ServerMessage::decode(135, &body).unwrap() else { panic!() };
+    assert_eq!((c.all.len(), c.have[0], c.groups[0].name.as_str(), c.groups[0].icon, c.groups[0].level, c.groups[0].items[0]),
+        (2, 0x0a02, "Lost Halls", 0x0712, 5, 0x0a01));
+    assert_eq!(ClientMessage::from(CollectionRequest {}).to_frame(), B::default().frame(134));
+    // PetPenData.Write: pet, base size, size, shards, needed, ok, message; PetPenActHandler reads
+    // the action and the slot.
+    let body = B::default().i16(0x1234).u8(1).u8(2).u8(3).u8(25).u8(1).utf("ok").0;
+    let ServerMessage::PetPen(p) = ServerMessage::decode(137, &body).unwrap() else { panic!() };
+    assert_eq!((p.pet, p.base_size, p.size, p.shards, p.shards_needed, p.ok, p.message.as_str()), (0x1234, 1, 2, 3, 25, true, "ok"));
+    assert_eq!(ClientMessage::from(PetPenAct { action: 2, slot: 5 }).to_frame(), B::default().u8(2).u8(5).frame(136));
+    // NexusPlacesMessage.Write: a short count of places (name, kind, x, y).
+    let body = B::default().i16(1).utf("The Warcaller").u8(0).f32(164.5).f32(94.5).0;
+    let ServerMessage::NexusPlaces(n) = ServerMessage::decode(139, &body).unwrap() else { panic!() };
+    assert_eq!((n.places[0].name.as_str(), n.places[0].kind, n.places[0].x, n.places[0].y), ("The Warcaller", 0, 164.5, 94.5));
+    assert_eq!(ClientMessage::from(NexusPlacesRequest {}).to_frame(), B::default().frame(138));
+}
+
+#[test]
 fn imprint_messages_match_imprint_handlers() {
     // ImprintHandler reads the inventory slot, then the imprint's id; ImprintRequestHandler nothing.
     let frame = ClientMessage::from(Imprint { slot: 4, imprint: 22 }).to_frame();

@@ -189,6 +189,22 @@ public enum MessageId : byte
     // (LAYERS), and the height the client walks at, before each MOVE there (HEIGHT).
     LAYERS = 132,
     HEIGHT = 133,
+    // The Collection in the vault (Rust client 2.3.10, CollectionHandler.cs): the client asks
+    // (COLLECTION_REQUEST) and gets every piece of gear there is to collect, what the account has
+    // had, and where the untiered gear comes from (COLLECTION).
+    COLLECTION_REQUEST = 134,
+    COLLECTION = 135,
+    // The Pen Keeper by the Arena court (Rust client 2.3.10, PetPen.cs): the client asks or acts
+    // (PET_PEN_ACT: 0 asks, 1 takes the pet back, 2 puts in the pet of an inventory slot's
+    // generator, 3 raises it Small to Medium with a Superburger, 4 gives Shards of the Mad God
+    // towards Medium to Large) and gets the pet as it is now, with what happened (PET_PEN).
+    PET_PEN_ACT = 136,
+    PET_PEN = 137,
+    // The Nexus's places on the minimap (Rust client 2.3.10, NexusPlaces.cs): the client asks on
+    // entering the Nexus (NEXUS_PLACES_REQUEST) and gets where its NPCs and portals stand, so the
+    // map shows the way to them before anyone has walked there (NEXUS_PLACES).
+    NEXUS_PLACES_REQUEST = 138,
+    NEXUS_PLACES = 139,
     // From the world proxy (tools/world_proxy.py), before the client's first message: the
     // client's address. Only taken on a connection from this PC; clients never send it.
     PROXY_INFO = 250

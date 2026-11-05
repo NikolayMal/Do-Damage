@@ -319,6 +319,8 @@ namespace WorldServer.core.objects
             }
 
             PetId = character.PetId;
+            PetUpgrade = character.PetUpgrade;
+            PetShards = character.PetShards;
 
             InitializePotionStacks(character, settings);
             InitializeInventory(gameData, character);
@@ -483,6 +485,8 @@ namespace WorldServer.core.objects
             chr.MagicStackCount = MagicPotionStack.Count;
             chr.HasBackpack = HasBackpack;
             chr.PetId = PetId;
+            chr.PetUpgrade = PetUpgrade;
+            chr.PetShards = PetShards;
             chr.Items = Inventory.GetItemTypes();
             chr.XPBoostTime = XPBoostTime;
             chr.LDBoostTime = LDBoostTime;
@@ -695,6 +699,8 @@ namespace WorldServer.core.objects
             {
                 var pet = new Pet(GameServer, this, (ushort)petId);
                 pet.Move(X, Y);
+                pet.Z = Z;
+                (pet.DamageScale, pet.Heal) = PetPower();
                 owner.EnterWorld(pet);
                 if (petDesc.Size > 0)
                     pet.Size = petDesc.Size;

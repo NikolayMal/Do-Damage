@@ -15,10 +15,29 @@ while you have one gives you back your current pet's generator (in your inventor
 Chest when it's full), and `/removepet` sends your pet away and gives you its generator back too.
 Using the generator of the pet you already have does nothing, and keeps the generator.
 
+A pet heals you wherever you are in the same world, however far it has fallen behind. If you go up
+or down a floor (the Sky Bar's stair, a teleport), it comes to you on your floor.
+
+### The Pen Keeper: raising a pet
+
+The **Pen Keeper** stands at the gate of the **pet pen**, east of the Herald and the Warcaller on the
+Arena island; pets of every kind come and go in the pen behind him. Talk to him to:
+
+- **Take your pet back** into its generator (as `/removepet` does).
+- **Put in a pet**: click any pet generator in your inventory or backpack.
+- **Raise your pet a size**, without changing its look or its shots: it hits and heals as the size
+  it's raised to (twice as hard a size, and the size's healing in the table below).
+  - **Small to Medium** for a **Superburger**.
+  - **Medium to Large** for **25 Shards of the Mad God**, which you can hand him a few at a time: he
+    keeps count, and the pet grows once he has 25.
+
+Tiny pets can't be raised, and a raised pet's generator keeps its raise (and any shards given
+towards it) when you take the pet back.
+
 ### Sizes
 
-Every pet is **Tiny**, **Small**, **Medium** or **Large**, and each size hits about twice as hard as
-the one below it. The size decides how much it heals, how hard it hits and how big it looks next to
+Every pet is **Tiny**, **Small**, **Medium** or **Large** (the Pen Keeper can raise a Small or
+Medium one), and each size hits about twice as hard as the one below it. The size decides how much it heals, how hard it hits and how big it looks next to
 you, and the generator's tooltip says which it is.
 
 | Size | Heals HP and MP | Damage a second | Looks | Which pets |

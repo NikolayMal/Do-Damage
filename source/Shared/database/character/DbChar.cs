@@ -27,6 +27,10 @@ namespace Shared.database.character
         public int MP { get => GetValue<int>("mp"); set => SetValue("mp", value); }
         public ushort ObjectType { get => GetValue<ushort>("charType"); set => SetValue("charType", value); }
         public int PetId { get => GetValue<int>("petId"); set => SetValue("petId", value); }
+        // the Pen Keeper's work on the pet (PetPen.cs): the sizes it was raised by, and the Shards of
+        // the Mad God given towards its next
+        public int PetUpgrade { get => GetValue<int>("petUpgrade"); set => SetValue("petUpgrade", value); }
+        public int PetShards { get => GetValue<int>("petShards"); set => SetValue("petShards", value); }
         public int Skin { get => GetValue<int>("skin"); set => SetValue("skin", value); }
 
         public int[] Stats { get => GetValue<int[]>("stats"); set => SetValue("stats", value); }
