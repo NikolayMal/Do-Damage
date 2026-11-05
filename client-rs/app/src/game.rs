@@ -831,7 +831,10 @@ impl Game {
             ServerMessage::PetPen(p) => self.pet_pen = Some(p.clone()),
             ServerMessage::ImprintVault(v) => self.forge_events.push(crate::forge::Event::ImprintVault(v.items.0.clone())),
             ServerMessage::RealmEvents(r) => self.realm_events = Some(r.clone()),
-            ServerMessage::NexusPlaces(n) => self.nexus_places = n.places.0.clone(),
+            ServerMessage::NexusPlaces(n) => {
+                log::debug!("nexus places: {:?}", n.places.iter().map(|p| (p.name.as_str(), p.x as i32, p.y as i32, p.icon)).collect::<Vec<_>>());
+                self.nexus_places = n.places.0.clone();
+            }
             ServerMessage::ImprintResult(r) => {
                 self.forge_events.push(crate::forge::Event::Imprint { success: r.success, message: r.message.clone() })
             }

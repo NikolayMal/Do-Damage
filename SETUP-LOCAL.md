@@ -596,7 +596,9 @@ The remotes `upstream` (HaloCelsius) and `aurusenth` share no history with `main
     `ItemData.PetUpgrade` / `PetShards` once given back; `Pet.DamageScale` and `Pet.Heal` apply it
     in `PetShoot`, `PetStrike`, `PetNova` and `PetHeal`.
   - The Nexus's places (`NexusPlaces.cs`, `NexusPlacesHandler.cs`, the client's
-    `events::draw_nexus_places`).
+    `events::draw_nexus_places`): entities and the map's static objects of the classes it lists,
+    on every floor, each with an object to draw (`Icons` for the invisible markers), places within
+    3 tiles sharing a mark.
   - Mystery Keys and Pet Stones (`Player.MysteryBoxes.cs` `MysteryKeys`, `MysteryPetSizes`; the wiki
     reads the keys' lists, `wiki_data.mystery_keys`). `/give` finds items by loose names.
   - Floors: teleports land on the target's floor (`TeleportPosition`'s `z`, the height sent again,

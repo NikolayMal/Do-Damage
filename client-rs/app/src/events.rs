@@ -310,16 +310,17 @@ pub fn draw_minimap_marks(ui: &mut Ui, s: f32, mini: &hud::MiniView, info: Optio
     }
 }
 
-/// The Nexus's places on the minimap (`NexusPlaces`): a gold dot for those you talk to, a violet
-/// ring for the portals, at the box's edge when they're out of it, so the way to each shows before
-/// you've been there; the one under the mouse is named.
+/// The Nexus's places on the minimap (`NexusPlaces`): each one's picture (the Divine Forge's fire,
+/// the Warcaller, a portal) on a disc ringed gold for those you talk to and violet for the portals
+/// (a dot when there's no picture), at the box's edge when they're out of it, so the way to each
+/// shows before you've been there; the one under the mouse is named.
 pub fn draw_nexus_places(ui: &mut Ui, s: f32, mini: &hud::MiniView, places: &[bsk_proto::NexusPlace], mouse: (f64, f64)) {
     if places.is_empty() {
         return;
     }
     let [x0, y0, side, _] = mini.rect;
     let (mx, my) = (mouse.0 as f32, mouse.1 as f32);
-    let d = 3.0 * s;
+    let d = 6.0 * s;
     let at = |p: &bsk_proto::NexusPlace| {
         let (px, py) = mini.to_map(p.x as f64, p.y as f64);
         (px.clamp(x0 + d, x0 + side - d), py.clamp(y0 + d, y0 + side - d))
@@ -338,11 +339,14 @@ pub fn draw_nexus_places(ui: &mut Ui, s: f32, mini: &hud::MiniView, places: &[bs
         let (px, py) = at(p);
         let lit = hover == Some(i);
         let c = if p.kind == 1 { PORTAL_COLOR } else { PLACE_COLOR };
-        let ring = if lit { 0xFFFFFF } else { 0x000000 };
-        ui.rect(px - d - s, py - d - s, 2.0 * (d + s), 2.0 * (d + s), ring, 0.85);
-        ui.rect(px - d, py - d, 2.0 * d, 2.0 * d, c, 1.0);
-        if p.kind == 1 {
-            ui.rect(px - d / 3.0, py - d / 3.0, 2.0 * d / 3.0, 2.0 * d / 3.0, 0x000000, 0.9);
+        // a dark disc ringed in the place's colour (white under the mouse), its picture on it
+        let ring = (2.0 * s).max(1.0);
+        theme::fill(ui.renderer, [px - d - ring, py - d - ring, 2.0 * (d + ring), 2.0 * (d + ring)], d + ring, if lit { 0xFFFFFF } else { c }, 1.0);
+        theme::fill(ui.renderer, [px - d, py - d, 2.0 * d, 2.0 * d], d, 0x14101E, 0.92);
+        if p.icon != 0 && ui.data.objects.contains_key(&p.icon) {
+            hud::object_icon(ui, p.icon, px, py, 1.9 * d);
+        } else {
+            theme::fill(ui.renderer, [px - d / 2.0, py - d / 2.0, d, d], d / 2.0, c, 1.0);
         }
     }
     if let Some(i) = hover {

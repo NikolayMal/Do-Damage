@@ -87,10 +87,10 @@ namespace WorldServer.core.worlds.impl
         // the villagers walking about and the bees over the flowers
         private NexusVillagers _villagers;
         private PetPen _petPen;
-        private (string, byte, float, float)[] _places;
+        private (string, byte, float, float, ushort)[] _places;
 
         /// <summary>Its places for the minimap (NexusPlaces), worked out once its objects are in.</summary>
-        public (string Name, byte Kind, float X, float Y)[] Places()
+        public (string Name, byte Kind, float X, float Y, ushort Icon)[] Places()
         {
             if (_places != null)
                 return _places;

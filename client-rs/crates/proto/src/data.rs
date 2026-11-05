@@ -154,12 +154,13 @@ wire_struct! {
 
 wire_struct! {
     /// One of the Nexus's places on the minimap (`NexusPlaces`): its name, its kind (0 someone to
-    /// talk to, 1 a portal) and where it stands.
+    /// talk to, 1 a portal), where it stands and the object drawn for it (0: a dot).
     pub struct NexusPlace {
         pub name: String,
         pub kind: u8,
         pub x: f32,
         pub y: f32,
+        pub icon: u16,
     }
 }
 

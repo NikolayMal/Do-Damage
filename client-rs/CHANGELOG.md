@@ -15,10 +15,11 @@ details). Add to a group's line when a change adds to it, rather than adding ano
 ## Unreleased
 
 ### Nexus
-- The Nexus's paths and bridges are half as quick again to walk, and the minimap marks its places
-  before you've been there, those you talk to in gold and its portals in violet: hover one for its
-  name.
-- A pet pen east of the Herald and the Warcaller, where pets of every kind come and go. Its Pen
+- The Nexus's paths and bridges are half as quick again to walk, and the minimap shows its places
+  before you've been there, each with its picture (the Divine Forge's fire, the Warcaller, the
+  portals...), ringed gold for those you talk to and violet for portals: hover one for its name.
+- A pet pen east of the Herald and the Warcaller, down a path curving off the main path, where
+  pets of every kind come and go. Its Pen
   Keeper takes your pet back, puts in another from its stone, and raises a Small pet to Medium for a
   Superburger, or a Medium one to Large for 25 Shards of the Mad God (handed over a few at a time if
   you like): it keeps its look and its shots, and hits and heals as the bigger size.

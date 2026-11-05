@@ -296,10 +296,10 @@ fn collection_and_pet_pen_match_their_handlers() {
     let ServerMessage::PetPen(p) = ServerMessage::decode(137, &body).unwrap() else { panic!() };
     assert_eq!((p.pet, p.base_size, p.size, p.shards, p.shards_needed, p.ok, p.message.as_str()), (0x1234, 1, 2, 3, 25, true, "ok"));
     assert_eq!(ClientMessage::from(PetPenAct { action: 2, slot: 5 }).to_frame(), B::default().u8(2).u8(5).frame(136));
-    // NexusPlacesMessage.Write: a short count of places (name, kind, x, y).
-    let body = B::default().i16(1).utf("The Warcaller").u8(0).f32(164.5).f32(94.5).0;
+    // NexusPlacesMessage.Write: a short count of places (name, kind, x, y, icon).
+    let body = B::default().i16(1).utf("Divine Forge").u8(0).f32(164.5).f32(94.5).i16(0x497a).0;
     let ServerMessage::NexusPlaces(n) = ServerMessage::decode(139, &body).unwrap() else { panic!() };
-    assert_eq!((n.places[0].name.as_str(), n.places[0].kind, n.places[0].x, n.places[0].y), ("The Warcaller", 0, 164.5, 94.5));
+    assert_eq!((n.places[0].name.as_str(), n.places[0].kind, n.places[0].x, n.places[0].y, n.places[0].icon), ("Divine Forge", 0, 164.5, 94.5, 0x497a));
     assert_eq!(ClientMessage::from(NexusPlacesRequest {}).to_frame(), B::default().frame(138));
 }
 
