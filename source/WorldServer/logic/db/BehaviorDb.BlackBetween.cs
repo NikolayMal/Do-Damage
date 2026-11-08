@@ -70,7 +70,7 @@ namespace WorldServer.logic
                                 new TimedTransition(150, "Interlude Rain")
                             ),
                             new State("Interlude Rain",
-                                new Starfall(Starfall.Area.Scatter, PlatformR - 1, 1.6, 330, 250, color: Gold),
+                                new Starfall(Starfall.Area.Scatter, PlatformR - 1, 1.6, 330, 250, perVolley: 2, color: Gold),
                                 new TimedTransition(10000, "Summon Aurel")
                             )
                         ),
@@ -102,12 +102,10 @@ namespace WorldServer.logic
                                     new Starfall(Starfall.Area.Scatter, BrokenR, 1.8, 360, 400, color: Red, origins: new[] { "The Mysterious One" })
                                 ),
                                 new State("T3B Calm"),
-                                // the Eclipse: Vesper's veil with Aurel's walls, starshards from her spectres
+                                // the Eclipse: Vesper's veil, starshards from her spectres
                                 new State("T3B Eclipse",
                                     new GatherIntoQuadrants(Diamond, BrokenR + 2),
                                     new PaintFloor("Veil of Dusk", BrokenR, (dx, dy) => Math.Abs(dx) + Math.Abs(dy) > Diamond),
-                                    new PlaceObject("Dawnlight Wall", 0, -Diamond, 0, Diamond, removeOnExit: true),
-                                    new PlaceObject("Dawnlight Wall", -Diamond, 0, Diamond, 0, removeOnExit: true),
                                     new SpawnRing("Spectral Vesper", 4, Diamond, aroundSpawn: true),
                                     new RemoveEntitiesOnExit(30, "Spectral Vesper"),
                                     new Starfall(Starfall.Area.Diamond, Diamond, 1.6, 360, 350, color: Violet,
@@ -115,8 +113,8 @@ namespace WorldServer.logic
                                 ),
                                 // the Black Between: only the Constellation Path is safe
                                 new State("T3B Black",
-                                    // out to where the burnt rim begins, so no ring of floor is left between them
-                                    new ConstellationPath("Black Between", "Constellation Path", BrokenR + 0.5)
+                                    // the whole platform, rim and all, whether or not its edge has burnt yet
+                                    new ConstellationPath("Black Between", "Constellation Path", PlatformR + 1)
                                 ),
                                 // his daughter's spectres on the rim, starshards at the players
                                 new State("T3B Rain",
@@ -203,7 +201,8 @@ namespace WorldServer.logic
             //   mines that burst, and throws more about the arena.
             // - 50%: the Veil again, faster (16 s, her last survival phase).
             // - 50% to 20%: the Gravity Well in turn with her kit.
-            // - Below 20%: Nightfall: darkness on everyone, Dusk Shades drifting in.
+            // - Below 20%: Nightfall: darkness on everyone.
+            // From her last Veil on, two rings of orbs at once, turning opposite ways.
             .Init("Vesper, the Dusk Star",
                 new State(
                     new BossStats(240000, 80, 1.0, 0.35),
@@ -240,13 +239,16 @@ namespace WorldServer.logic
                         )
                     ),
                     VeilPhase("Veil 2", "T1 Veil Fast", 16000, "Well Kit", true),
+                    // from her last Veil on: two rings at once, one turning clockwise, one the other way
+                    new State("Late",
+                    new Shoot(0, 18, fixedAngle: 0, rotateAngle: 10, projectileIndex: 1, coolDown: 2400),
+                    new Shoot(0, 18, fixedAngle: 10, rotateAngle: -10, projectileIndex: 1, coolDown: 2400, coolDownOffset: 1200),
                     new State("Well",
                         new HpLessTransition(0.2, "Nightfall"),
                         new State("Well Kit",
                             new Order(60, "Observatory Heart", "T1 Calm"),
                             new Prioritize(new StayCloseToSpawn(0.6, 8), new Wander(0.4)),
                             DuskVolley(900),
-                            UmbralRing(2600),
                             new TimedTransition(8000, "Well Pull")
                         ),
                         new State("Well Pull",
@@ -263,9 +265,8 @@ namespace WorldServer.logic
                         new Taunt(true, "Then let it be night.") { Bubble = false },
                         new ConditionAura(Sight, ConditionEffectIndex.Darkness, 1500, 1000),
                         new Prioritize(new StayCloseToSpawn(0.7, 10), new Wander(0.5)),
-                        new TossObject("Dusk Shade", 9, coolDown: 4000),
-                        DuskVolley(800),
-                        UmbralRing(2200)
+                        DuskVolley(800)
+                    )
                     )
                 )
             )
@@ -289,20 +290,6 @@ namespace WorldServer.logic
                     new State("Gone", new Suicide())
                 )
             )
-            .Init("Dusk Shade",
-                new State(
-                    new State("Drift",
-                        new Prioritize(new Follow(0.9, Sight, 0), new Wander(0.4)),
-                        new PlayerWithinTransition(1.5, "Burst")
-                    ),
-                    new State("Burst",
-                        new Shoot(0, 10, fixedAngle: 0, projectileIndex: 0, coolDown: 90000000),
-                        new TimedTransition(150, "Gone")
-                    ),
-                    new State("Gone", new Suicide())
-                )
-            )
-
             // ---- Trial II: Aurel, the Dawn Blade (AltTexture 1: the Solar Cyclone; 2: empty-handed,
             // his sword flying) ----
             // All through his fight he calls divine lightning down all over the arena and on the
@@ -310,7 +297,7 @@ namespace WorldServer.logic
             // - 100% to 70%: Dawn Slash (three piercing crescents), the Sunburst ring and the Zenith
             //   Leap (he lands on a marked player).
             // - 70%: the Solar Cyclone: three dashes rim to rim, each through a player and marked
-            //   first (a first survival phase).
+            //   first, a twin tornado crossing each at right angles (a first survival phase).
             // - 70% to 40%: Radiance: his kit, and the Sunwheel in turn (he stands and spins out four
             //   spiralling arms of crescents).
             // - 40%: the Sword Lanes (his last survival phase): he stands in the middle, immune, and his
@@ -328,7 +315,7 @@ namespace WorldServer.logic
                         new Shoot(0, 16, fixedAngle: 0, projectileIndex: 1, coolDown: 90000000),
                         new TimedTransition(2500, "Dawn")
                     ),
-                    S("Fight", DivineLightning(900, 2600),
+                    S("Fight", DivineLightning(900, 1300),
                         new State("Dawn",
                             new HpLessTransition(0.7, "Cyclone 1"),
                             new Prioritize(new StayCloseToSpawn(0.9, 11), new Follow(0.75, Sight, 3)),
@@ -402,6 +389,15 @@ namespace WorldServer.logic
                 )
             )
 
+            // his twin tornado: moved and fired by his Cyclone (CycloneDash), gone when it ends
+            .Init("Aurel's Twin Cyclone",
+                new State(
+                    new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                    new State("Live"),
+                    new State("Gone", new Suicide())
+                )
+            )
+
             // ---- Trial III: the Mysterious One ----
             // - 100% to 70%: Twin Heritage: his violet eye (Vesper's weaving volleys and bowing rings,
             //   starshards at you, dusk mines) and his gold eye (Aurel's crescents, divine lightning,
@@ -413,11 +409,13 @@ namespace WorldServer.logic
             //   Constellation Path's start and must follow it while he fires on them.
             // - 40% to 10%: everything faster, his children in turn: Vesper's spectres casting
             //   starshards, then Aurel's sword flying its lanes and a spectral Cyclone.
-            // - 10%: Supernova: his rift opens round him, 9 tiles across in 5 s. Then the last 10%.
+            // - 10%: Supernova: back to the middle, then his rift opens round him, 9 tiles across in 5 s.
+            //   Then the last 10% down to 5%, where he fades instead of dying: he speaks, sinks into his
+            //   rift and is gone. His violet eye's rifts and his gold eye's lightning come all through.
             .Init("The Mysterious One",
                 new State(
                     new BossStats(480000, 110, 1.0, 0.35),
-                    new AnnounceOnDeath("{PL_LIST} passed the Mysterious One's trials in the Black Between. \"This is... interesting.\""),
+                    new AnnounceOnDeath("{PL_LIST} passed the Mysterious One's trials in the Black Between, and he withdrew into the void. \"I will return.\""),
                     // the only way out, once he falls
                     new DropPortalOnDeath("Nexus Portal", 1.0, 60),
                     new State("Arrive",
@@ -468,6 +466,8 @@ namespace WorldServer.logic
                         new ReturnToSpawn(1.5),
                         new Taunt(true, "Now... see where I live. Stand in the light, while it lasts.") { Bubble = false },
                         new Order(60, "Observatory Heart", "T3B Black"),
+                        // no tornadoes while they walk the path: any spectral Cyclone still about is gone
+                        new Order(60, "Spectral Aurel", "Gone"),
                         new Shoot(0, 10, fixedAngle: 0, rotateAngle: 13, projectileIndex: 5, coolDown: 1900, coolDownOffset: 2500),
                         new Shoot(Sight, 3, 16, projectileIndex: 0, coolDown: 1300, coolDownOffset: 3000),
                         new Starfall(Starfall.Area.Players, Sight, 1.3, 260, 2300, color: Gold, lightning: true, fillMs: 1200,
@@ -480,7 +480,7 @@ namespace WorldServer.logic
                         new TimedTransition(1500, "Children Heritage")
                     ),
                     new State("Children",
-                        new HpLessTransition(0.1, "Nova"),
+                        new HpLessTransition(0.1, "Nova Gather"),
                         new Prioritize(new StayCloseToSpawn(0.6, 4), new Wander(0.3)),
                         EclipseRing(2600),
                         new State("Children Heritage",
@@ -504,21 +504,50 @@ namespace WorldServer.logic
                             new TimedTransition(8000, "Children Heritage")
                         )
                     ),
-                    S("Nova", Survival(true),
+                    // back to the middle first, then his rift opens round him there
+                    S("Nova Gather", Survival(true),
                         new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
                         new Order(60, "Observatory Heart", "T3B Calm"),
-                        new ReturnToSpawn(2),
-                        new Flash(0xFFB040FF, 0.25, 20),
+                        new ReturnToSpawn(2.5, 0.3),
+                        new Flash(0xFFB040FF, 0.25, 8),
                         new Taunt(true, "Everything I am, all at once. RUN.") { Bubble = false },
-                        // his rift, opening out round him
+                        new TimedTransition(2500, "Nova")
+                    ),
+                    S("Nova", Survival(true),
+                        new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                        new Flash(0xFFB040FF, 0.25, 12),
                         new Starfall(Starfall.Area.Host, 0, 9, 1600, 90000000, color: Violet, fillMs: 5000, style: 1),
                         new TimedTransition(6000, "Last")
                     ),
                     new State("Last",
+                        new HpLessTransition(0.05, "Fading"),
                         new Prioritize(new StayCloseToSpawn(0.7, 6), new Follow(0.6, Sight, 4)),
                         EclipseRing(2400),
                         HeritageDusk("L Dusk", "L Dawn", 4000, 0.75),
                         HeritageDawn("L Dawn", "L Dusk", 4000, 0.75)
+                    ),
+                    // he doesn't die: at 5% he stops, speaks, sinks into his rift and is gone (only then
+                    // does his portal come, and the announcement)
+                    new State("Fading",
+                        new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                        new Order(60, "Observatory Heart", "T3B Calm"),
+                        new State("Fading Words",
+                            new ReturnToSpawn(2.5, 0.3),
+                            new Flash(0xFFFFFFFF, 0.4, 6),
+                            new Taunt(true, "Enough. What you fought was only the shadow I cast into this realm.") { Bubble = false },
+                            new TimedTransition(4000, "Fading Promise")
+                        ),
+                        new State("Fading Promise",
+                            new Taunt(true, "The Between will remember you. And I... will return.") { Bubble = false },
+                            new Starfall(Starfall.Area.Host, 0, 3, 0, 90000000, color: Violet, fillMs: 4500, style: 1),
+                            new Flash(0xFFB040FF, 0.3, 14),
+                            new TimedTransition(1500, "Fading Away")
+                        ),
+                        new State("Fading Away",
+                            new ChangeSize(-6, 0),
+                            new TimedTransition(3200, "Gone")
+                        ),
+                        new State("Gone", new Suicide())
                     )
                 )
             )
@@ -528,14 +557,14 @@ namespace WorldServer.logic
                     new Shoot(Sight, 3, 15, projectileIndex: 0, predictive: 0.3, coolDown: 1600)
                 )
             )
-            // a spectre of Aurel's Cyclone: one dash (AltTexture 1), then gone
+            // a spectre of Aurel's Cyclone (AltTexture 1): three dashes across the whole arena, then gone
             .Init("Spectral Aurel",
                 new State(
                     new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
                     new State("Spin",
                         new SetAltTexture(1),
-                        new CycloneDash(BrokenR + 3, 15, 900, 1, 0, contactDamage: 220),
-                        new TimedTransition(3800, "Gone")
+                        new CycloneDash(PlatformR, 15, 900, 3, 0, contactDamage: 220, centreOn: "Observatory Heart"),
+                        new TimedTransition(11000, "Gone")
                     ),
                     new State("Gone", new Suicide())
                 )
@@ -569,15 +598,13 @@ namespace WorldServer.logic
             return last ? toll.Append(new ConditionAura(Sight, ConditionEffectIndex.Sick, 1000, 500)).ToArray() : toll;
         }
 
-        // the Heart's Fourfold Veil: everyone into the diamond's quadrants first, then outside the
-        // diamond the floor burns, the cross is walls, and starshards fall into the four quadrants
-        // every `coolDown` ms, thrown by Vesper and her copies (violet marks)
+        // the Heart's Fourfold Veil: everyone into the diamond first, then outside it the floor burns
+        // and starshards fall into it every `coolDown` ms, thrown by Vesper and her copies at its four
+        // points (violet marks)
         private static State HeartVeil(string name, int coolDown) =>
             new State(name,
                 new GatherIntoQuadrants(Diamond, PlatformR + 2),
                 new PaintFloor("Veil of Dusk", PlatformR, (dx, dy) => Math.Abs(dx) + Math.Abs(dy) > Diamond),
-                new PlaceObject("Veil Wall", 0, -Diamond, 0, Diamond, removeOnExit: true),
-                new PlaceObject("Veil Wall", -Diamond, 0, Diamond, 0, removeOnExit: true),
                 new Starfall(Starfall.Area.Diamond, Diamond, 1.6, 380, coolDown, color: Violet,
                     effect: ConditionEffectIndex.Quiet, effectMs: 1500, origins: VesperNames)
             );
@@ -628,29 +655,38 @@ namespace WorldServer.logic
         private static Behavior EclipseRing(int coolDown) => new Shoot(0, 8, fixedAngle: 0, rotateAngle: 9, projectileIndex: 4, coolDown: coolDown);
         private static Behavior DuskVolleyFather(int coolDown) => new Shoot(Sight, 5, 12, projectileIndex: 0, predictive: 0.3, coolDown: coolDown);
 
-        // Aurel's divine lightning: gold marks all over the arena, two at a time, and every so often
-        // one on a player; a bolt from him strikes each as it fills
+        // Aurel's divine lightning: gold marks all over the arena, four at a time, and every so often
+        // one on a player; a bolt from him strikes each as it fills, paralysing a moment
         private static IStateChildren[] DivineLightning(int coolDown, int atPlayers) =>
             new IStateChildren[]
             {
-                new Starfall(Starfall.Area.Scatter, PlatformR - 1, 1.3, 280, coolDown, perVolley: 2, color: Gold, lightning: true, fillMs: 1000),
+                new Starfall(Starfall.Area.Scatter, PlatformR - 1, 1.3, 280, coolDown, perVolley: 4, color: Gold, lightning: true, fillMs: 1000,
+                    effect: ConditionEffectIndex.Paralyzed, effectMs: 600),
                 new Starfall(Starfall.Area.Players, Sight, 1.3, 280, atPlayers, color: Gold, lightning: true, fillMs: 1000,
-                    coolDownOffset: 1200),
+                    coolDownOffset: 1200, effect: ConditionEffectIndex.Paralyzed, effectMs: 600),
             };
 
-        // Aurel's Solar Cyclone: `passes` dashes, his sprite the Cyclone's (with a survival phase's
-        // toll when it is one)
+        // Aurel's Solar Cyclone: `passes` dashes across the whole arena, his sprite the Cyclone's,
+        // and his twin tornado crossing each at right angles (with a survival phase's toll when it is
+        // one)
         private static State Cyclone(string name, string next, int passes, IStateChildren[] toll = null) =>
             new State(name,
                 new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
                 S(name + " Spin", toll ?? new IStateChildren[0],
                     new SetAltTexture(1),
                     new Flash(0xFFFFD24A, 0.2, 4),
-                    new CycloneDash(PlatformR, 16, 800, passes, 2),
-                    new TimedTransition(passes * 3300 + 800, name + " Down")
+                    new CycloneDash(PlatformR, 16, 800, passes, 2, centreOn: "Observatory Heart", twin: "Aurel's Twin Cyclone"),
+                    new TimedTransition(passes * 3300 + 800, name + " Down"),
+                    // his twin, once (a Spawn left running sends another whenever the twin is away)
+                    new State(name + " Twin",
+                        new Spawn("Aurel's Twin Cyclone", 1, 1),
+                        new TimedTransition(100, name + " Turning")
+                    ),
+                    new State(name + " Turning")
                 ),
                 new State(name + " Down",
                     new SetAltTexture(0),
+                    new Order(60, "Aurel's Twin Cyclone", "Gone"),
                     new TimedTransition(1000, next)
                 )
             );
@@ -665,6 +701,7 @@ namespace WorldServer.logic
                 new Starfall(Starfall.Area.Players, Sight, 1.6, 340, (int)(1600 * pace), color: Violet,
                     effect: ConditionEffectIndex.Quiet, effectMs: 1500),
                 new TossObject("Dusk Mine", Sight, coolDown: (int)(2500 * pace), minAngle: 0, maxAngle: 360, minRange: 3, maxRange: 10),
+                Portals(pace),
                 new TimedTransition(ms, next)
             );
 
@@ -676,7 +713,13 @@ namespace WorldServer.logic
                 new Shoot(0, 12, fixedAngle: 0, rotateAngle: 15, projectileIndex: 3, coolDown: (int)(2400 * pace)),
                 new Starfall(Starfall.Area.Scatter, BrokenR, 1.3, 280, (int)(900 * pace), perVolley: 2, color: Gold, lightning: true, fillMs: 1000),
                 new TossObject("Spectral Aurel", 2, 0, coolDown: 90000000),
+                Portals(pace),
                 new TimedTransition(ms, next)
             );
+
+        // his portals: small rifts opening about the arena, two at a time, bursting as they open
+        private static Behavior Portals(double pace) =>
+            new Starfall(Starfall.Area.Scatter, BrokenR, 2.2, 380, (int)(2600 * pace), perVolley: 2, color: Violet, style: 1, fillMs: 1800,
+                effect: ConditionEffectIndex.Darkness, effectMs: 1500);
     }
 }

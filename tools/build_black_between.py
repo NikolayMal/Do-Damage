@@ -216,7 +216,7 @@ BOSSES = {
         shot(0, "Dusk Bolt", 200, 90, 2400, amplitude=WAVE[0], frequency=WAVE[1]),
         shot(1, "Umbral Orb", 170, 55, 4000, 110, effects=[("Darkness", 2)], amplitude=ARC[0], frequency=ARC[1]),
         shot(2, "Dawn Crescent", 230, 70, 2600, 130, effects=[("Armor Broken", 2)], multi=True),
-        shot(3, "Sunspark", 180, 80, 2200),
+        shot(3, "Sunspark", 180, 80, 2200, effects=[("Blind", 1)]),
         shot(4, "Eclipse Orb", 210, 40, 6000, 120, effects=[("Darkness", 2), ("Armor Broken", 2)]),
         shot(5, "Eclipse Orb", 190, 45, 5500, 110, effects=[("Darkness", 1.5)]),
         shot(6, "Dawn Sword", 400, 160, 2400, 200, multi=True),
@@ -234,25 +234,27 @@ BOSSES = {
     "Aurel, the Dawn Blade": ("Aurel, the Dawn Blade", 85, 280000, 100, "boss",
                               ["Aurel, Solar Cyclone", "Aurel, Gauntlet Form"], [
         shot(0, "Dawn Crescent", 230, 75, 2600, 130, effects=[("Armor Broken", 2)], multi=True),
-        shot(1, "Sunspark", 180, 85, 2400),
+        shot(1, "Sunspark", 180, 85, 2400, effects=[("Blind", 1)]),
         shot(2, "Sunspark", 170, 65, 2200),
         shot(3, "Dawn Crescent", 220, 60, 2400, 120, multi=True),
         # the Sunwheel's spiral, and his sword flying across the arena (the Sword Lanes)
         shot(4, "Dawn Crescent", 200, 80, 1800, 110, multi=True),
         shot(5, "Dawn Sword", 400, 160, 2400, 200, multi=True),
     ]),
+    # the second tornado of his Solar Cyclone, crossing each dash of his at right angles
+    "Aurel's Twin Cyclone": ("Aurel, Solar Cyclone", 85, 100000, 0, "helper", [], [
+        shot(0, "Sunspark", 170, 65, 2200),
+    ]),
     "Spectral Aurel": ("Spectral Aurel", 85, 100000, 0, "helper", ["Spectral Cyclone"], [
         shot(0, "Sunspark", 170, 65, 2200),
     ]),
 }
-# like Oryx 3 to 5, the father can't be stunned, paralysed, petrified, slowed or dazed
-IMMUNE = {"The Mysterious One", "Mysterious One Herald"}
-DISPLAY = {"Mysterious One Herald": "The Mysterious One"}
+# like Oryx 3 to 5, none of them can be stunned, paralysed, petrified, slowed or dazed
+IMMUNE = {"The Mysterious One", "Mysterious One Herald", "Vesper, the Dusk Star", "Aurel, the Dawn Blade"}
+DISPLAY = {"Mysterious One Herald": "The Mysterious One", "Aurel's Twin Cyclone": "Aurel, the Dawn Blade"}
 
 # minions (8x8): name -> (health, defence, size, [projectiles])
-MINIONS = {
-    "Dusk Shade": (6000, 10, 110, [shot(0, "Umbral Orb", 220, 40, 1000, 120, effects=[("Darkness", 2)])]),
-}
+MINIONS = {}
 # the Starbound Sentinels over the causeway: scenery that drifts and shoots stars that do no harm
 # (not enemies: nothing hits them), as Oryx 5's clouds drift over his Landing
 SENTINEL_SHOTS = [shot(0, "Starbound Mote", 0, 50, 3000), shot(1, "Starbound Mote", 0, 90, 1800)]
@@ -480,11 +482,14 @@ def build_map():
             elif d <= PLATFORM_R:
                 m.ground[y][x] = "Platform Rim"
     # the inlaid lines: the diamond and the cross
-    # the causeway, from the rim south to the spawn
-    for y in range(CY + PLATFORM_R, CAUSEWAY_END + 1):
+    # the causeway, from the rim south to the spawn; plain floor across its mouth, where the rim
+    # would stand across the path
+    for y in range(CY + PLATFORM_R - 3, CY + PLATFORM_R + 1):
+        for x in range(CAUSEWAY[0] + 1, CAUSEWAY[1]):
+            m.ground[y][x] = "Astral Stone"
+    for y in range(CY + PLATFORM_R + 1, CAUSEWAY_END + 1):
         for x in range(CAUSEWAY[0], CAUSEWAY[1] + 1):
-            edge = x in CAUSEWAY or y == CAUSEWAY_END
-            m.ground[y][x] = "Platform Rim" if edge else "Astral Stone"
+            m.ground[y][x] = "Astral Stone"
     for y in range(*SPAWN_ROWS):
         for x in range(CAUSEWAY[0] + 1, CAUSEWAY[1]):
             m.region[y][x] = "Spawn"

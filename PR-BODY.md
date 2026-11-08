@@ -40,6 +40,20 @@ From `..Context-Txts/11082026/mystery-updates1.txt` (and its sketch of the sword
 - **Redeploy:** client and servers, as the rest of the dungeon. Nobody is disconnected.
 - **Not done or off:** the lightning bolts are thin sparks (the game's Lightning effect) and easy to miss beside their marks; the sword lanes' timing and the survival tolls are untested by real players.
 
+### The Black Between: the owner's second round of changes (still admin only)
+
+From the bottom of `..Context-Txts/11082026/mystery-updates1.txt` and its four screenshots.
+
+- **Look:** a rim of flecked stone (its gold band read as broken blocks round the stepped edge), no gold line under it, plain floor along and across the causeway's mouth.
+- **Arena:** no walls on the cross (Veil and Eclipse); the Black Between darkens the whole platform even if its edge hasn't burnt; twice the starfall after Vesper.
+- **Vesper:** no Dusk Shades; two counter-turning rings from her last Veil on.
+- **Aurel:** twice the lightning (paralysing a moment), blinding sunbursts, and a twin tornado crossing each Cyclone dash at right angles; every dash runs rim to rim.
+- **The Mysterious One:** his spectral Cyclone crosses the whole arena; his small rifts burst about the arena; no tornadoes during the Black Between (any spectral Cyclone still about is sent away); the Supernova only once he's in the middle; at 5% he fades away instead of dying, with a last word that he'll return.
+- **Immunities:** all three bosses are immune as Oryx 3 to 5 are.
+- **Found in testing:** a jump of many tiles in one tick (the Cyclone whisking him to each dash's start, the Zenith Leap) left clients drawing Aurel with his normal sprite mid-Cyclone, or double size after a leap: he now flies to each start and glides onto the leap's mark. The twin is summoned once (a `Spawn` left running sent another whenever the twin was away) and the Cyclone waits a moment for it.
+- **Files:** `BehaviorDb.BlackBetween.cs`, `logic/behaviors/BlackBetween.cs` (`CycloneDash` twin and centre, whole chords; `Starfall` anywhere in the diamond; `GatherIntoQuadrants`), `tools/build_black_between.py` and `small.py` (regenerated). No client change.
+- **Redeploy:** servers, and the client for the new art.
+
 ### Placed objects show (Oryx 3's and Oryx 5's gates)
 
 - `PlaceObject` set a square's object without an object id and never told the players round it to look again, so clients were never sent it: Oryx 5's Holy Gates (as they shut, and in his Last Judgement) and Oryx 3's gate stood in the way unseen. It now gives each one an id and refreshes players' squares (`UpdateTiles`, as `RemoveObject` does); removal already worked (clients drop a square's object by its id). Found with the Black Between's walls of light.
@@ -49,4 +63,5 @@ From `..Context-Txts/11082026/mystery-updates1.txt` (and its sketch of the sword
 
 - The Black Between: `dotnet build` of the world server, `dotnet test source/Tests` (169 passed), `cargo test` of `bsk-client` (82, with a new test for the ground marks), `bsk-data`, `bsk-world` and `bsk-proto`; the generator run and its sheets looked over; the wiki built to a scratch folder (nothing of the dungeon shows on it). On an isolated stack (slot 3): `bsk-bot` through the whole fight with `/tppos` and `/smite` (every phase's line in order, from the herald's speech to the announcement, no errors in the world log), and the client (`--shot`) at the intro, the Fourfold Veil (burning floor, the walls along the cross, the copies, the red marks filling), the Solar Cyclone, the Sundering (the sword, the wall, the reflection, the Templars), the Black Between (the void and the Constellation Path) and the Supernova (the 9-tile mark).
 - Placed objects: Oryx's Elysium's and the Sanctuary's gates not looked at in game; the same code path as the Black Between's walls, which now show.
+- The second round: `dotnet test source/Tests` (169), the client built; on the slot 3 stack `bsk-bot` through the whole fight to the father's fade (both his last lines, then the announcement; no errors in the world log), and the client: the Veil without walls, Aurel's Cyclone with its twin, the father's Twin Heritage (mines, weaving bolts, spectral Cyclone) and his fade into his rift at 3%.
 - The first round of changes: `dotnet test source/Tests` (169), `cargo test` of `bsk-client`, `bsk-data`, `bsk-world`; on the slot 3 stack `bsk-bot` through the whole fight (no errors in the world log) and the client (`--shot`): the causeway over the void sky with the platform's undersides, pylons and the Sentinels' stars; the Veil (players moved into the quadrants, violet marks, no lasers) and the arena after it (walls and floor gone); Aurel's lightning and leap; the Sword Lanes (swords flying up and down their lanes); the Black Between (everyone on the path's start, the father firing); the Supernova's rift. Pet stasis and the survival tolls not seen in game (no pet on the test character).
