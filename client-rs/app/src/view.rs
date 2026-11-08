@@ -1342,6 +1342,10 @@ pub fn draw(scene: &Scene, renderer: &mut Renderer, redrawer: &mut Redrawer, gro
         }
         crate::prof::mark("v.ground");
         }
+        // the ground marks (the Black Between's telegraphs) lie on the lowest floor's ground
+        if level == 0 {
+            scene.particles.draw_marks(&cam, renderer);
+        }
         let here = |item: &Item| item_level(item) == level && !sky_under(item);
         for (_, item) in items.iter().filter(|(_, i)| under(i) && here(i)) {
             match item {

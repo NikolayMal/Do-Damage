@@ -138,7 +138,27 @@ pub struct Particles {
     /// Objects thrown (`ShowEffect` 16 naming an object, the islands' barman's bottle) waiting
     /// for their art (`object_effects`): the object, from, to, flight ms and the trail's colour.
     thrown: Vec<(u16, (f64, f64), (f64, f64), i32, u32)>,
+    /// Ground marks (`ShowEffect` 40): where something is about to land.
+    marks: Vec<GroundMark>,
+    /// The time of the last update, for the marks.
+    now: i32,
 }
+
+/// A circle on the ground (`ShowEffect` 40, the Black Between's telegraphs): its outline at once,
+/// filling from its middle out to its edge over `ms`, when whatever is coming lands; then a
+/// moment's flash.
+#[derive(Clone, Copy, Debug)]
+struct GroundMark {
+    x: f64,
+    y: f64,
+    radius: f64,
+    color: u32,
+    start: i32,
+    ms: i32,
+}
+
+/// How long a filled mark flashes before it goes, ms.
+const MARK_FLASH: i32 = 180;
 
 /// An object's effect at work.
 #[derive(Clone, Copy, Debug)]
@@ -186,6 +206,7 @@ impl Particles {
 
     /// A new world: nothing carries over.
     pub fn clear(&mut self) {
+        self.marks.clear();
         self.list.clear();
         self.pending.clear();
         self.flashes.clear();
@@ -479,6 +500,11 @@ impl Particles {
                 let (vx, vy) = ((p1.0 - p2.0) / life as f64, (p1.1 - p2.1) / life as f64);
                 self.add(Particle::new(p2.0, p2.1, 0.0, 0xFFFFFF, 0.0, life, Motion::Throw).moving(vx, vy, 0.0));
             }
+            // GroundMark: a circle at pos1, radius pos2.x, filling over `duration` ms.
+            40 => {
+                let radius = (p2.0).clamp(0.2, 20.0);
+                self.marks.push(GroundMark { x: p1.0, y: p1.1, radius, color, start: now, ms: e.duration.clamp(1, 20_000) });
+            }
             // InspireEffect: the object flashes gold.
             17 if go.is_some() => {
                 let flash = Flash { start: now, color, period: ((p2.0 * 1000.0) as i32).max(1), repeats: (p2.1 as i32).max(1) };
@@ -517,6 +543,8 @@ impl Particles {
     /// Move every particle `dt` ms on; drop the finished ones.
     pub fn update(&mut self, world: &World, now: i32, dt: i32) {
         self.floor = world.my_z();
+        self.now = now;
+        self.marks.retain(|m| now - m.start < m.ms + MARK_FLASH);
         let dt = dt.max(0);
         let mut spawned = Vec::new();
         let mut list = std::mem::take(&mut self.list);
@@ -855,6 +883,42 @@ impl Particles {
     }
 
     /// Draw every particle: a square of colour with a dark edge.
+    /// The ground marks, drawn on the ground under everything standing on it: a faint disc, the
+    /// part filled so far, and the outline; a white flash once it's full.
+    pub fn draw_marks(&self, cam: &Camera, renderer: &mut Renderer) {
+        const SIDES: usize = 40;
+        for m in &self.marks {
+            let t = (self.now - m.start) as f64 / m.ms as f64;
+            let fill = t.clamp(0.0, 1.0);
+            let flash = t >= 1.0;
+            let at = |r: f64, a: f64| cam.to_screen(m.x + r * a.cos(), m.y + r * a.sin(), self.floor);
+            let centre = cam.to_screen(m.x, m.y, self.floor);
+            let disc = |renderer: &mut Renderer, r: f64, rgb: u32, alpha: f32| {
+                for i in 0..SIDES {
+                    let (a0, a1) = (2.0 * PI * i as f64 / SIDES as f64, 2.0 * PI * (i + 1) as f64 / SIDES as f64);
+                    renderer.triangle(renderer.white(), [centre, at(r, a0), at(r, a1)], [[0.5, 0.5]; 3], Tint::color(rgb, alpha));
+                }
+            };
+            if flash {
+                disc(renderer, m.radius, 0xFFFFFF, 0.55);
+                continue;
+            }
+            disc(renderer, m.radius, m.color, 0.14);
+            if fill > 0.0 {
+                disc(renderer, m.radius * fill, m.color, 0.32);
+            }
+            // the outline: a band a tenth of a tile wide just inside the edge
+            let inner = (m.radius - 0.1).max(0.0);
+            for i in 0..SIDES {
+                let (a0, a1) = (2.0 * PI * i as f64 / SIDES as f64, 2.0 * PI * (i + 1) as f64 / SIDES as f64);
+                let (o0, o1, i0, i1) = (at(m.radius, a0), at(m.radius, a1), at(inner, a0), at(inner, a1));
+                let tint = Tint::color(m.color, 0.9);
+                renderer.triangle(renderer.white(), [o0, o1, i1], [[0.5, 0.5]; 3], tint);
+                renderer.triangle(renderer.white(), [o0, i1, i0], [[0.5, 0.5]; 3], tint);
+            }
+        }
+    }
+
     pub fn draw(&self, cam: &Camera, renderer: &mut Renderer) {
         let k = cam.scale / 50.0;
         for p in &self.list {
@@ -943,6 +1007,28 @@ mod tests {
         // Effects on unknown objects do nothing.
         p.show_effect(&effect(5, 99, (3.0, 0.0), (0.0, 0.0)), &world, 0);
         assert!(p.list.is_empty());
+    }
+
+    #[test]
+    fn ground_marks_fill_then_go() {
+        let world = World::new(10, 10, "test", 1);
+        let mut p = Particles::default();
+        let mut e = effect(40, 99, (5.0, 5.0), (1.6, 0.0));
+        e.duration = 1500;
+        p.show_effect(&e, &world, 1000);
+        assert_eq!(p.marks.len(), 1);
+        assert!((p.marks[0].radius - 1.6).abs() < 1e-6);
+        // still there while it fills and as it flashes, gone after
+        p.update(&world, 2400, 1400);
+        assert_eq!(p.marks.len(), 1);
+        p.update(&world, 2600, 200);
+        assert_eq!(p.marks.len(), 1);
+        p.update(&world, 2700, 100);
+        assert!(p.marks.is_empty());
+        // shown even with particles off: they warn of what's coming
+        p.disabled = true;
+        p.show_effect(&e, &world, 3000);
+        assert_eq!(p.marks.len(), 1);
     }
 
     #[test]

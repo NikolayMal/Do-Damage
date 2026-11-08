@@ -1,68 +1,37 @@
-Release 2.4.10: new item art, more frequent Necromantic Relics and Elder dungeon keys (deploys the client, servers and website; nobody is disconnected)
+Release 2.4.7 (deploys client and servers; nobody is disconnected)
 
 ## For players
 
-- **Items:** new art for the Enthroned gear: the Sword, Dagger, Bow, Wand, Katana, Dual Blades and Staff, the Hide, Plate and Robe, and the Boots. Each of those seven weapons has a shot of its own for its first volley, taking turns with Oryx's violet Rift as before. The Enthroned Helm and both rings keep their look, and the Enthroned Fists still fire the gold Radiance.
-- **Items:** new art for the Monk's fists, all sixteen tiers from the Cloth Hand Wraps (T0) to the Fists of the Ascended (T15); the Enthroned Fists take the new T15 look, with their purple sparkles.
-- **Elder dungeons:** Necromantic Relics now have a 5% drop chance per player who dealt at least 2% of an Elder boss's damage, up from 3%; each Elder dungeon also drops its own key at the regular dungeon's chance (1% where no regular key chance is configured).
-- **Help calls:** `/help` asks eligible players in the Nexus or realms to join you and announces
-  the call to everyone online once a minute; `/phelp` and `/ghelp` call your party or guild. Click
-  the chat message names the dungeon and its link lets you ask to join the caller.
-- **Game:** timed portals and loot bags flash during their last five seconds; status effects,
-  including temporary stat boosts, flash during their last two seconds.
+- **Oryx 3 and Oryx 5:** the gates that shut behind you in Oryx's Sanctuary and Oryx's Elysium now show as they close; before, they blocked the way unseen.
+- (Not for players yet: the Black Between, the Mysterious One's dungeon, opens only with the admin `/dungeon` command while it's tested.)
 
 ## Details
 
-### Enthroned gear: the owner's sprites and per-weapon shots
+### The Black Between: the Mysterious One's dungeon (testing, admin only)
 
-- New sheet `client/src/kabam/rotmg/assets/custom/images/EnthronedItems8x8.png` (`enthronedItems8x8`, 56×48, 7 cells a row, hand-drawn by the owner): top row the weapons (Sword, Wand, Bow, Dagger, Staff, Katana, Dual Blades), the row under it each one's shot, the fourth row the Hide, Robe and Plate, the sixth the Boots. Registered in `tools/gen_rs_manifest.py` (manifest regenerated).
-- `tools/build_ascended_items.py`: those items' textures point at the new sheet; `OWN_SHOTS` adds seven projectile objects (0x5873-0x5877, 0x5879, 0x587a; 0x5878 was taken), each the weapon's first-volley `ObjectId` in place of the Enthroned Radiance. The Rift (second volley, piercing and ignoring defense) is unchanged, and so are all numbers. The Fists keep their sparkled T15 sprite and the Radiance; the Helm keeps its drawn piece. The old Staff (16×16), Robe and Boots cells are still drawn but unused. Regenerated: both `CustomItems.xml`, `AscendedItems8x8.png` (now without the weapons' and armours' sparkled cells).
-- Redeploy: client (the new sheet) and world server (the XML). Nobody is disconnected; nothing in Redis (type codes of the items unchanged). An older client doesn't know the new sheet or shots, so it shows them wrongly until it updates.
-- Docs: changelog (Items), the wiki's forge page, SETUP-LOCAL.md "Changes from upstream".
-- Not checked: the shots in flight in the game (only the data resolved through the manifest, see Checks). Some of the shot cells have a lone dark pixel or 2×2 block in their bottom-left corner, as drawn.
+The owner's plan (`..Context-Txts/11082026/mystery.txt`, and the plan page shared with them): the Mysterious Voice of Realm 2 in person, three trials on a platform floating in the void, harder than Oryx 5, for players in full Enthroned gear.
 
-### The Monk's fists: the owner's sprites
+- **How to get in:** `/dungeon The Black Between` (admins). `/dungeon`'s usage now lists it under "Being tested" (`DungeonCommand.Testing`, `DoomedRealmsCommands.cs`). No way in for players yet, so no changelog line or wiki page.
+- **Generated** by `tools/build_black_between.py` (new), with the art in `tools/black_between/bosses.py` (the three bosses at 32x32, as on Oryx 3's sheet: Vesper, a dark-winged sorceress; Aurel, a winged knight whose sword flies at his command; their father, hooded in a starfield robe with a ring of the heavens behind him and one wing of each; Aurel's Solar Cyclone and Gauntlet Form, Vesper's Veil Copy, the spectres, the planted sword) and `small.py` (minions, shots, floor, walls of light, dusk mines, the Rift): the sheets `BlackBetween8x8/16x16/32x32.png` and `BlackBetweenChars8x8/32x32.png`, `BlackBetweenGrounds.xml` and `BlackBetweenObjects.xml` (server and client copies), and the map `worlds/Dungeons/The Black Between/The Black Between.jm` (48x72). Types 0x8D00-0x8DFF, kept in `tools/black_between/types.json`. `tools/gen_rs_manifest.py` registers the sheets and XML; manifest regenerated. The world is in `Dungeons.xml`.
+- **The map:** the Constellation Approach, a causeway four tiles wide over Realm 2's void (`R2 Abyss`) with two pairs of Starbound Sentinels, from the spawn and its Nexus Portal; then the Observatory, a platform 17 tiles in radius with a rim, a diamond and a cross inlaid where the walls will rise, the Rift on its north rim.
+- **The fight** (`BehaviorDb.BlackBetween.cs`): the herald (the father's look, invulnerable) walks out of the Rift when someone reaches the middle, sets the trials and watches. The invisible `Observatory Heart` at the centre runs the arena: the bosses order it into each phase; it spawns them at the centre, raises the walls, turns the floor and sends the starfall, all undone when its state ends.
+  - **Trial I, Vesper** (240,000 health, 80 defence): volleys and rings; the **Fourfold Veil** at 75% (14 s) and 50% (16 s, faster), as in the owner's sketch: she and three copies at the diamond's points, the floor outside it burning, walls along the cross, starshards into the four quadrants, each marked by a red circle that fills in over 1.5 s (380 damage, Quiet); the Starfall Waltz (dusk mines), the Gravity Well (rings closing in from the edge), Nightfall below 20%.
+  - **Interlude:** 10 s of starfall while Aurel comes down.
+  - **Trial II, Aurel** (280,000, 100): crescents and sunbursts; the **Solar Cyclone** at 70% (his sprite a gold tornado, three dashes rim to rim through players, each marked in gold first, sunsparks spiralling out); the Zenith Leap; the **Sundering** at 40% (his sword planted in the middle with 60,000 health, his sprite empty-handed with blazing gauntlets, his reflection in the other half, then a wall of dawnlight north and south of the sword and across the causeway's mouth, two Dawn Templars from the sword every 6 s; break the sword and he's stunned and armour-broken for 5 s, else it ends after 30 s); High Noon below 15%. The sword's own square stays open (a wall object there would stop shots at it, and in the client an object that blocks walking blocks shots too), and its light slows anyone squeezing past.
+  - **Trial III, the Mysterious One** (480,000, 110, immune as Oryx 3-5): Twin Heritage (his daughter's kit and his son's in turn); the Platform Breaks at 70% (15 s: its edge burns away to 12.5 tiles for the rest of the fight); the Eclipse (the veil's floor, dawnlight walls, starshards from Vesper's spectres); **the Black Between** at 40% (22 s: the platform burning void but for a Constellation Path that lights ahead and goes out behind); his children's spectres in turn; the Supernova at 10% (get more than 9 tiles from him in 5 s, 1,600 damage).
+  - Health scales with players (`BossStats`, +35% each). No loot yet (the owner's call).
+- **New behaviours** (`logic/behaviors/BlackBetween.cs`): `Starfall` (marked strikes: into a diamond, scattered, on players, or round the host), `PaintFloor` (turn the floor where a shape says, for the state), `ConstellationPath`, `CycloneDash`, `LeapStrike`, `BlinkAround`, and `Strike`'s helpers.
+- **The ground mark** (client and server): `ShowEffect` 40, `GroundMark` (centre pos1, radius pos2.x, `Duration` ms). The Rust client draws it on the ground under everything (`particles.rs` `draw_marks`, from `view.rs` after the ground): a faint disc, the part filled so far, the outline, a flash when it lands; shown even with particles off. Older clients see only the throws and blasts.
+- **Redeploy:** client (new sheets, XML, the ground mark) and servers (world server: XML, map, behaviours, `/dungeon`). Nobody is disconnected; no Redis changes.
+- **Found in testing and fixed:** the herald stood too close to the Rift and hid it (the Rift now stands upright on the rim behind him, and he stays out in front after his speech); he wakes within 19 tiles, so anyone near the middle wakes him; Vesper and Aurel move to their places before their walls rise (the walls stood in their way); the Black Between's dark reaches the burnt rim, leaving no ring of floor between; softer floor tiles (a seam on every tile read as a grid).
+- **Not done or off:** the way in for players, loot, wiki and changelog (later, once it's reachable). Numbers are the plan's starting point, to be tuned against Enthroned characters. The Supernova is "outrun it" rather than the plan's shadow cone. The walls and floor are centred on the Heart's tile; the Veil's burning floor can be crossed at a cost, its walls can't.
 
-- New sheet `client/src/kabam/rotmg/assets/custom/images/FistsItems8x8.png` (`fistsItems8x8`, 128×8, hand-drawn by the owner): a cell per tier, T0 Cloth Hand Wraps to T15 Fists of the Ascended (0x5802-0x5810, 0x582a). Registered in `tools/gen_rs_manifest.py` (manifest regenerated).
-- Both `CustomItems.xml`: those sixteen items' textures point at it (hand-written entries, outside any generator's marks). `tools/build_ascended_items.py` reads the new sheet for the Enthroned Fists' sparkled copy (`SOURCE_SHEETS`); `AscendedItems8x8.png` regenerated. The old tiles 0x70-0x7E of `CustomAssets8x8.png` and the T15 cell of `T15Weapons8x8.png` are unused now (left in place).
-- Redeploy: client (the new sheet) and world server (the XML). Nobody is disconnected; nothing in Redis. An older client doesn't know the sheet and shows the fists wrongly until it updates.
-- Docs: changelog (Items), SETUP-LOCAL.md (the Monk fist sprites entry), `tools/draw_t15_weapons.py`'s notes. The wiki's gear pages pick up the new icons from the data; no hand-written guide describes the fists' look.
+### Placed objects show (Oryx 3's and Oryx 5's gates)
 
-### Elder dungeon keys
-
-- Each of the 14 Elder dungeon keys now drops from loot in its own dungeon. The key uses its regular dungeon's drop chance where configured (including the Snake Pit and Sprite World keys at 10% and the Davy Jones and Undead Lair keys at 0.9%); otherwise it drops at 1%. The Elder Tomb Key chance is now 1%, matching the Tomb key. The Elder Draconis Key stays at 1% on Elder Draconis dragon loot, and the Elder Ivory Wyvern Key is 1% on the Elder Wyvern; neither drops in the other dungeon.
-- Redeploy: world server and website (updated wiki); no one is disconnected. No client, protocol or Redis change.
-- Docs: changelog, wiki, SETUP-LOCAL.md.
-
-### Help calls
-
-- Added `/help`, `/phelp` and `/ghelp`. From a dungeon or instance, `/help` sends summon requests to eligible online players currently in the Nexus or a realm, announces the call to everyone online across world servers, and can be used once a minute; the party and guild variants limit recipients to those groups. Requests are limited to players connected to the same world-server process and use the existing summon rules, one request per recipient, the 30 s answer window and the usual cooldowns. Each recipient sees a clickable chat link that sends `/visit <name>` to request entry; `/summon cancel` withdraws the whole help call.
-- The Rust client styles and handles the link; other clients still see the text and can accept the summon request or type `/visit <name>`. No client protocol or persistent Redis data change; an expiring Redis key tracks the cooldown, and the announcement uses the existing inter-server chat channel.
-- Redeploy: world servers; nobody is disconnected.
-- Docs: changelog, SETUP-LOCAL.md, wiki commands page.
-
-### Status effects and expiring objects
-
-- The world server sends remaining durations for timed status effects (including stat boosts) and
-  portals as integer stats; loot bags already send their remaining lifetime as health. The Rust
-  client flashes status icons during their last two seconds and loot bags and timed portals during
-  their last five seconds. Permanent effects and portals that do not expire do not flash.
-- The new stats are optional and older clients ignore them. No Redis migration.
-- Redeploy: world server and Rust client; nobody is disconnected.
-- Docs: changelog and SETUP-LOCAL.md.
+- `PlaceObject` set a square's object without an object id and never told the players round it to look again, so clients were never sent it: Oryx 5's Holy Gates (as they shut, and in his Last Judgement) and Oryx 3's gate stood in the way unseen. It now gives each one an id and refreshes players' squares (`UpdateTiles`, as `RemoveObject` does); removal already worked (clients drop a square's object by its id). Found with the Black Between's walls of light.
+- Redeploy: servers. The client needs nothing.
 
 ## Checks
 
-- Enthroned gear: `build_ascended_items.py` and `gen_rs_manifest.py` rerun; every Enthroned item and shot resolved through the manifest to a non-empty cell and rendered side by side; `build_wiki.py` shows the new icons on the gear pages; server tests (`dotnet test`, 177 passed).
-- Monk's fists: every Fists item (T0-T15 and the Enthroned Fists) resolved through the manifest to a non-empty cell and rendered side by side; `build_wiki.py` draws the new icons on the Martial Art gear page; server tests (`dotnet test`, 177 passed).
-- Elder dungeon keys: Elder loot regression tests verify each key's source and chance; `build_wiki.py` shows the key on its matching dungeon page.
-- Help calls: `dotnet test` covers multi-recipient requests, answers, withdrawal and the one-minute `/help` cooldown; `cargo test -p bsk-client` covers clickable link rendering and normal chat behavior.
-- Status effects and expiring objects: `dotnet test source\Tests\Tests.csproj --no-restore` (197 passed); from `client-rs`, `cargo test -p bsk-proto -p bsk-world -p bsk-client` (145 passed).
-
-### Necromantic Relic drop rate
-
-- Raised the per-eligible-player drop chance from 3% to 5%; the 2% damage threshold is unchanged. `tools/build_resurrection.py` is the source and regenerates `source/Shared/resources/data/resurrection.json`. The wiki reads the generated value. No Redis migration or client protocol change.
-- Redeploy: world server and website (updated wiki); no one is disconnected.
-- Docs: changelog, wiki, SETUP-LOCAL.md.
-
-- Checks: regenerated resurrection data and verified the wiki reports 5%.
+- The Black Between: `dotnet build` of the world server, `dotnet test source/Tests` (169 passed), `cargo test` of `bsk-client` (82, with a new test for the ground marks), `bsk-data`, `bsk-world` and `bsk-proto`; the generator run and its sheets looked over; the wiki built to a scratch folder (nothing of the dungeon shows on it). On an isolated stack (slot 3): `bsk-bot` through the whole fight with `/tppos` and `/smite` (every phase's line in order, from the herald's speech to the announcement, no errors in the world log), and the client (`--shot`) at the intro, the Fourfold Veil (burning floor, the walls along the cross, the copies, the red marks filling), the Solar Cyclone, the Sundering (the sword, the wall, the reflection, the Templars), the Black Between (the void and the Constellation Path) and the Supernova (the 9-tile mark).
+- Placed objects: Oryx's Elysium's and the Sanctuary's gates not looked at in game; the same code path as the Black Between's walls, which now show.

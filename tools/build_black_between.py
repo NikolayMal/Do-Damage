@@ -1,0 +1,576 @@
+"""Builds the Black Between, the Mysterious One's dungeon: the Mysterious Voice of Realm 2 at last
+in person, who tries those who silenced a realm against his daughter, his son and then himself.
+Meant to be harder than Oryx 5, for players in full Enthroned gear.
+
+    python tools/build_black_between.py [--preview <folder>]
+
+The map, from south to north:
+
+- the Constellation Approach: a causeway of astral stone four tiles wide across the void, where
+  players arrive (Spawn region) by a Nexus Portal, held by two pairs of Starbound Sentinels;
+- the Observatory: a disc of astral stone floating in the void (PLATFORM_R tiles in radius) with a
+  raised rim. Faint lines inlaid in the floor (a diamond and a cross, Astral Inlay) show where
+  Vesper's veil and Aurel's wall of light will fall. The Observatory Heart, invisible, stands at
+  its centre: the fights order it to raise those walls and turn the floor, so they come and go
+  with its states (BehaviorDb.BlackBetween.cs). The Rift of the Between is on the north rim, and
+  the Mysterious One (his herald, at first) beside it.
+
+Every fight happens on the platform. Its void is Realm 2's own (R2 Abyss), the starry black players
+already know they can't walk on; the Black Between ground is that void come up through the floor,
+which can be walked on but burns.
+
+Outputs (generated, don't edit):
+- the map, source/Shared/resources/worlds/Dungeons/The Black Between/The Black Between.jm;
+- BlackBetweenGrounds.xml and BlackBetweenObjects.xml, in source/Shared/resources/xml/custom and
+  the client's custom/xmls;
+- the sheets BlackBetween8x8.png, BlackBetween16x16.png, BlackBetween32x32.png,
+  BlackBetweenChars8x8.png and BlackBetweenChars32x32.png in the client's custom/images
+  (registered for the Rust client by tools/gen_rs_manifest.py).
+The art is drawn by tools/black_between/bosses.py (the three bosses and their forms, 32x32) and
+small.py (everything else). Type codes are kept stable in tools/black_between/types.json.
+Needs Pillow.
+"""
+import base64
+import json
+import math
+import os
+import sys
+import xml.etree.ElementTree as ET
+import zlib
+
+from PIL import Image
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from black_between import bosses, small  # noqa: E402
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+XML_DIR = os.path.join(ROOT, "source", "Shared", "resources", "xml")
+CLIENT = os.path.join(ROOT, "client", "src", "kabam", "rotmg", "assets")
+IMAGES = os.path.join(CLIENT, "custom", "images")
+OUT_MAP = os.path.join(ROOT, "source", "Shared", "resources", "worlds", "Dungeons", "The Black Between",
+                       "The Black Between.jm")
+OUT_XML = {
+    "grounds": [os.path.join(XML_DIR, "custom", "BlackBetweenGrounds.xml"),
+                os.path.join(CLIENT, "custom", "xmls", "BlackBetweenGrounds.xml")],
+    "objects": [os.path.join(XML_DIR, "custom", "BlackBetweenObjects.xml"),
+                os.path.join(CLIENT, "custom", "xmls", "BlackBetweenObjects.xml")],
+}
+TYPES = os.path.join(ROOT, "tools", "black_between", "types.json")
+GROUND_TYPES = (0x8D00, 0x8D20)
+OBJECT_TYPES = (0x8D20, 0x8E00)
+SHEET8 = ("blackBetween8x8", "BlackBetween8x8.png")
+SHEET16 = ("blackBetween16x16", "BlackBetween16x16.png")
+SHEET32 = ("blackBetween32x32", "BlackBetween32x32.png")
+CHARS8 = ("blackBetweenChars8x8", "BlackBetweenChars8x8.png")
+CHARS32 = ("blackBetweenChars32x32", "BlackBetweenChars32x32.png")
+VOID = "R2 Abyss"   # Realm 2's void: starry black, not walkable
+
+
+# ------------------------------------------------------------------------------------------------
+# types and sheets
+
+class Types:
+    """Type codes kept stable between runs."""
+
+    def __init__(self):
+        self.types = json.load(open(TYPES)) if os.path.exists(TYPES) else {}
+
+    def get(self, key, span):
+        if key not in self.types:
+            used = {int(v, 16) for v in self.types.values()}
+            self.types[key] = "0x%04X" % next(t for t in range(*span) if t not in used)
+        return self.types[key]
+
+    def save(self):
+        os.makedirs(os.path.dirname(TYPES), exist_ok=True)
+        with open(TYPES, "w", newline="\n") as f:
+            json.dump(self.types, f, indent=1, sort_keys=True)
+            f.write("\n")
+
+
+class Grid:
+    """A sheet of equal cells, filled in order."""
+
+    def __init__(self, cell, cols):
+        self.cell, self.cols, self.cells = cell, cols, []
+
+    def add(self, img):
+        assert img.size[0] <= self.cell and img.size[1] <= self.cell, img.size
+        self.cells.append(img)
+        return len(self.cells) - 1
+
+    def write(self, path):
+        rows = max(1, (len(self.cells) + self.cols - 1) // self.cols)
+        sheet = Image.new("RGBA", (self.cols * self.cell, rows * self.cell), (0, 0, 0, 0))
+        for i, img in enumerate(self.cells):
+            ox = (i % self.cols) * self.cell + (self.cell - img.size[0]) // 2
+            oy = (i // self.cols) * self.cell + (self.cell - img.size[1])
+            sheet.paste(img, (ox, oy))
+        sheet.save(path)
+
+
+class Chars:
+    """A character sheet: one row of seven frames each (stand, walk 1, walk 2, unused, attack 1,
+    attack 2, the attack's second cell)."""
+
+    def __init__(self, size):
+        self.size, self.rows = size, []
+
+    def add(self, frames, attack):
+        """frames: the idle frames (one to three, cycled through the stand and walk cells)."""
+        f = list(frames) + [frames[0]] * (3 - len(frames))
+        self.rows.append([f[0], f[1], f[2], f[0], f[1], attack])
+        return len(self.rows) - 1
+
+    def write(self, path):
+        s = self.size
+        sheet = Image.new("RGBA", (s * 7, s * max(1, len(self.rows))), (0, 0, 0, 0))
+        for r, frames in enumerate(self.rows):
+            for i, img in enumerate(frames):
+                sheet.paste(img, (i * s, r * s))
+        sheet.save(path)
+
+
+def sub(parent, tag, text=None, **attrs):
+    e = ET.SubElement(parent, tag, {k.rstrip("_"): str(v) for k, v in attrs.items()})
+    if text is not None:
+        e.text = str(text)
+    return e
+
+
+def texture(parent, file, index, tag="Texture"):
+    t = sub(parent, tag)
+    sub(t, "File", file)
+    sub(t, "Index", index if tag == "AnimatedTexture" else "0x%02x" % index)
+    return t
+
+
+def shot(pid, obj, damage, speed, life, size=100, effects=(), multi=False, amplitude=None, frequency=None):
+    p = ET.Element("Projectile", {"id": str(pid)})
+    sub(p, "ObjectId", obj)
+    sub(p, "Damage", damage)
+    sub(p, "Speed", speed)
+    sub(p, "LifetimeMS", life)
+    sub(p, "Size", size)
+    if amplitude is not None:
+        sub(p, "Amplitude", amplitude)
+        sub(p, "Frequency", frequency)
+    if multi:
+        sub(p, "MultiHit")
+    for effect, duration in effects:
+        sub(p, "ConditionEffect", effect, duration=duration)
+    return p
+
+
+# ------------------------------------------------------------------------------------------------
+# grounds: name -> (variants, minimap colour, extras)
+
+GROUNDS = {
+    "Astral Stone": ("0x2A2442", {}),
+    "Astral Inlay": ("0x3A2E5A", {}),
+    "Platform Rim": ("0x4A4070", {}),
+    # Vesper's ward on the floor: burns, the Veil's damage per hit
+    "Veil of Dusk": ("0x5A1A90", {"MinDamage": 140, "MaxDamage": 170}),
+    # the void come up through the floor: walkable, but it burns
+    "Black Between": ("0x08051A", {"MinDamage": 160, "MaxDamage": 190}),
+    "Constellation Path": ("0x8A80D0", {}),
+}
+
+
+def grounds(types, sheet):
+    out = []
+    for name, (colour, extra) in GROUNDS.items():
+        e = ET.Element("Ground", {"type": types.get(name, GROUND_TYPES), "id": name})
+        rt = sub(e, "RandomTexture")
+        for img in small.TILES[name]:
+            texture(rt, SHEET8[0], sheet.add(img))
+        for k, v in extra.items():
+            sub(e, k, v)
+        sub(e, "Color", colour)
+        out.append(e)
+    return out
+
+
+# ------------------------------------------------------------------------------------------------
+# objects
+
+# The bosses and their forms (32x32, BehaviorDb.BlackBetween.cs): name -> (art, size, health,
+# defence, flags, alt textures (art names), [projectiles]); the projectiles' order is the
+# behaviours'. Health and defence here are the base: BossStats sets them in the fight.
+BOSSES = {
+    # the father, who comes out of the Rift: his herald does the talking at first and watches the
+    # first two trials from the Rift; the Mysterious One himself comes down for the third
+    "Mysterious One Herald": ("The Mysterious One", 100, 480000, 110, "herald", [], []),
+    "The Mysterious One": ("The Mysterious One", 100, 480000, 110, "boss", [], [
+        shot(0, "Dusk Bolt", 200, 90, 2400),
+        shot(1, "Umbral Orb", 170, 55, 4000, 110, effects=[("Darkness", 2)]),
+        shot(2, "Dawn Crescent", 230, 70, 2600, 130, effects=[("Armor Broken", 2)], multi=True),
+        shot(3, "Sunspark", 180, 80, 2200),
+        shot(4, "Eclipse Orb", 210, 40, 6000, 120, effects=[("Darkness", 2), ("Armor Broken", 2)]),
+        shot(5, "Eclipse Orb", 190, 45, 5500, 110, effects=[("Darkness", 1.5)]),
+    ]),
+    "Vesper, the Dusk Star": ("Vesper, the Dusk Star", 85, 240000, 80, "boss", [], [
+        shot(0, "Dusk Bolt", 190, 95, 2300),
+        shot(1, "Umbral Orb", 160, 50, 4200, 110, effects=[("Darkness", 1.5)]),
+    ]),
+    "Vesper's Veil Copy": ("Vesper's Veil Copy", 85, 100000, 0, "helper", [], [
+        shot(0, "Dusk Bolt", 180, 80, 2200),
+    ]),
+    "Spectral Vesper": ("Spectral Vesper", 85, 100000, 0, "helper", [], [
+        shot(0, "Dusk Bolt", 180, 80, 2200),
+    ]),
+    "Aurel, the Dawn Blade": ("Aurel, the Dawn Blade", 85, 280000, 100, "boss",
+                              ["Aurel, Solar Cyclone", "Aurel, Gauntlet Form"], [
+        shot(0, "Dawn Crescent", 230, 75, 2600, 130, effects=[("Armor Broken", 2)], multi=True),
+        shot(1, "Sunspark", 180, 85, 2400),
+        shot(2, "Sunspark", 170, 65, 2200),
+        shot(3, "Dawn Crescent", 220, 60, 2400, 120, multi=True),
+        # the Gauntlet Form's punches and shockwaves
+        shot(4, "Sunspark", 200, 120, 450, 120),
+        shot(5, "Dawn Crescent", 190, 55, 1500, 110, effects=[("Dazed", 1.5)], multi=True),
+    ]),
+    "Aurel's Reflection": ("Aurel, Gauntlet Form", 85, 100000, 0, "helper", [], [
+        shot(0, "Sunspark", 200, 120, 450, 120),
+        shot(1, "Dawn Crescent", 190, 55, 1500, 110, effects=[("Dazed", 1.5)], multi=True),
+    ]),
+    "Spectral Aurel": ("Spectral Aurel", 85, 100000, 0, "helper", ["Spectral Cyclone"], [
+        shot(0, "Sunspark", 170, 65, 2200),
+    ]),
+}
+# like Oryx 3 to 5, the father can't be stunned, paralysed, petrified, slowed or dazed
+IMMUNE = {"The Mysterious One", "Mysterious One Herald"}
+DISPLAY = {"Mysterious One Herald": "The Mysterious One", "Aurel's Reflection": "Aurel, the Dawn Blade"}
+
+# minions (8x8): name -> (health, defence, size, [projectiles])
+MINIONS = {
+    "Dawn Templar": (9000, 40, 110, [shot(0, "Dawn Crescent", 160, 60, 1300, effects=[("Slowed", 2)])]),
+    "Dusk Shade": (6000, 10, 110, [shot(0, "Umbral Orb", 220, 40, 1000, 120, effects=[("Darkness", 2)])]),
+    "Starbound Sentinel": (14000, 30, 120, [
+        shot(0, "Starbound Mote", 150, 50, 3000),
+        shot(1, "Starbound Mote", 130, 90, 1800),
+    ]),
+}
+
+# invisible helpers: name -> [projectiles]; not enemies, nothing hits them
+HELPERS = {
+    # the centre of the arena, which raises the walls and turns the floor for the fights
+    "Observatory Heart": [],
+    # the points of Vesper's Gravity Well, round the platform's edge, firing in at its middle
+    "Gravity Point": [shot(0, "Umbral Orb", 150, 45, 3400, 110, effects=[("Slowed", 1)])],
+}
+
+
+def projectile(types, sheet, name, img):
+    e = ET.Element("Object", {"type": types.get(name, OBJECT_TYPES), "id": name})
+    sub(e, "Class", "Projectile")
+    texture(e, SHEET8[0], sheet.add(img))
+    return e
+
+
+def objects(types, s8, s16, s32, c8, c32):
+    out = []
+    # shots
+    for name, fn in small.SHOTS.items():
+        out.append(projectile(types, s8, name, fn()))
+
+    # the bosses' art, a row each
+    sprites = bosses.all_sprites()
+    sprites["Spectral Vesper"] = [bosses.spectral(f) for f in sprites["Vesper, the Dusk Star"]]
+    sprites["Spectral Aurel"] = [bosses.spectral(f, (255, 222, 120)) for f in sprites["Aurel, the Dawn Blade"]]
+    sprites["Spectral Cyclone"] = [bosses.spectral(f, (255, 222, 120)) for f in sprites["Aurel, Solar Cyclone"]]
+    rows = {}
+
+    def row(art):
+        if art not in rows:
+            fr = sprites[art]
+            if art == "Vesper's Veil Copy":
+                rows[art] = c32.add(fr, fr[0])
+            elif art in ("Aurel, Solar Cyclone", "Spectral Cyclone"):
+                rows[art] = c32.add(fr[:3], fr[3])
+            elif art == "Aurel, Gauntlet Form":
+                rows[art] = c32.add([fr[0]], fr[1])
+            else:
+                rows[art] = c32.add(fr[:3], fr[3])
+        return rows[art]
+
+    for name, (art, size, hp, defense, kind, alts, shots) in BOSSES.items():
+        e = ET.Element("Object", {"type": types.get(name, OBJECT_TYPES), "id": name})
+        if name in DISPLAY:
+            sub(e, "DisplayId", DISPLAY[name])
+        sub(e, "Class", "Character")
+        sub(e, "Enemy")
+        texture(e, CHARS32[0], row(art), "AnimatedTexture")
+        for k, alt in enumerate(alts, start=1):
+            holder = sub(e, "AltTexture", id=k)
+            texture(holder, CHARS32[0], row(alt), "AnimatedTexture")
+        sub(e, "HitSound", "monster/ghost_god_hit" if kind != "boss" else "monster/oryx_hit")
+        sub(e, "DeathSound", "monster/ghost_god_death" if kind != "boss" else "monster/oryx_death")
+        sub(e, "Size", size)
+        sub(e, "MaxHitPoints", hp)
+        sub(e, "Defense", defense)
+        if kind == "boss":
+            sub(e, "Quest")
+            sub(e, "Level", 20)
+            sub(e, "God")
+            sub(e, "ShowName")
+        if kind in ("boss", "herald"):
+            sub(e, "NoArticle")
+        sub(e, "StasisImmune")
+        if name in IMMUNE:
+            for flag in ("StunImmune", "ParalyzeImmune", "PetrifyImmune", "SlowedImmune", "DazedImmune"):
+                sub(e, flag)
+        if kind != "boss":
+            sub(e, "XpMult", 0)
+        for p in shots:
+            e.append(p)
+        out.append(e)
+
+    # the planted Sword of the Dawn (16x32), an enemy with health of its own
+    e = ET.Element("Object", {"type": types.get("Sword of the Dawn", OBJECT_TYPES), "id": "Sword of the Dawn"})
+    sub(e, "Class", "Character")
+    sub(e, "Enemy")
+    texture(e, SHEET32[0], s32.add(sprites["Sword of the Dawn (planted)"][0]))
+    sub(e, "HitSound", "monster/stone_walls_hit")
+    sub(e, "DeathSound", "monster/stone_walls_death")
+    sub(e, "Size", 100)
+    sub(e, "MaxHitPoints", 60000)
+    sub(e, "Defense", 60)
+    sub(e, "StasisImmune")
+    sub(e, "XpMult", 0)
+    out.append(e)
+
+    # minions
+    art = small.minions()
+    for name, (hp, defense, size, shots) in MINIONS.items():
+        e = ET.Element("Object", {"type": types.get(name, OBJECT_TYPES), "id": name})
+        sub(e, "Class", "Character")
+        sub(e, "Enemy")
+        texture(e, CHARS8[0], c8.add([art[name][0]], art[name][1]), "AnimatedTexture")
+        sub(e, "HitSound", "monster/ghost_god_hit")
+        sub(e, "DeathSound", "monster/ghost_god_death")
+        sub(e, "Size", size)
+        sub(e, "MaxHitPoints", hp)
+        sub(e, "Defense", defense)
+        if name == "Starbound Sentinel":
+            sub(e, "Flying")
+        for p in shots:
+            e.append(p)
+        out.append(e)
+
+    # Vesper's dusk mine: invulnerable, bursts and is gone
+    e = ET.Element("Object", {"type": types.get("Dusk Mine", OBJECT_TYPES), "id": "Dusk Mine"})
+    sub(e, "Class", "Character")
+    sub(e, "Enemy")
+    first = s8.add(small.dusk_mine(0))
+    texture(e, SHEET8[0], first)
+    anim = sub(e, "Animation", prob="1.0")
+    for i, idx in enumerate((first, s8.add(small.dusk_mine(1)))):
+        texture(sub(anim, "Frame", time="0.2"), SHEET8[0], idx)
+    sub(e, "Size", 110)
+    sub(e, "MaxHitPoints", 1000)
+    sub(e, "Defense", 0)
+    sub(e, "StasisImmune")
+    sub(e, "XpMult", 0)
+    e.append(shot(0, "Dusk Bolt", 170, 70, 2000))
+    out.append(e)
+
+    # walls of light: Vesper's veil and Aurel's dawnlight (16x16, shimmering), blocking
+    for name, kind in (("Veil Wall", "veil"), ("Dawnlight Wall", "dawn")):
+        e = ET.Element("Object", {"type": types.get(name, OBJECT_TYPES), "id": name})
+        sub(e, "Class", "GameObject")
+        first = s16.add(small.wall_of_light(kind, 0))
+        texture(e, SHEET16[0], first)
+        anim = sub(e, "Animation", prob="1.0")
+        for idx in (first, s16.add(small.wall_of_light(kind, 1)), s16.add(small.wall_of_light(kind, 2))):
+            texture(sub(anim, "Frame", time="0.15"), SHEET16[0], idx)
+        sub(e, "Size", 100)
+        sub(e, "ShadowSize", 0)
+        sub(e, "Static")
+        sub(e, "OccupySquare")
+        sub(e, "FullOccupy")
+        sub(e, "EnemyOccupySquare")
+        out.append(e)
+
+    # the Rift of the Between, on the north rim: a galactic portal, turning
+    e = ET.Element("Object", {"type": types.get("Rift of the Between", OBJECT_TYPES), "id": "Rift of the Between"})
+    sub(e, "Class", "GameObject")
+    first = s16.add(small.rift(0))
+    texture(e, SHEET16[0], first)
+    anim = sub(e, "Animation", prob="1.0")
+    for idx in [first] + [s16.add(small.rift(f)) for f in (1, 2, 3)]:
+        texture(sub(anim, "Frame", time="0.12"), SHEET16[0], idx)
+    sub(e, "Size", 220)
+    sub(e, "ShadowSize", 0)
+    sub(e, "Static")
+    out.append(e)
+
+    # invisible helpers
+    for name, shots in HELPERS.items():
+        e = ET.Element("Object", {"type": types.get(name, OBJECT_TYPES), "id": name})
+        sub(e, "Class", "GameObject")
+        texture(e, "invisible", 0)
+        sub(e, "NoMiniMap")
+        sub(e, "ShadowSize", 0)
+        sub(e, "Size", 0)
+        for p in shots:
+            e.append(p)
+        out.append(e)
+    return out
+
+
+# ------------------------------------------------------------------------------------------------
+# the map
+
+W, H = 48, 72
+CX, CY = 24, 22               # the Observatory's centre (the Observatory Heart's tile)
+PLATFORM_R = 17               # its floor's radius; the rim is the last tile
+DIAMOND = 8                   # how far the inlaid diamond's points (and the cross's arms) reach
+CAUSEWAY = (22, 25)           # the approach's columns
+CAUSEWAY_END = 68             # its southern end, where the Nexus Portal is
+SPAWN_ROWS = (61, 66)
+SENTINELS = [(22, 47), (25, 47), (22, 55), (25, 55)]
+RIFT = (CX, CY - PLATFORM_R)          # on the rim, standing up into the void behind it
+HERALD = (CX, CY - PLATFORM_R + 2)    # just in front of it
+
+
+class Map:
+    def __init__(self):
+        self.ground = [[VOID] * W for _ in range(H)]
+        self.obj = [[None] * W for _ in range(H)]
+        self.region = [[None] * W for _ in range(H)]
+
+    def place(self, x, y, name):
+        assert self.ground[y][x] != VOID and self.obj[y][x] is None, (name, x, y)
+        self.obj[y][x] = name
+
+
+def tile_dist(x, y):
+    return math.hypot(x + 0.5 - (CX + 0.5), y + 0.5 - (CY + 0.5))
+
+
+def build_map():
+    m = Map()
+    for y in range(H):
+        for x in range(W):
+            d = tile_dist(x, y)
+            if d <= PLATFORM_R - 1:
+                m.ground[y][x] = "Astral Stone"
+            elif d <= PLATFORM_R:
+                m.ground[y][x] = "Platform Rim"
+    # the inlaid lines: the diamond and the cross
+    for y in range(H):
+        for x in range(W):
+            dx, dy = x - CX, y - CY
+            if m.ground[y][x] == "Astral Stone" and (abs(dx) + abs(dy) == DIAMOND
+                                                     or (dx == 0 and abs(dy) <= DIAMOND)
+                                                     or (dy == 0 and abs(dx) <= DIAMOND)):
+                m.ground[y][x] = "Astral Inlay"
+    # the causeway, from the rim south to the spawn
+    for y in range(CY + PLATFORM_R, CAUSEWAY_END + 1):
+        for x in range(CAUSEWAY[0], CAUSEWAY[1] + 1):
+            edge = x in CAUSEWAY or y == CAUSEWAY_END
+            m.ground[y][x] = "Platform Rim" if edge else "Astral Stone"
+    for y in range(*SPAWN_ROWS):
+        for x in range(CAUSEWAY[0] + 1, CAUSEWAY[1]):
+            m.region[y][x] = "Spawn"
+    m.place(CX, CAUSEWAY_END - 1, "Nexus Portal")
+    for (x, y) in SENTINELS:
+        m.place(x, y, "Starbound Sentinel")
+    m.place(*RIFT, "Rift of the Between")
+    m.place(*HERALD, "Mysterious One Herald")
+    m.place(CX, CY, "Observatory Heart")
+    return m
+
+
+def save_map(m):
+    entries, index, out = [], {}, bytearray()
+    for y in range(H):
+        for x in range(W):
+            t = {"ground": m.ground[y][x]}
+            if m.obj[y][x]:
+                t["objs"] = [{"id": m.obj[y][x]}]
+            if m.region[y][x]:
+                t["regions"] = [{"id": m.region[y][x]}]
+            key = json.dumps(t, sort_keys=True)
+            if key not in index:
+                index[key] = len(entries)
+                entries.append(t)
+            i = index[key]
+            out += bytes((i >> 8, i & 0xff))
+    jm = {"width": W, "height": H, "dict": entries,
+          "data": base64.b64encode(zlib.compress(bytes(out), 9)).decode("ascii")}
+    os.makedirs(os.path.dirname(OUT_MAP), exist_ok=True)
+    with open(OUT_MAP, "w", encoding="utf-8", newline="") as f:
+        json.dump(jm, f, separators=(",", ":"))
+
+
+def write_xml(paths, root_tag, elements, comment):
+    root = ET.Element(root_tag)
+    for e in elements:
+        root.append(e)
+    ET.indent(root, "\t")
+    text = "<!-- %s -->\n%s\n" % (comment, ET.tostring(root, encoding="unicode"))
+    for path in paths:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+
+
+def preview(m, out, s8, s16, c8, c32):
+    """The map at 8 pixels a tile, and the sheets enlarged, for checking by eye."""
+    os.makedirs(out, exist_ok=True)
+    colour = {"Astral Stone": (42, 36, 66), "Astral Inlay": (74, 58, 110), "Platform Rim": (74, 64, 112),
+              VOID: (6, 4, 14)}
+    img = Image.new("RGB", (W * 8, H * 8))
+    for y in range(H):
+        for x in range(W):
+            c = colour[m.ground[y][x]]
+            for yy in range(8):
+                for xx in range(8):
+                    img.putpixel((x * 8 + xx, y * 8 + yy), c)
+            if m.obj[y][x]:
+                for yy in range(2, 6):
+                    for xx in range(2, 6):
+                        img.putpixel((x * 8 + xx, y * 8 + yy), (255, 210, 74))
+    img.save(os.path.join(out, "black_between_map.png"))
+    for fname in (SHEET8[1], SHEET16[1], CHARS8[1], CHARS32[1], SHEET32[1]):
+        sheet = Image.open(os.path.join(IMAGES, fname))
+        k = 6 if "8x8" in fname else 4
+        bg = Image.new("RGBA", sheet.size, (40, 36, 56, 255))
+        bg.alpha_composite(sheet)
+        bg.resize((sheet.size[0] * k, sheet.size[1] * k), Image.NEAREST).save(os.path.join(out, fname))
+
+
+def main():
+    types = Types()
+    s8, s16, s32 = Grid(8, 16), Grid(16, 8), Grid(32, 8)
+    c8, c32 = Chars(8), Chars(32)
+    m = build_map()
+    g = grounds(types, s8)
+    o = objects(types, s8, s16, s32, c8, c32)
+
+    os.makedirs(IMAGES, exist_ok=True)
+    s8.write(os.path.join(IMAGES, SHEET8[1]))
+    s16.write(os.path.join(IMAGES, SHEET16[1]))
+    s32.write(os.path.join(IMAGES, SHEET32[1]))
+    c8.write(os.path.join(IMAGES, CHARS8[1]))
+    c32.write(os.path.join(IMAGES, CHARS32[1]))
+    write_xml(OUT_XML["grounds"], "GroundTypes", g,
+              "Generated by tools/build_black_between.py: the Black Between's floor. Do not edit.")
+    write_xml(OUT_XML["objects"], "Objects", o,
+              "Generated by tools/build_black_between.py: the Black Between's bosses, minions, walls, "
+              "rift, helpers and shots. Do not edit.")
+    save_map(m)
+    types.save()
+    known = {e.get("id") for e in g + o} | {VOID, "Nexus Portal"}
+    used = {t for row in m.ground for t in row} | {t for row in m.obj for t in row if t}
+    assert used <= known, used - known
+    print("wrote %s (%dx%d), %d grounds, %d objects" % (OUT_MAP, W, H, len(g), len(o)))
+    if "--preview" in sys.argv:
+        out = sys.argv[sys.argv.index("--preview") + 1]
+        preview(m, out, s8, s16, c8, c32)
+        print("preview in", out)
+
+
+if __name__ == "__main__":
+    main()
