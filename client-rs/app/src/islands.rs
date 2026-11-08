@@ -320,7 +320,10 @@ fn depth(dist: u8, x: i32, y: i32) -> f64 {
 fn columns(world: &World, dist: &[Vec<u8>], level: u8, cx: i32, cy: i32) -> Vec<RockFace> {
     let mut faces = Vec::new();
     let floor_h = world.levels.as_ref().map_or(1.0, |l| l.height);
-    let base = level as f64 * floor_h - SLAB;
+    // under a floor's slab on stacked floors (the Nexus islands, whose floors draw their slab's
+    // sides); on a flat map (the Black Between) nothing draws a slab, so the rock starts right at
+    // the ground, or a gap shows between them
+    let base = level as f64 * floor_h - if world.levels.is_some() { SLAB } else { 0.0 };
     let (w, h) = (world.width, world.height);
     let Some(dist) = dist.get(level as usize) else { return faces };
     let at = |x: i32, y: i32| -> Option<u8> {

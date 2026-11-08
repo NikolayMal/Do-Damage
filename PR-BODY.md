@@ -54,6 +54,13 @@ From the bottom of `..Context-Txts/11082026/mystery-updates1.txt` and its four s
 - **Files:** `BehaviorDb.BlackBetween.cs`, `logic/behaviors/BlackBetween.cs` (`CycloneDash` twin and centre, whole chords; `Starfall` anywhere in the diamond; `GatherIntoQuadrants`), `tools/build_black_between.py` and `small.py` (regenerated). No client change.
 - **Redeploy:** servers, and the client for the new art.
 
+### The Black Between: the owner's third round (still admin only)
+
+- No Realm Portal when Vesper or Aurel falls (`World.BossDied` opened one when the last quest monster in a dungeon died, and also counted the dungeon cleared): in the Black Between only the Mysterious One's going clears it, and he leaves his own portal.
+- No gap between the platform's floor and the rock under it (`islands.rs`: no slab offset on a flat map).
+- The father's crumbling meteors violet and gold in turn, not red; the Sentinels no longer shoot.
+- Redeploy: servers and client. Checks: `bsk-bot` through the whole fight (no Realm Portal opened, no errors), the client at the platform's edge and in the Break.
+
 ### Placed objects show (Oryx 3's and Oryx 5's gates)
 
 - `PlaceObject` set a square's object without an object id and never told the players round it to look again, so clients were never sent it: Oryx 5's Holy Gates (as they shut, and in his Last Judgement) and Oryx 3's gate stood in the way unseen. It now gives each one an id and refreshes players' squares (`UpdateTiles`, as `RemoveObject` does); removal already worked (clients drop a square's object by its id). Found with the Black Between's walls of light.
