@@ -326,6 +326,13 @@ A_BODY = {
 }
 
 
+def dawn_sword_shot():
+    """Aurel's sword flying across the arena (16x16, pointing right, its pale fire trailing)."""
+    cv = Canvas(16, 16)
+    flight_sword(cv, 3.5, 8, 0, 1.0)
+    return cv.img
+
+
 def aurel(frame=0, slash=False, gauntlets=False):
     cv = Canvas()
     flap = (-5, 0, 4)[frame % 3]

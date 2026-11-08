@@ -223,30 +223,63 @@ def astral_stone(seed):
     return _tile(f, seed)
 
 
-def astral_inlay(seed):
-    """The faint lines inlaid in the floor where the bosses' walls will fall: gold under violet."""
-    def f(img, rnd):
-        for y in range(8):
-            for x in range(8):
-                c = "#2a2442" if rnd.random() > 0.15 else "#322a4e"
-                put(img, x, y, c)
-        for i in range(8):
-            put(img, i, 3, "#4a3a78")
-            put(img, i, 4, "#6a5226" if (i + seed) % 3 else "#8a6a2a")
-    return _tile(f, seed)
-
-
 def platform_rim(seed):
-    """The raised rim of the platform: lighter stone, cut in blocks."""
+    """The platform's rim: polished dark stone dressed in blocks, a gold band along it and a violet
+    glint now and then, where the floor ends over the drop."""
     def f(img, rnd):
         for y in range(8):
             for x in range(8):
-                c = "#4a4070" if y < 2 else ("#3a3258" if y < 6 else "#241e38")
-                if x in (0, 4) and y >= 2:
+                c = "#3e3562" if y < 3 else ("#332b52" if y < 6 else "#251f3d")
+                if y == 3:
+                    c = "#c08a1c" if (x + seed) % 4 else "#ffd24a"
+                if y == 4:
+                    c = "#6a4a1a"
+                if x == (seed * 3) % 8 and y > 4:
                     c = "#1c1830"
                 put(img, x, y, c)
-        put(img, rnd.randrange(1, 7), 0, "#6a5ea0")
+        put(img, rnd.randrange(1, 7), 1, "#8a7ad0")
+        if seed % 2:
+            put(img, rnd.randrange(1, 7), 6, "#b070ff")
     return _tile(f, seed)
+
+
+def underside(seed, rim=False):
+    """The rock the platform floats on (never on the map: the client hangs it under the platform's
+    edges): dark violet stone with veins of starlight, or (rim) the band of dressed stone and gold
+    just under the floor."""
+    def f(img, rnd):
+        for y in range(8):
+            for x in range(8):
+                if rim:
+                    c = "#2e2648" if y < 6 else "#211a36"
+                    if y == 1:
+                        c = "#a07418"
+                    if (x + y * 3 + seed) % 11 == 0:
+                        c = "#3c3260"
+                else:
+                    v = rnd.random()
+                    c = "#1a1430" if v > 0.3 else ("#14102a" if v > 0.1 else "#221a3e")
+                put(img, x, y, c)
+        if not rim:
+            x, y = rnd.randrange(8), rnd.randrange(8)
+            for i in range(rnd.randrange(2, 5)):
+                put(img, (x + i) % 8, (y + i // 2) % 8, "#4a3a86")
+            if seed % 2:
+                put(img, rnd.randrange(8), rnd.randrange(8), "#c8b8ff")
+    return _tile(f, seed)
+
+
+def pylon(frame):
+    """A star pylon on the rim: a slim dark obelisk, a crystal of dusk or dawn glowing at its tip."""
+    img = _blank()
+    glow = (("#7a2ad0", "#d8a0ff"), ("#c08a1c", "#fff0a8"))[frame % 2]
+    for y in range(2, 8):
+        put(img, 3, y, "#3e3562" if y < 7 else "#251f3d")
+        put(img, 4, y, "#251f3d")
+    put(img, 2, 7, "#332b52"); put(img, 5, 7, "#1c1830")
+    put(img, 3, 1, glow[1]); put(img, 4, 1, glow[0]); put(img, 3, 0, glow[0])
+    put(img, 2, 1, glow[0]); put(img, 4, 0, glow[1] if frame > 1 else glow[0])
+    return img
 
 
 def veil(seed):
@@ -287,11 +320,13 @@ def constellation(seed):
 
 TILES = {
     "Astral Stone": [astral_stone(s) for s in (3, 4, 5, 6)],
-    "Astral Inlay": [astral_inlay(s) for s in (1, 2)],
-    "Platform Rim": [platform_rim(s) for s in (1, 2)],
+    "Platform Rim": [platform_rim(s) for s in (1, 2, 3, 4)],
     "Veil of Dusk": [veil(s) for s in (0, 1, 2)],
     "Black Between": [black_between(s) for s in (1, 2, 3)],
     "Constellation Path": [constellation(s) for s in (0, 1)],
+    # under the platform's edges (the client's undersides, never on the map)
+    "BB Underside Rock": [underside(s) for s in (1, 2, 3, 4)],
+    "BB Underside Rim": [underside(s, rim=True) for s in (1, 2)],
 }
 
 

@@ -155,6 +155,8 @@ struct GroundMark {
     color: u32,
     start: i32,
     ms: i32,
+    /// 0: a circle filling in; 1: the Mysterious One's rift opening out (pos2.y).
+    style: u8,
 }
 
 /// How long a filled mark flashes before it goes, ms.
@@ -503,7 +505,8 @@ impl Particles {
             // GroundMark: a circle at pos1, radius pos2.x, filling over `duration` ms.
             40 => {
                 let radius = (p2.0).clamp(0.2, 20.0);
-                self.marks.push(GroundMark { x: p1.0, y: p1.1, radius, color, start: now, ms: e.duration.clamp(1, 20_000) });
+                let style = if p2.1 >= 0.5 { 1 } else { 0 };
+                self.marks.push(GroundMark { x: p1.0, y: p1.1, radius, color, start: now, ms: e.duration.clamp(1, 20_000), style });
             }
             // InspireEffect: the object flashes gold.
             17 if go.is_some() => {
@@ -900,7 +903,11 @@ impl Particles {
                 }
             };
             if flash {
-                disc(renderer, m.radius, 0xFFFFFF, 0.55);
+                disc(renderer, m.radius, if m.style == 1 { 0xE0B0FF } else { 0xFFFFFF }, 0.55);
+                continue;
+            }
+            if m.style == 1 {
+                self.draw_rift(cam, renderer, m, fill);
                 continue;
             }
             disc(renderer, m.radius, m.color, 0.14);
@@ -916,6 +923,65 @@ impl Particles {
                 renderer.triangle(renderer.white(), [o0, o1, i1], [[0.5, 0.5]; 3], tint);
                 renderer.triangle(renderer.white(), [o0, i1, i0], [[0.5, 0.5]; 3], tint);
             }
+        }
+    }
+
+    /// The Mysterious One's rift opening on the ground (a mark of style 1): the void's black
+    /// spreading out from him to the mark's edge, its spiral arms of dusk and dawn turning inside
+    /// it, faster as it grows, stars caught in them, a ring of gold and violet at its edge, and the
+    /// whole circle it will reach faintly marked from the start.
+    fn draw_rift(&self, cam: &Camera, renderer: &mut Renderer, m: &GroundMark, fill: f64) {
+        const SIDES: usize = 48;
+        let z = self.floor;
+        let at = |r: f64, a: f64| cam.to_screen(m.x + r * a.cos(), m.y + r * a.sin(), z);
+        let centre = cam.to_screen(m.x, m.y, z);
+        let white = renderer.white();
+        let tri = |renderer: &mut Renderer, pts: [[f32; 2]; 3], rgb: u32, alpha: f32| {
+            renderer.triangle(white, pts, [[0.5, 0.5]; 3], Tint::color(rgb, alpha));
+        };
+        // where it will reach: a faint violet disc and a thin ring
+        for i in 0..SIDES {
+            let (a0, a1) = (2.0 * PI * i as f64 / SIDES as f64, 2.0 * PI * (i + 1) as f64 / SIDES as f64);
+            tri(renderer, [centre, at(m.radius, a0), at(m.radius, a1)], 0x3A1868, 0.16);
+            let (o0, o1, i0, i1) = (at(m.radius, a0), at(m.radius, a1), at(m.radius - 0.12, a0), at(m.radius - 0.12, a1));
+            let rim = if i % 2 == 0 { 0xB040FF } else { 0xFFD24A };
+            tri(renderer, [o0, o1, i1], rim, 0.75);
+            tri(renderer, [o0, i1, i0], rim, 0.75);
+        }
+        // the rift so far: black, edged in light, its arms turning
+        let r = (m.radius * fill.powf(0.8)).max(0.3);
+        let spin = (self.now - m.start) as f64 / 1000.0 * (1.5 + 3.0 * fill);
+        for i in 0..SIDES {
+            let (a0, a1) = (2.0 * PI * i as f64 / SIDES as f64, 2.0 * PI * (i + 1) as f64 / SIDES as f64);
+            tri(renderer, [centre, at(r, a0), at(r, a1)], 0x07051A, 0.85);
+            let (o0, o1, i0, i1) = (at(r + 0.15, a0), at(r + 0.15, a1), at(r, a0), at(r, a1));
+            tri(renderer, [o0, o1, i1], 0xE0B0FF, 0.8);
+            tri(renderer, [o0, i1, i0], 0xE0B0FF, 0.8);
+        }
+        // two arms of each colour, curling in to the middle
+        for arm in 0..4 {
+            let colour = if arm % 2 == 0 { 0xB040FF } else { 0xFFD24A };
+            let base = spin + arm as f64 * PI / 2.0;
+            let steps = 16;
+            for k in 0..steps {
+                let (t0, t1) = (k as f64 / steps as f64, (k + 1) as f64 / steps as f64);
+                let (a0, a1) = (base + t0 * 2.6, base + t1 * 2.6);
+                let (r0, r1) = (r * (1.0 - t0 * 0.92), r * (1.0 - t1 * 0.92));
+                let w = 0.22 * r * (1.0 - t0 * 0.7);
+                let (p0, p1) = (at(r0, a0), at(r1, a1));
+                let (q0, q1) = (at((r0 - w).max(0.0), a0 + 0.12), at((r1 - w).max(0.0), a1 + 0.12));
+                let alpha = 0.75 * (1.0 - t0 * 0.5) as f32;
+                tri(renderer, [p0, p1, q1], colour, alpha);
+                tri(renderer, [p0, q1, q0], colour, alpha);
+            }
+        }
+        // a few stars caught in it, turning with it
+        for k in 0..10 {
+            let a = spin * 0.7 + k as f64 * 2.4;
+            let d = r * (0.2 + 0.08 * k as f64);
+            let [sx, sy] = at(d.min(r * 0.95), a);
+            let side = (0.12 * cam.scale) as f32;
+            renderer.fill(sx - side / 2.0, sy - side / 2.0, side, side, 0xFFFFFF, 0.9);
         }
     }
 

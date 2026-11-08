@@ -7,17 +7,20 @@ Meant to be harder than Oryx 5, for players in full Enthroned gear.
 The map, from south to north:
 
 - the Constellation Approach: a causeway of astral stone four tiles wide across the void, where
-  players arrive (Spawn region) by a Nexus Portal, held by two pairs of Starbound Sentinels;
+  players arrive (Spawn region), with Starbound Sentinels drifting over it (harmless, as Oryx 5's
+  clouds: their stars do no damage and nothing hits them). No portal out: the Mysterious One drops
+  one when he falls;
 - the Observatory: a disc of astral stone floating in the void (PLATFORM_R tiles in radius) with a
-  raised rim. Faint lines inlaid in the floor (a diamond and a cross, Astral Inlay) show where
-  Vesper's veil and Aurel's wall of light will fall. The Observatory Heart, invisible, stands at
-  its centre: the fights order it to raise those walls and turn the floor, so they come and go
-  with its states (BehaviorDb.BlackBetween.cs). The Rift of the Between is on the north rim, and
-  the Mysterious One (his herald, at first) beside it.
+  rim of dressed stone banded in gold and star pylons round it. The Observatory Heart, invisible,
+  stands at its centre: the fights order it to raise the walls and turn the floor, so they come
+  and go with its states (BehaviorDb.BlackBetween.cs). The Rift of the Between is on the north
+  rim, and the Mysterious One (his herald, at first) beside it.
 
-Every fight happens on the platform. Its void is Realm 2's own (R2 Abyss), the starry black players
-already know they can't walk on; the Black Between ground is that void come up through the floor,
-which can be walked on but burns.
+Every fight happens on the platform. The void is empty sky: no ground at all, so the client draws
+its starry void sky there (`<Background>8</Background>` in Dungeons.xml, the Rust client's
+voidsky.rs) and hangs rock under the platform's and the causeway's edges (islands.rs, with the
+`BB Underside` grounds), as under the Nexus islands. The Black Between ground is that void come up
+through the floor, which can be walked on but burns.
 
 Outputs (generated, don't edit):
 - the map, source/Shared/resources/worlds/Dungeons/The Black Between/The Black Between.jm;
@@ -63,7 +66,7 @@ SHEET16 = ("blackBetween16x16", "BlackBetween16x16.png")
 SHEET32 = ("blackBetween32x32", "BlackBetween32x32.png")
 CHARS8 = ("blackBetweenChars8x8", "BlackBetweenChars8x8.png")
 CHARS32 = ("blackBetweenChars32x32", "BlackBetweenChars32x32.png")
-VOID = "R2 Abyss"   # Realm 2's void: starry black, not walkable
+VOID = None         # the void: no ground at all (the client's sky shows there)
 
 
 # ------------------------------------------------------------------------------------------------
@@ -167,13 +170,16 @@ def shot(pid, obj, damage, speed, life, size=100, effects=(), multi=False, ampli
 
 GROUNDS = {
     "Astral Stone": ("0x2A2442", {}),
-    "Astral Inlay": ("0x3A2E5A", {}),
     "Platform Rim": ("0x4A4070", {}),
     # Vesper's ward on the floor: burns, the Veil's damage per hit
     "Veil of Dusk": ("0x5A1A90", {"MinDamage": 140, "MaxDamage": 170}),
     # the void come up through the floor: walkable, but it burns
     "Black Between": ("0x08051A", {"MinDamage": 160, "MaxDamage": 190}),
     "Constellation Path": ("0x8A80D0", {}),
+    # never on the map: the rock the client hangs under the platform's edges, and its band under
+    # the floor (islands.rs)
+    "BB Underside Rock": ("0x1A1430", {}),
+    "BB Underside Rim": ("0x2E2648", {}),
 }
 
 
@@ -197,27 +203,33 @@ def grounds(types, sheet):
 # The bosses and their forms (32x32, BehaviorDb.BlackBetween.cs): name -> (art, size, health,
 # defence, flags, alt textures (art names), [projectiles]); the projectiles' order is the
 # behaviours'. Health and defence here are the base: BossStats sets them in the fight.
+# shots that weave as they fly (Vesper's aimed bolts, as the Void Entity's), and rings that bow
+# (half a wave over their flight): (Amplitude, Frequency)
+WAVE = (1.0, 1.5)
+ARC = (1.2, 0.5)
+
 BOSSES = {
     # the father, who comes out of the Rift: his herald does the talking at first and watches the
     # first two trials from the Rift; the Mysterious One himself comes down for the third
     "Mysterious One Herald": ("The Mysterious One", 100, 480000, 110, "herald", [], []),
     "The Mysterious One": ("The Mysterious One", 100, 480000, 110, "boss", [], [
-        shot(0, "Dusk Bolt", 200, 90, 2400),
-        shot(1, "Umbral Orb", 170, 55, 4000, 110, effects=[("Darkness", 2)]),
+        shot(0, "Dusk Bolt", 200, 90, 2400, amplitude=WAVE[0], frequency=WAVE[1]),
+        shot(1, "Umbral Orb", 170, 55, 4000, 110, effects=[("Darkness", 2)], amplitude=ARC[0], frequency=ARC[1]),
         shot(2, "Dawn Crescent", 230, 70, 2600, 130, effects=[("Armor Broken", 2)], multi=True),
         shot(3, "Sunspark", 180, 80, 2200),
         shot(4, "Eclipse Orb", 210, 40, 6000, 120, effects=[("Darkness", 2), ("Armor Broken", 2)]),
         shot(5, "Eclipse Orb", 190, 45, 5500, 110, effects=[("Darkness", 1.5)]),
+        shot(6, "Dawn Sword", 400, 160, 2400, 200, multi=True),
     ]),
     "Vesper, the Dusk Star": ("Vesper, the Dusk Star", 85, 240000, 80, "boss", [], [
-        shot(0, "Dusk Bolt", 190, 95, 2300),
-        shot(1, "Umbral Orb", 160, 50, 4200, 110, effects=[("Darkness", 1.5)]),
+        shot(0, "Dusk Bolt", 190, 95, 2300, amplitude=WAVE[0], frequency=WAVE[1]),
+        shot(1, "Umbral Orb", 160, 50, 4200, 110, effects=[("Darkness", 1.5)], amplitude=ARC[0], frequency=ARC[1]),
     ]),
     "Vesper's Veil Copy": ("Vesper's Veil Copy", 85, 100000, 0, "helper", [], [
-        shot(0, "Dusk Bolt", 180, 80, 2200),
+        shot(0, "Dusk Bolt", 180, 80, 2200, amplitude=WAVE[0], frequency=WAVE[1]),
     ]),
     "Spectral Vesper": ("Spectral Vesper", 85, 100000, 0, "helper", [], [
-        shot(0, "Dusk Bolt", 180, 80, 2200),
+        shot(0, "Dusk Bolt", 180, 80, 2200, amplitude=WAVE[0], frequency=WAVE[1]),
     ]),
     "Aurel, the Dawn Blade": ("Aurel, the Dawn Blade", 85, 280000, 100, "boss",
                               ["Aurel, Solar Cyclone", "Aurel, Gauntlet Form"], [
@@ -225,13 +237,9 @@ BOSSES = {
         shot(1, "Sunspark", 180, 85, 2400),
         shot(2, "Sunspark", 170, 65, 2200),
         shot(3, "Dawn Crescent", 220, 60, 2400, 120, multi=True),
-        # the Gauntlet Form's punches and shockwaves
-        shot(4, "Sunspark", 200, 120, 450, 120),
-        shot(5, "Dawn Crescent", 190, 55, 1500, 110, effects=[("Dazed", 1.5)], multi=True),
-    ]),
-    "Aurel's Reflection": ("Aurel, Gauntlet Form", 85, 100000, 0, "helper", [], [
-        shot(0, "Sunspark", 200, 120, 450, 120),
-        shot(1, "Dawn Crescent", 190, 55, 1500, 110, effects=[("Dazed", 1.5)], multi=True),
+        # the Sunwheel's spiral, and his sword flying across the arena (the Sword Lanes)
+        shot(4, "Dawn Crescent", 200, 80, 1800, 110, multi=True),
+        shot(5, "Dawn Sword", 400, 160, 2400, 200, multi=True),
     ]),
     "Spectral Aurel": ("Spectral Aurel", 85, 100000, 0, "helper", ["Spectral Cyclone"], [
         shot(0, "Sunspark", 170, 65, 2200),
@@ -239,17 +247,15 @@ BOSSES = {
 }
 # like Oryx 3 to 5, the father can't be stunned, paralysed, petrified, slowed or dazed
 IMMUNE = {"The Mysterious One", "Mysterious One Herald"}
-DISPLAY = {"Mysterious One Herald": "The Mysterious One", "Aurel's Reflection": "Aurel, the Dawn Blade"}
+DISPLAY = {"Mysterious One Herald": "The Mysterious One"}
 
 # minions (8x8): name -> (health, defence, size, [projectiles])
 MINIONS = {
-    "Dawn Templar": (9000, 40, 110, [shot(0, "Dawn Crescent", 160, 60, 1300, effects=[("Slowed", 2)])]),
     "Dusk Shade": (6000, 10, 110, [shot(0, "Umbral Orb", 220, 40, 1000, 120, effects=[("Darkness", 2)])]),
-    "Starbound Sentinel": (14000, 30, 120, [
-        shot(0, "Starbound Mote", 150, 50, 3000),
-        shot(1, "Starbound Mote", 130, 90, 1800),
-    ]),
 }
+# the Starbound Sentinels over the causeway: scenery that drifts and shoots stars that do no harm
+# (not enemies: nothing hits them), as Oryx 5's clouds drift over his Landing
+SENTINEL_SHOTS = [shot(0, "Starbound Mote", 0, 50, 3000), shot(1, "Starbound Mote", 0, 90, 1800)]
 
 # invisible helpers: name -> [projectiles]; not enemies, nothing hits them
 HELPERS = {
@@ -260,10 +266,10 @@ HELPERS = {
 }
 
 
-def projectile(types, sheet, name, img):
+def projectile(types, sheet, name, img, file=SHEET8[0]):
     e = ET.Element("Object", {"type": types.get(name, OBJECT_TYPES), "id": name})
     sub(e, "Class", "Projectile")
-    texture(e, SHEET8[0], sheet.add(img))
+    texture(e, file, sheet.add(img))
     return e
 
 
@@ -272,6 +278,7 @@ def objects(types, s8, s16, s32, c8, c32):
     # shots
     for name, fn in small.SHOTS.items():
         out.append(projectile(types, s8, name, fn()))
+    out.append(projectile(types, s16, "Dawn Sword", bosses.dawn_sword_shot(), SHEET16[0]))
 
     # the bosses' art, a row each
     sprites = bosses.all_sprites()
@@ -325,20 +332,6 @@ def objects(types, s8, s16, s32, c8, c32):
             e.append(p)
         out.append(e)
 
-    # the planted Sword of the Dawn (16x32), an enemy with health of its own
-    e = ET.Element("Object", {"type": types.get("Sword of the Dawn", OBJECT_TYPES), "id": "Sword of the Dawn"})
-    sub(e, "Class", "Character")
-    sub(e, "Enemy")
-    texture(e, SHEET32[0], s32.add(sprites["Sword of the Dawn (planted)"][0]))
-    sub(e, "HitSound", "monster/stone_walls_hit")
-    sub(e, "DeathSound", "monster/stone_walls_death")
-    sub(e, "Size", 100)
-    sub(e, "MaxHitPoints", 60000)
-    sub(e, "Defense", 60)
-    sub(e, "StasisImmune")
-    sub(e, "XpMult", 0)
-    out.append(e)
-
     # minions
     art = small.minions()
     for name, (hp, defense, size, shots) in MINIONS.items():
@@ -351,10 +344,38 @@ def objects(types, s8, s16, s32, c8, c32):
         sub(e, "Size", size)
         sub(e, "MaxHitPoints", hp)
         sub(e, "Defense", defense)
-        if name == "Starbound Sentinel":
-            sub(e, "Flying")
         for p in shots:
             e.append(p)
+        out.append(e)
+
+    # the Starbound Sentinels: drifting scenery with harmless stars
+    sentinel = small.minions()["Starbound Sentinel"]
+    e = ET.Element("Object", {"type": types.get("Starbound Sentinel", OBJECT_TYPES), "id": "Starbound Sentinel"})
+    sub(e, "Class", "GameObject")
+    first = s8.add(sentinel[0])
+    texture(e, SHEET8[0], first)
+    anim = sub(e, "Animation", prob="1.0")
+    for idx in (first, s8.add(sentinel[1])):
+        texture(sub(anim, "Frame", time="0.4"), SHEET8[0], idx)
+    sub(e, "Size", 120)
+    sub(e, "NoMiniMap")
+    for p in SENTINEL_SHOTS:
+        e.append(p)
+    out.append(e)
+
+    # star pylons round the rim, a crystal of dusk or dawn glowing at each tip
+    for name, frames in (("Dusk Pylon", (0, 2)), ("Dawn Pylon", (1, 3))):
+        e = ET.Element("Object", {"type": types.get(name, OBJECT_TYPES), "id": name})
+        sub(e, "Class", "GameObject")
+        first = s8.add(small.pylon(frames[0]))
+        texture(e, SHEET8[0], first)
+        anim = sub(e, "Animation", prob="1.0")
+        for idx in (first, s8.add(small.pylon(frames[1]))):
+            texture(sub(anim, "Frame", time="0.5"), SHEET8[0], idx)
+        sub(e, "Size", 150)
+        sub(e, "Static")
+        sub(e, "OccupySquare")
+        sub(e, "EnemyOccupySquare")
         out.append(e)
 
     # Vesper's dusk mine: invulnerable, bursts and is gone
@@ -428,7 +449,8 @@ DIAMOND = 8                   # how far the inlaid diamond's points (and the cro
 CAUSEWAY = (22, 25)           # the approach's columns
 CAUSEWAY_END = 68             # its southern end, where the Nexus Portal is
 SPAWN_ROWS = (61, 66)
-SENTINELS = [(22, 47), (25, 47), (22, 55), (25, 55)]
+SENTINELS = [(23, 46), (24, 53), (23, 59)]
+PYLONS = 12                   # round the rim, every 30 degrees but by the Rift and the causeway
 RIFT = (CX, CY - PLATFORM_R)          # on the rim, standing up into the void behind it
 HERALD = (CX, CY - PLATFORM_R + 2)    # just in front of it
 
@@ -440,7 +462,7 @@ class Map:
         self.region = [[None] * W for _ in range(H)]
 
     def place(self, x, y, name):
-        assert self.ground[y][x] != VOID and self.obj[y][x] is None, (name, x, y)
+        assert self.ground[y][x] is not None and self.obj[y][x] is None, (name, x, y)
         self.obj[y][x] = name
 
 
@@ -458,13 +480,6 @@ def build_map():
             elif d <= PLATFORM_R:
                 m.ground[y][x] = "Platform Rim"
     # the inlaid lines: the diamond and the cross
-    for y in range(H):
-        for x in range(W):
-            dx, dy = x - CX, y - CY
-            if m.ground[y][x] == "Astral Stone" and (abs(dx) + abs(dy) == DIAMOND
-                                                     or (dx == 0 and abs(dy) <= DIAMOND)
-                                                     or (dy == 0 and abs(dx) <= DIAMOND)):
-                m.ground[y][x] = "Astral Inlay"
     # the causeway, from the rim south to the spawn
     for y in range(CY + PLATFORM_R, CAUSEWAY_END + 1):
         for x in range(CAUSEWAY[0], CAUSEWAY[1] + 1):
@@ -473,12 +488,19 @@ def build_map():
     for y in range(*SPAWN_ROWS):
         for x in range(CAUSEWAY[0] + 1, CAUSEWAY[1]):
             m.region[y][x] = "Spawn"
-    m.place(CX, CAUSEWAY_END - 1, "Nexus Portal")
     for (x, y) in SENTINELS:
         m.place(x, y, "Starbound Sentinel")
     m.place(*RIFT, "Rift of the Between")
     m.place(*HERALD, "Mysterious One Herald")
     m.place(CX, CY, "Observatory Heart")
+    for k in range(PYLONS):
+        a = 2 * math.pi * k / PYLONS + math.pi / PYLONS
+        x, y = round(CX + 0.5 + math.cos(a) * (PLATFORM_R - 0.6) - 0.5), round(CY + 0.5 + math.sin(a) * (PLATFORM_R - 0.6) - 0.5)
+        if abs(x - CX) <= 3 and (y < CY or y > CY):
+            continue
+        if m.ground[y][x] is None or m.obj[y][x]:
+            continue
+        m.obj[y][x] = "Dusk Pylon" if k % 2 else "Dawn Pylon"
     return m
 
 
@@ -486,7 +508,7 @@ def save_map(m):
     entries, index, out = [], {}, bytearray()
     for y in range(H):
         for x in range(W):
-            t = {"ground": m.ground[y][x]}
+            t = {"ground": m.ground[y][x]} if m.ground[y][x] else {}
             if m.obj[y][x]:
                 t["objs"] = [{"id": m.obj[y][x]}]
             if m.region[y][x]:
@@ -519,8 +541,7 @@ def write_xml(paths, root_tag, elements, comment):
 def preview(m, out, s8, s16, c8, c32):
     """The map at 8 pixels a tile, and the sheets enlarged, for checking by eye."""
     os.makedirs(out, exist_ok=True)
-    colour = {"Astral Stone": (42, 36, 66), "Astral Inlay": (74, 58, 110), "Platform Rim": (74, 64, 112),
-              VOID: (6, 4, 14)}
+    colour = {"Astral Stone": (42, 36, 66), "Platform Rim": (74, 64, 112), None: (6, 4, 14)}
     img = Image.new("RGB", (W * 8, H * 8))
     for y in range(H):
         for x in range(W):
@@ -562,7 +583,7 @@ def main():
               "rift, helpers and shots. Do not edit.")
     save_map(m)
     types.save()
-    known = {e.get("id") for e in g + o} | {VOID, "Nexus Portal"}
+    known = {e.get("id") for e in g + o} | {None}
     used = {t for row in m.ground for t in row} | {t for row in m.obj for t in row if t}
     assert used <= known, used - known
     print("wrote %s (%dx%d), %d grounds, %d objects" % (OUT_MAP, W, H, len(g), len(o)))

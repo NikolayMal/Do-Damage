@@ -20,14 +20,15 @@ namespace WorldServer.logic.behaviors
         // the client's default throw (ShowEffect Throw with no duration) takes 1.5 s
         public const int ThrowMs = 1500;
 
-        public static void Mark(Entity host, Position at, double radius, int ms, uint color)
+        // style (pos2.y): 0 a plain circle filling in; 1 the Mysterious One's rift, opening out
+        public static void Mark(Entity host, Position at, double radius, int ms, uint color, int style = 0)
         {
             var effect = new ShowEffect
             {
                 EffectType = EffectType.GroundMark,
                 TargetObjectId = host.Id,
                 Pos1 = at,
-                Pos2 = new Position((float)radius, 0),
+                Pos2 = new Position((float)radius, style),
                 Color = new ARGB(color),
                 Duration = ms,
             };
@@ -61,8 +62,23 @@ namespace WorldServer.logic.behaviors
             });
         }
 
+        // a bolt of lightning from the host down to `at` (ShowEffect Lightning)
+        public static void Bolt(Entity host, Position at, uint color) =>
+            host.World.BroadcastIfVisible(new ShowEffect
+            {
+                EffectType = EffectType.Lightning,
+                TargetObjectId = host.Id,
+                Pos1 = at,
+                Pos2 = new Position(170, 0),
+                Color = new ARGB(color),
+            }, ref at);
+
         // a volley of the host's projectile `index`: `count` shots `inc` radians apart, centred on `angle`
-        public static void Fire(Entity host, int index, double angle, int count, double inc)
+        public static void Fire(Entity host, int index, double angle, int count, double inc) =>
+            FireFrom(host, host.X, host.Y, index, angle, count, inc);
+
+        // the same from anywhere (Aurel's sword flying in from the arena's edge)
+        public static void FireFrom(Entity host, float x, float y, int index, double angle, int count = 1, double inc = 0)
         {
             if (host.World == null || !host.ObjectDesc.Projectiles.TryGetValue(index, out var desc))
                 return;
@@ -74,7 +90,7 @@ namespace WorldServer.logic.behaviors
                 Spawned = host.Spawned,
                 BulletId = host.GetNextBulletId(count),
                 OwnerId = host.Id,
-                StartingPos = new Position(host.X, host.Y),
+                StartingPos = new Position(x, y),
                 Angle = (float)(angle - inc * (count - 1) / 2),
                 Damage = (short)dmg,
                 BulletType = (byte)desc.BulletType,
@@ -97,7 +113,8 @@ namespace WorldServer.logic.behaviors
     // - Players: on a player within `extent` tiles of the host;
     // - Host: one great blast round the host itself (no throw).
     // The mark and the blast are `color`; the throw's trail is `throwColor` (the mark's colour if
-    // none is given).
+    // none is given). With `lightning` nothing is thrown: when the mark has filled, a bolt comes
+    // down from the host (Aurel's divine lightning). `style` is the mark's (Strike.Mark).
     internal class Starfall : Behavior
     {
         public enum Area { Diamond, Scatter, Players, Host }
@@ -115,11 +132,15 @@ namespace WorldServer.logic.behaviors
         private readonly string[] _origins;
         private readonly int _coolDownOffset;
         private readonly uint _throwColor;
+        private readonly bool _lightning;
+        private readonly int _style;
 
         public Starfall(Area area, double extent, double radius, int damage, Cooldown coolDown = new Cooldown(), int perVolley = 1,
             uint color = 0xFFFF3030, ConditionEffectIndex effect = 0, int effectMs = 0, string[] origins = null,
-            int fillMs = Strike.ThrowMs, int coolDownOffset = 0, uint throwColor = 0)
+            int fillMs = Strike.ThrowMs, int coolDownOffset = 0, uint throwColor = 0, bool lightning = false, int style = 0)
         {
+            _lightning = lightning;
+            _style = style;
             _throwColor = throwColor == 0 ? color : throwColor;
             _area = area;
             _extent = extent;
@@ -188,8 +209,8 @@ namespace WorldServer.logic.behaviors
 
         private void Drop(Entity host, Position at)
         {
-            Strike.Mark(host, at, _radius, _fillMs, _color);
-            if (_area != Area.Host)
+            Strike.Mark(host, at, _radius, _fillMs, _color, _style);
+            if (_area != Area.Host && !_lightning)
             {
                 Entity from = host;
                 if (_origins != null)
@@ -201,7 +222,12 @@ namespace WorldServer.logic.behaviors
                 Strike.Throw(from, at, _throwColor);
             }
             var world = host.World;
-            world.StartNewTimer(_fillMs, (w, t) => Strike.Land(world, host, at, _radius, _damage, _color, _effect, _effectMs));
+            world.StartNewTimer(_fillMs, (w, t) =>
+            {
+                if (_lightning && host.World == world)
+                    Strike.Bolt(host, at, _color);
+                Strike.Land(world, host, at, _radius, _damage, _color, _effect, _effectMs);
+            });
         }
     }
 
@@ -385,6 +411,11 @@ namespace WorldServer.logic.behaviors
             }
             Light(host, w);
             Floor.Refresh(host);
+            // everyone on the platform onto the path's start, so no one begins out in the dark
+            var (px, py) = w.Path[0];
+            foreach (var player in host.World.Players.Values)
+                if (player.DistTo(c.X, c.Y) <= _radius + 3)
+                    player.TeleportPosition(time, new Position(px + 0.5f + Random.Next(-1, 2), py + 0.5f + Random.Next(-1, 2)), true);
         }
 
         protected override void TickCore(Entity host, TickTime time, ref object state)
@@ -636,6 +667,158 @@ namespace WorldServer.logic.behaviors
             r.EndX = (float)(host.X + dx * t);
             r.EndY = (float)(host.Y + dy * t);
             return true;
+        }
+    }
+
+    // Aurel's Sword Lanes: his sword flies across the arena (round the host's spawn point, `radius`
+    // tiles) along every second column, each lane marked in gold `telegraphMs` before, the lanes one
+    // after another from west to east, up and down in turn; then along every second row, south to
+    // north, west and east in turn. Each round after the first uses the other half of the lanes, so
+    // the safe squares move. Fired from the arena's edge (`projectile` of the host's), so it needs
+    // no sword object.
+    internal class SwordLanes : Behavior
+    {
+        private readonly double _radius;
+        private readonly int _projectile;
+        private readonly int _rounds;
+        private readonly int _telegraphMs;
+        private readonly int _laneMs;
+        private readonly int _gapMs;
+
+        public SwordLanes(double radius, int projectile, int rounds = 2, int telegraphMs = 900, int laneMs = 110, int gapMs = 900)
+        {
+            _radius = radius;
+            _projectile = projectile;
+            _rounds = rounds;
+            _telegraphMs = telegraphMs;
+            _laneMs = laneMs;
+            _gapMs = gapMs;
+        }
+
+        private sealed class Plan
+        {
+            public readonly List<(int At, bool Fire, bool Vertical, int Offset, int Dir)> Events = new();
+            public int Elapsed;
+            public int Next;
+        }
+
+        protected override void OnStateEntry(Entity host, TickTime time, ref object state)
+        {
+            var plan = new Plan();
+            state = plan;
+            var t = 600;
+            var reach = (int)Math.Floor(_radius) - 1;
+            for (var round = 0; round < _rounds; round++)
+                foreach (var vertical in new[] { true, false })
+                {
+                    var i = 0;
+                    for (var k = -reach + round % 2; k <= reach; k += 2, i++)
+                    {
+                        var dir = i % 2 == 0 ? 1 : -1;
+                        plan.Events.Add((t + i * _laneMs, false, vertical, k, dir));
+                        plan.Events.Add((t + i * _laneMs + _telegraphMs, true, vertical, k, dir));
+                    }
+                    t += i * _laneMs + _telegraphMs + _gapMs;
+                }
+            plan.Events.Sort((a, b) => a.At.CompareTo(b.At));
+        }
+
+        protected override void TickCore(Entity host, TickTime time, ref object state)
+        {
+            if (state is not Plan plan)
+                return;
+            plan.Elapsed += time.ElapsedMsDelta;
+            var c = host.SpawnPoint.Value;
+            while (plan.Next < plan.Events.Count && plan.Events[plan.Next].At <= plan.Elapsed)
+            {
+                var (_, fire, vertical, k, dir) = plan.Events[plan.Next++];
+                var half = Math.Sqrt(Math.Max(0, _radius * _radius - k * k));
+                if (!fire)
+                {
+                    for (var d = -half + 0.5; d <= half; d += 2)
+                    {
+                        var at = vertical ? new Position(c.X + k, c.Y + (float)d) : new Position(c.X + (float)d, c.Y + k);
+                        Strike.Mark(host, at, 0.6, _telegraphMs, 0xFFFFD24A);
+                    }
+                    continue;
+                }
+                // from the platform's far edge, across (not from beyond it: clients end a shot as soon as
+                // it is over a square with no ground, the void)
+                var from = (float)Math.Max(0, half - 0.6);
+                if (vertical)
+                    Strike.FireFrom(host, c.X + k, c.Y - dir * from, _projectile, dir * Math.PI / 2);
+                else
+                    Strike.FireFrom(host, c.X - dir * from, c.Y + k, _projectile, dir > 0 ? 0 : Math.PI);
+            }
+        }
+    }
+
+    // Vesper's Fourfold Veil, as it rises: anyone on the platform outside the diamond (`diamond`
+    // tiles to each point round the host's spawn) or on its cross is moved into the middle of the
+    // nearest quadrant, so no one starts on the burning floor or caught in the walls.
+    internal class GatherIntoQuadrants : Behavior
+    {
+        private readonly int _diamond;
+        private readonly double _reach;
+
+        public GatherIntoQuadrants(int diamond, double reach)
+        {
+            _diamond = diamond;
+            _reach = reach;
+        }
+
+        protected override void OnStateEntry(Entity host, TickTime time, ref object state)
+        {
+            var c = host.SpawnPoint.Value;
+            var into = _diamond / 2.0f - 0.5f;
+            foreach (var player in host.World.Players.Values)
+            {
+                float dx = player.X - c.X, dy = player.Y - c.Y;
+                if (Math.Sqrt(dx * dx + dy * dy) > _reach)
+                    continue;
+                var inside = Math.Abs(dx) + Math.Abs(dy) < _diamond - 0.5 && Math.Abs(dx) >= 1 && Math.Abs(dy) >= 1;
+                if (inside)
+                    continue;
+                var sx = Math.Abs(dx) < 0.5 ? (Random.Next(2) == 0 ? -1 : 1) : Math.Sign(dx);
+                var sy = Math.Abs(dy) < 0.5 ? (Random.Next(2) == 0 ? -1 : 1) : Math.Sign(dy);
+                player.TeleportPosition(time, new Position(c.X + sx * into, c.Y + sy * into), true);
+            }
+        }
+
+        protected override void TickCore(Entity host, TickTime time, ref object state) { }
+    }
+
+    // Puts the pets within `range` of the host under `effect` for `durationMs`, renewed every
+    // `coolDown` while the state lasts (pets in stasis neither heal nor attack: the survival phases).
+    internal class PetAura : Behavior
+    {
+        private readonly double _range;
+        private readonly ConditionEffectIndex _effect;
+        private readonly int _durationMs;
+        private readonly Cooldown _coolDown;
+
+        public PetAura(double range, ConditionEffectIndex effect, int durationMs, Cooldown coolDown = new Cooldown())
+        {
+            _range = range;
+            _effect = effect;
+            _durationMs = durationMs;
+            _coolDown = coolDown.Normalize(500);
+        }
+
+        protected override void OnStateEntry(Entity host, TickTime time, ref object state) => state = 0;
+
+        protected override void TickCore(Entity host, TickTime time, ref object state)
+        {
+            var cool = (int)state - time.ElapsedMsDelta;
+            if (cool > 0)
+            {
+                state = cool;
+                return;
+            }
+            state = _coolDown.Next(Random);
+            foreach (var pet in host.World.Pets.Values)
+                if (pet.DistTo(host) <= _range)
+                    pet.ApplyConditionEffect(new ConditionEffect(_effect, _durationMs));
         }
     }
 

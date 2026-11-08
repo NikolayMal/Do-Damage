@@ -4,42 +4,49 @@
 		<Class>Projectile</Class>
 		<Texture>
 			<File>blackBetween8x8</File>
-			<Index>0x10</Index>
+			<Index>0x16</Index>
 		</Texture>
 	</Object>
 	<Object type="0x8D21" id="Umbral Orb">
 		<Class>Projectile</Class>
 		<Texture>
 			<File>blackBetween8x8</File>
-			<Index>0x11</Index>
+			<Index>0x17</Index>
 		</Texture>
 	</Object>
 	<Object type="0x8D22" id="Dawn Crescent">
 		<Class>Projectile</Class>
 		<Texture>
 			<File>blackBetween8x8</File>
-			<Index>0x12</Index>
+			<Index>0x18</Index>
 		</Texture>
 	</Object>
 	<Object type="0x8D23" id="Sunspark">
 		<Class>Projectile</Class>
 		<Texture>
 			<File>blackBetween8x8</File>
-			<Index>0x13</Index>
+			<Index>0x19</Index>
 		</Texture>
 	</Object>
 	<Object type="0x8D24" id="Eclipse Orb">
 		<Class>Projectile</Class>
 		<Texture>
 			<File>blackBetween8x8</File>
-			<Index>0x14</Index>
+			<Index>0x1a</Index>
 		</Texture>
 	</Object>
 	<Object type="0x8D25" id="Starbound Mote">
 		<Class>Projectile</Class>
 		<Texture>
 			<File>blackBetween8x8</File>
-			<Index>0x15</Index>
+			<Index>0x1b</Index>
+		</Texture>
+	</Object>
+	<Object type="0x8D38" id="Dawn Sword">
+		<Class>Projectile</Class>
+		<Texture>
+			<File>blackBetween16x16</File>
+			<Index>0x00</Index>
 		</Texture>
 	</Object>
 	<Object type="0x8D26" id="Mysterious One Herald">
@@ -93,6 +100,8 @@
 			<Speed>90</Speed>
 			<LifetimeMS>2400</LifetimeMS>
 			<Size>100</Size>
+			<Amplitude>1.0</Amplitude>
+			<Frequency>1.5</Frequency>
 		</Projectile>
 		<Projectile id="1">
 			<ObjectId>Umbral Orb</ObjectId>
@@ -100,6 +109,8 @@
 			<Speed>55</Speed>
 			<LifetimeMS>4000</LifetimeMS>
 			<Size>110</Size>
+			<Amplitude>1.2</Amplitude>
+			<Frequency>0.5</Frequency>
 			<ConditionEffect duration="2">Darkness</ConditionEffect>
 		</Projectile>
 		<Projectile id="2">
@@ -135,6 +146,14 @@
 			<Size>110</Size>
 			<ConditionEffect duration="1.5">Darkness</ConditionEffect>
 		</Projectile>
+		<Projectile id="6">
+			<ObjectId>Dawn Sword</ObjectId>
+			<Damage>400</Damage>
+			<Speed>160</Speed>
+			<LifetimeMS>2400</LifetimeMS>
+			<Size>200</Size>
+			<MultiHit />
+		</Projectile>
 	</Object>
 	<Object type="0x8D28" id="Vesper, the Dusk Star">
 		<Class>Character</Class>
@@ -160,6 +179,8 @@
 			<Speed>95</Speed>
 			<LifetimeMS>2300</LifetimeMS>
 			<Size>100</Size>
+			<Amplitude>1.0</Amplitude>
+			<Frequency>1.5</Frequency>
 		</Projectile>
 		<Projectile id="1">
 			<ObjectId>Umbral Orb</ObjectId>
@@ -167,6 +188,8 @@
 			<Speed>50</Speed>
 			<LifetimeMS>4200</LifetimeMS>
 			<Size>110</Size>
+			<Amplitude>1.2</Amplitude>
+			<Frequency>0.5</Frequency>
 			<ConditionEffect duration="1.5">Darkness</ConditionEffect>
 		</Projectile>
 	</Object>
@@ -190,6 +213,8 @@
 			<Speed>80</Speed>
 			<LifetimeMS>2200</LifetimeMS>
 			<Size>100</Size>
+			<Amplitude>1.0</Amplitude>
+			<Frequency>1.5</Frequency>
 		</Projectile>
 	</Object>
 	<Object type="0x8D2A" id="Spectral Vesper">
@@ -212,6 +237,8 @@
 			<Speed>80</Speed>
 			<LifetimeMS>2200</LifetimeMS>
 			<Size>100</Size>
+			<Amplitude>1.0</Amplitude>
+			<Frequency>1.5</Frequency>
 		</Projectile>
 	</Object>
 	<Object type="0x8D2B" id="Aurel, the Dawn Blade">
@@ -276,52 +303,20 @@
 			<MultiHit />
 		</Projectile>
 		<Projectile id="4">
-			<ObjectId>Sunspark</ObjectId>
+			<ObjectId>Dawn Crescent</ObjectId>
 			<Damage>200</Damage>
-			<Speed>120</Speed>
-			<LifetimeMS>450</LifetimeMS>
-			<Size>120</Size>
+			<Speed>80</Speed>
+			<LifetimeMS>1800</LifetimeMS>
+			<Size>110</Size>
+			<MultiHit />
 		</Projectile>
 		<Projectile id="5">
-			<ObjectId>Dawn Crescent</ObjectId>
-			<Damage>190</Damage>
-			<Speed>55</Speed>
-			<LifetimeMS>1500</LifetimeMS>
-			<Size>110</Size>
+			<ObjectId>Dawn Sword</ObjectId>
+			<Damage>400</Damage>
+			<Speed>160</Speed>
+			<LifetimeMS>2400</LifetimeMS>
+			<Size>200</Size>
 			<MultiHit />
-			<ConditionEffect duration="1.5">Dazed</ConditionEffect>
-		</Projectile>
-	</Object>
-	<Object type="0x8D2C" id="Aurel's Reflection">
-		<DisplayId>Aurel, the Dawn Blade</DisplayId>
-		<Class>Character</Class>
-		<Enemy />
-		<AnimatedTexture>
-			<File>blackBetweenChars32x32</File>
-			<Index>6</Index>
-		</AnimatedTexture>
-		<HitSound>monster/ghost_god_hit</HitSound>
-		<DeathSound>monster/ghost_god_death</DeathSound>
-		<Size>85</Size>
-		<MaxHitPoints>100000</MaxHitPoints>
-		<Defense>0</Defense>
-		<StasisImmune />
-		<XpMult>0</XpMult>
-		<Projectile id="0">
-			<ObjectId>Sunspark</ObjectId>
-			<Damage>200</Damage>
-			<Speed>120</Speed>
-			<LifetimeMS>450</LifetimeMS>
-			<Size>120</Size>
-		</Projectile>
-		<Projectile id="1">
-			<ObjectId>Dawn Crescent</ObjectId>
-			<Damage>190</Damage>
-			<Speed>55</Speed>
-			<LifetimeMS>1500</LifetimeMS>
-			<Size>110</Size>
-			<MultiHit />
-			<ConditionEffect duration="1.5">Dazed</ConditionEffect>
 		</Projectile>
 	</Object>
 	<Object type="0x8D2D" id="Spectral Aurel">
@@ -352,48 +347,12 @@
 			<Size>100</Size>
 		</Projectile>
 	</Object>
-	<Object type="0x8D2E" id="Sword of the Dawn">
-		<Class>Character</Class>
-		<Enemy />
-		<Texture>
-			<File>blackBetween32x32</File>
-			<Index>0x00</Index>
-		</Texture>
-		<HitSound>monster/stone_walls_hit</HitSound>
-		<DeathSound>monster/stone_walls_death</DeathSound>
-		<Size>100</Size>
-		<MaxHitPoints>60000</MaxHitPoints>
-		<Defense>60</Defense>
-		<StasisImmune />
-		<XpMult>0</XpMult>
-	</Object>
-	<Object type="0x8D2F" id="Dawn Templar">
-		<Class>Character</Class>
-		<Enemy />
-		<AnimatedTexture>
-			<File>blackBetweenChars8x8</File>
-			<Index>0</Index>
-		</AnimatedTexture>
-		<HitSound>monster/ghost_god_hit</HitSound>
-		<DeathSound>monster/ghost_god_death</DeathSound>
-		<Size>110</Size>
-		<MaxHitPoints>9000</MaxHitPoints>
-		<Defense>40</Defense>
-		<Projectile id="0">
-			<ObjectId>Dawn Crescent</ObjectId>
-			<Damage>160</Damage>
-			<Speed>60</Speed>
-			<LifetimeMS>1300</LifetimeMS>
-			<Size>100</Size>
-			<ConditionEffect duration="2">Slowed</ConditionEffect>
-		</Projectile>
-	</Object>
 	<Object type="0x8D30" id="Dusk Shade">
 		<Class>Character</Class>
 		<Enemy />
 		<AnimatedTexture>
 			<File>blackBetweenChars8x8</File>
-			<Index>1</Index>
+			<Index>0</Index>
 		</AnimatedTexture>
 		<HitSound>monster/ghost_god_hit</HitSound>
 		<DeathSound>monster/ghost_god_death</DeathSound>
@@ -410,51 +369,110 @@
 		</Projectile>
 	</Object>
 	<Object type="0x8D31" id="Starbound Sentinel">
-		<Class>Character</Class>
-		<Enemy />
-		<AnimatedTexture>
-			<File>blackBetweenChars8x8</File>
-			<Index>2</Index>
-		</AnimatedTexture>
-		<HitSound>monster/ghost_god_hit</HitSound>
-		<DeathSound>monster/ghost_god_death</DeathSound>
+		<Class>GameObject</Class>
+		<Texture>
+			<File>blackBetween8x8</File>
+			<Index>0x1c</Index>
+		</Texture>
+		<Animation prob="1.0">
+			<Frame time="0.4">
+				<Texture>
+					<File>blackBetween8x8</File>
+					<Index>0x1c</Index>
+				</Texture>
+			</Frame>
+			<Frame time="0.4">
+				<Texture>
+					<File>blackBetween8x8</File>
+					<Index>0x1d</Index>
+				</Texture>
+			</Frame>
+		</Animation>
 		<Size>120</Size>
-		<MaxHitPoints>14000</MaxHitPoints>
-		<Defense>30</Defense>
-		<Flying />
+		<NoMiniMap />
 		<Projectile id="0">
 			<ObjectId>Starbound Mote</ObjectId>
-			<Damage>150</Damage>
+			<Damage>0</Damage>
 			<Speed>50</Speed>
 			<LifetimeMS>3000</LifetimeMS>
 			<Size>100</Size>
 		</Projectile>
 		<Projectile id="1">
 			<ObjectId>Starbound Mote</ObjectId>
-			<Damage>130</Damage>
+			<Damage>0</Damage>
 			<Speed>90</Speed>
 			<LifetimeMS>1800</LifetimeMS>
 			<Size>100</Size>
 		</Projectile>
+	</Object>
+	<Object type="0x8D39" id="Dusk Pylon">
+		<Class>GameObject</Class>
+		<Texture>
+			<File>blackBetween8x8</File>
+			<Index>0x1e</Index>
+		</Texture>
+		<Animation prob="1.0">
+			<Frame time="0.5">
+				<Texture>
+					<File>blackBetween8x8</File>
+					<Index>0x1e</Index>
+				</Texture>
+			</Frame>
+			<Frame time="0.5">
+				<Texture>
+					<File>blackBetween8x8</File>
+					<Index>0x1f</Index>
+				</Texture>
+			</Frame>
+		</Animation>
+		<Size>150</Size>
+		<Static />
+		<OccupySquare />
+		<EnemyOccupySquare />
+	</Object>
+	<Object type="0x8D3A" id="Dawn Pylon">
+		<Class>GameObject</Class>
+		<Texture>
+			<File>blackBetween8x8</File>
+			<Index>0x20</Index>
+		</Texture>
+		<Animation prob="1.0">
+			<Frame time="0.5">
+				<Texture>
+					<File>blackBetween8x8</File>
+					<Index>0x20</Index>
+				</Texture>
+			</Frame>
+			<Frame time="0.5">
+				<Texture>
+					<File>blackBetween8x8</File>
+					<Index>0x21</Index>
+				</Texture>
+			</Frame>
+		</Animation>
+		<Size>150</Size>
+		<Static />
+		<OccupySquare />
+		<EnemyOccupySquare />
 	</Object>
 	<Object type="0x8D32" id="Dusk Mine">
 		<Class>Character</Class>
 		<Enemy />
 		<Texture>
 			<File>blackBetween8x8</File>
-			<Index>0x16</Index>
+			<Index>0x22</Index>
 		</Texture>
 		<Animation prob="1.0">
 			<Frame time="0.2">
 				<Texture>
 					<File>blackBetween8x8</File>
-					<Index>0x16</Index>
+					<Index>0x22</Index>
 				</Texture>
 			</Frame>
 			<Frame time="0.2">
 				<Texture>
 					<File>blackBetween8x8</File>
-					<Index>0x17</Index>
+					<Index>0x23</Index>
 				</Texture>
 			</Frame>
 		</Animation>
@@ -475,15 +493,9 @@
 		<Class>GameObject</Class>
 		<Texture>
 			<File>blackBetween16x16</File>
-			<Index>0x00</Index>
+			<Index>0x01</Index>
 		</Texture>
 		<Animation prob="1.0">
-			<Frame time="0.15">
-				<Texture>
-					<File>blackBetween16x16</File>
-					<Index>0x00</Index>
-				</Texture>
-			</Frame>
 			<Frame time="0.15">
 				<Texture>
 					<File>blackBetween16x16</File>
@@ -494,6 +506,12 @@
 				<Texture>
 					<File>blackBetween16x16</File>
 					<Index>0x02</Index>
+				</Texture>
+			</Frame>
+			<Frame time="0.15">
+				<Texture>
+					<File>blackBetween16x16</File>
+					<Index>0x03</Index>
 				</Texture>
 			</Frame>
 		</Animation>
@@ -508,15 +526,9 @@
 		<Class>GameObject</Class>
 		<Texture>
 			<File>blackBetween16x16</File>
-			<Index>0x03</Index>
+			<Index>0x04</Index>
 		</Texture>
 		<Animation prob="1.0">
-			<Frame time="0.15">
-				<Texture>
-					<File>blackBetween16x16</File>
-					<Index>0x03</Index>
-				</Texture>
-			</Frame>
 			<Frame time="0.15">
 				<Texture>
 					<File>blackBetween16x16</File>
@@ -527,6 +539,12 @@
 				<Texture>
 					<File>blackBetween16x16</File>
 					<Index>0x05</Index>
+				</Texture>
+			</Frame>
+			<Frame time="0.15">
+				<Texture>
+					<File>blackBetween16x16</File>
+					<Index>0x06</Index>
 				</Texture>
 			</Frame>
 		</Animation>
@@ -541,15 +559,9 @@
 		<Class>GameObject</Class>
 		<Texture>
 			<File>blackBetween16x16</File>
-			<Index>0x06</Index>
+			<Index>0x07</Index>
 		</Texture>
 		<Animation prob="1.0">
-			<Frame time="0.12">
-				<Texture>
-					<File>blackBetween16x16</File>
-					<Index>0x06</Index>
-				</Texture>
-			</Frame>
 			<Frame time="0.12">
 				<Texture>
 					<File>blackBetween16x16</File>
@@ -566,6 +578,12 @@
 				<Texture>
 					<File>blackBetween16x16</File>
 					<Index>0x09</Index>
+				</Texture>
+			</Frame>
+			<Frame time="0.12">
+				<Texture>
+					<File>blackBetween16x16</File>
+					<Index>0x0a</Index>
 				</Texture>
 			</Frame>
 		</Animation>

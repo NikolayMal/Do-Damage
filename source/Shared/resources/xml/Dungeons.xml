@@ -355,6 +355,8 @@
 		<Width>48</Width>
 		<Height>72</Height>
 		<MapJM>Dungeons/The Black Between/The Black Between.jm</MapJM>
+		<!-- the Rust client's starry void sky (voidsky.rs SKY_VOID) and the platform's undersides -->
+		<Background>8</Background>
 		<VisibilityType>1</VisibilityType>
 		<Dungeon/>
 	</World>
