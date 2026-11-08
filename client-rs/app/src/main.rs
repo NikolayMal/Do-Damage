@@ -38,6 +38,7 @@ mod sky;
 mod sprites;
 mod stars;
 mod sunset;
+mod voidsky;
 mod text;
 mod textedit;
 mod theme;

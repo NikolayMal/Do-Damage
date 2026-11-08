@@ -21,7 +21,7 @@
 		</RandomTexture>
 		<Color>0x2A2442</Color>
 	</Ground>
-	<Ground type="0x8D01" id="Astral Inlay">
+	<Ground type="0x8D02" id="Platform Rim">
 		<RandomTexture>
 			<Texture>
 				<File>blackBetween8x8</File>
@@ -31,11 +31,6 @@
 				<File>blackBetween8x8</File>
 				<Index>0x05</Index>
 			</Texture>
-		</RandomTexture>
-		<Color>0x3A2E5A</Color>
-	</Ground>
-	<Ground type="0x8D02" id="Platform Rim">
-		<RandomTexture>
 			<Texture>
 				<File>blackBetween8x8</File>
 				<Index>0x06</Index>
@@ -97,5 +92,39 @@
 			</Texture>
 		</RandomTexture>
 		<Color>0x8A80D0</Color>
+	</Ground>
+	<Ground type="0x8D06" id="BB Underside Rock">
+		<RandomTexture>
+			<Texture>
+				<File>blackBetween8x8</File>
+				<Index>0x10</Index>
+			</Texture>
+			<Texture>
+				<File>blackBetween8x8</File>
+				<Index>0x11</Index>
+			</Texture>
+			<Texture>
+				<File>blackBetween8x8</File>
+				<Index>0x12</Index>
+			</Texture>
+			<Texture>
+				<File>blackBetween8x8</File>
+				<Index>0x13</Index>
+			</Texture>
+		</RandomTexture>
+		<Color>0x1A1430</Color>
+	</Ground>
+	<Ground type="0x8D07" id="BB Underside Rim">
+		<RandomTexture>
+			<Texture>
+				<File>blackBetween8x8</File>
+				<Index>0x14</Index>
+			</Texture>
+			<Texture>
+				<File>blackBetween8x8</File>
+				<Index>0x15</Index>
+			</Texture>
+		</RandomTexture>
+		<Color>0x2E2648</Color>
 	</Ground>
 </GroundTypes>

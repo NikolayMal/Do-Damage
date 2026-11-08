@@ -1247,11 +1247,22 @@ pub fn draw(scene: &Scene, renderer: &mut Renderer, redrawer: &mut Redrawer, gro
     // islands (`<SkyUnder/>` models: their rocky undersides, the bridges' piers), back to front,
     // before any floor: everything else stands in front of them.
     let sky_under = |item: &Item| matches!(item, Item::Model { desc, .. } if desc.sky_under);
-    if world.background == crate::sunset::SKY_SUNSET {
-        ground.sky.draw(renderer, &cam, scene.time);
+    // The Black Between's void is the same: its starry sky, and rock hanging under the platform.
+    let islands = match world.background {
+        crate::sunset::SKY_SUNSET => {
+            ground.sky.draw(renderer, &cam, scene.time);
+            Some(&crate::islands::SUNSET)
+        }
+        crate::voidsky::SKY_VOID => {
+            ground.void_sky.draw(renderer, &cam, scene.time);
+            Some(&crate::islands::VOID)
+        }
+        _ => None,
+    };
+    if let Some(style) = islands {
         // rock hangs below its floor, so it shows from further up the screen
         let below = 14;
-        ground.undersides.draw(world, scene.data, scene.sprites, renderer, &cam, x0, x1, y0 - raise as i32 - below, y1 + raise as i32);
+        ground.undersides.draw(world, scene.data, scene.sprites, renderer, &cam, x0, x1, y0 - raise as i32 - below, y1 + raise as i32, style);
     }
     for (_, item) in items.iter().filter(|(_, i)| sky_under(i)) {
         if let Item::Model { obj, desc, model } = item {
