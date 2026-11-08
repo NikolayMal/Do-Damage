@@ -1,0 +1,665 @@
+using System;
+using Shared.resources;
+using WorldServer.logic.behaviors;
+using WorldServer.logic.transitions;
+
+namespace WorldServer.logic
+{
+    // The Black Between (tools/build_black_between.py), the Mysterious One's dungeon: the voice that
+    // interrupts Oryx at the end of Realm 2, in person. On a platform floating in the void he tries
+    // those who silenced a realm against his daughter Vesper, the Dusk Star (purple and dark, a
+    // mage), his son Aurel, the Dawn Blade (gold and bright, a swordsman), and then himself, with
+    // both of their powers. Meant to be harder than Oryx 5, for players in full Enthroned gear.
+    //
+    // The Observatory Heart, invisible at the platform's centre, runs the arena: the bosses order it
+    // into each phase, and it raises the walls of light, turns the floor and sends the starfall, so
+    // all of it is centred on the platform and comes and goes with its states. The bosses come down
+    // at the centre too (it spawns them there), so their spawn point is the platform's middle.
+    //
+    // Sizes from the map: the platform's floor reaches PlatformR tiles from the middle, the inlaid
+    // diamond's points (and its cross's arms) Diamond tiles.
+    partial class BehaviorDb
+    {
+        private const double PlatformR = 17;
+        private const int Diamond = 8;
+        // once the Mysterious One breaks it, the platform's edge is gone down to this
+        private const double BrokenR = 12.5;
+        private const uint Red = 0xFFFF3030;
+        private const uint Gold = 0xFFFFD24A;
+        private const uint Violet = 0xFFB040FF;
+
+        private _ BlackBetween = () => Behav()
+            // ---- the arena ----
+            .Init("Observatory Heart",
+                new State(
+                    new State("Waiting"),
+                    new State("Summon Vesper",
+                        new Spawn("Vesper, the Dusk Star", 1, 1, givesNoXp: false),
+                        new TimedTransition(500, "Trial I")
+                    ),
+                    new State("Trial I",
+                        new EntityNotExistsTransition("Vesper, the Dusk Star", 40, "Interlude"),
+                        new State("T1 Calm"),
+                        // the Fourfold Veil: outside the diamond the floor burns, the cross is walls,
+                        // and starshards fall into the four quadrants from Vesper and her copies
+                        HeartVeil("T1 Veil", 300),
+                        HeartVeil("T1 Veil Fast", 200),
+                        // the Gravity Well: rings closing in from the edge
+                        new State("T1 Well",
+                            new SpawnRing("Gravity Point", 24, PlatformR - 1.5, aroundSpawn: true),
+                            new RemoveEntitiesOnExit(30, "Gravity Point")
+                        )
+                    ),
+                    // starfall over the whole platform while Aurel comes down
+                    // (an Order acts every tick its state lasts, so each call to another object is a
+                    // state of its own, shorter than whatever it sets off)
+                    new State("Interlude",
+                        new State("Interlude Call",
+                            new Order(40, "Mysterious One Herald", "Interlude Speech"),
+                            new TimedTransition(150, "Interlude Rain")
+                        ),
+                        new State("Interlude Rain",
+                            new Starfall(Starfall.Area.Scatter, PlatformR - 1, 1.6, 330, 250, color: Red),
+                            new TimedTransition(10000, "Summon Aurel")
+                        )
+                    ),
+                    new State("Summon Aurel",
+                        new Spawn("Aurel, the Dawn Blade", 1, 1, givesNoXp: false),
+                        new TimedTransition(500, "Trial II")
+                    ),
+                    new State("Trial II",
+                        new EntityNotExistsTransition("Aurel, the Dawn Blade", 40, "Before III"),
+                        new State("T2 Calm"),
+                        // the Sundering: a wall of dawnlight north and south through the planted sword
+                        // (the sword's own square stays open: a wall there would stop the shots at it,
+                        // and its light slows anyone squeezing past)
+                        new State("T2 Sundering",
+                            new PlaceObject("Dawnlight Wall", 0, -(int)PlatformR, 0, -1, removeOnExit: true),
+                            new PlaceObject("Dawnlight Wall", 0, 1, 0, (int)PlatformR, removeOnExit: true),
+                            // and across the causeway's mouth (columns 22 to 25 of the map, the middle
+                            // is 24), so it can't be walked round
+                            new PlaceObject("Dawnlight Wall", -2, (int)PlatformR, 1, (int)PlatformR, removeOnExit: true)
+                        )
+                    ),
+                    new State("Before III",
+                        new State("Before III Call",
+                            new Order(40, "Mysterious One Herald", "Descend"),
+                            new TimedTransition(150, "Before III Wait")
+                        ),
+                        new State("Before III Wait", new TimedTransition(4000, "Summon Father"))
+                    ),
+                    new State("Summon Father",
+                        new Spawn("The Mysterious One", 1, 1, givesNoXp: false),
+                        new TimedTransition(500, "Trial III")
+                    ),
+                    new State("Trial III",
+                        new EntityNotExistsTransition("The Mysterious One", 40, "Done"),
+                        new State("T3 Calm"),
+                        // from 70% the platform's edge is gone for the rest of the fight
+                        new State("T3 Broken",
+                            new LavaRing("Black Between", PlatformR, PlatformR, BrokenR, 3, 12000),
+                            new State("T3B Crumble",
+                                new Starfall(Starfall.Area.Scatter, BrokenR, 1.8, 360, 400, color: Red, origins: new[] { "The Mysterious One" })
+                            ),
+                            new State("T3B Calm"),
+                            // the Eclipse: Vesper's veil with Aurel's walls, starshards from her spectres
+                            new State("T3B Eclipse",
+                                new PaintFloor("Veil of Dusk", BrokenR, (dx, dy) => Math.Abs(dx) + Math.Abs(dy) > Diamond),
+                                new PlaceObject("Dawnlight Wall", 0, -Diamond, 0, Diamond, removeOnExit: true),
+                                new PlaceObject("Dawnlight Wall", -Diamond, 0, Diamond, 0, removeOnExit: true),
+                                new SpawnRing("Spectral Vesper", 4, Diamond, aroundSpawn: true),
+                                new RemoveEntitiesOnExit(30, "Spectral Vesper"),
+                                new Starfall(Starfall.Area.Diamond, Diamond, 1.6, 360, 350, color: Red,
+                                    effect: ConditionEffectIndex.Quiet, effectMs: 1500, origins: new[] { "Spectral Vesper" }, throwColor: Violet)
+                            ),
+                            // the Black Between: only the Constellation Path is safe
+                            new State("T3B Black",
+                                // out to where the burnt rim begins, so no ring of floor is left between them
+                                new ConstellationPath("Black Between", "Constellation Path", BrokenR + 0.5)
+                            ),
+                            // his daughter's spectres on the rim, starshards at the players
+                            new State("T3B Rain",
+                                new SpawnRing("Spectral Vesper", 2, BrokenR - 1, 90, aroundSpawn: true),
+                                new RemoveEntitiesOnExit(30, "Spectral Vesper"),
+                                new Starfall(Starfall.Area.Players, BrokenR + 3, 1.7, 360, 650, color: Red,
+                                    effect: ConditionEffectIndex.Quiet, effectMs: 1500, origins: new[] { "Spectral Vesper" }, throwColor: Violet)
+                            )
+                        )
+                    ),
+                    new State("Done")
+                )
+            )
+            .Init("Gravity Point",
+                new State(
+                    new ShootFromCenter("Observatory Heart", new[] { 0 }, inward: true, coolDown: 2600, coolDownOffset: 400)
+                )
+            )
+
+            // ---- the Mysterious One's herald: the voice, walking out of the Rift ----
+            // He wakes when someone reaches the middle of the platform, walks out of the Rift and sets
+            // the trials, then stands before it and watches; he speaks between the trials, and before
+            // the third he is gone and the Mysterious One comes down in the middle.
+            .Init("Mysterious One Herald",
+                new State(
+                    new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                    // he stands 14 tiles north of the middle: anyone near the middle wakes him
+                    new State("Dormant", new PlayerWithinTransition(19, "Step Out")),
+                    new State("Step Out",
+                        new Flash(0xFFB040FF, 0.3, 4),
+                        new MoveLine(0.5, 90, 4),
+                        new Taunt(true, "This is interesting...") { Bubble = false },
+                        new TimedTransition(3500, "Speak 1")
+                    ),
+                    new State("Speak 1",
+                        new Taunt(true, "So you are the ones who silenced the Mad God's realm. I heard every step.") { Bubble = false },
+                        new TimedTransition(4000, "Speak 2")
+                    ),
+                    new State("Speak 2",
+                        new Taunt(true, "No one has needed a name for me in a very long time. Keep calling me a voice, if you like.") { Bubble = false },
+                        new TimedTransition(4000, "Speak 3")
+                    ),
+                    new State("Speak 3",
+                        new Taunt(true, "Three trials. My daughter, who keeps the dark. My son, who keeps the light. And then... me.") { Bubble = false },
+                        new TimedTransition(4500, "Speak 4")
+                    ),
+                    new State("Speak 4",
+                        new Taunt(true, "Vesper. Show them the dark.") { Bubble = false },
+                        new TimedTransition(800, "Call Vesper")
+                    ),
+                    new State("Call Vesper",
+                        new Order(40, "Observatory Heart", "Summon Vesper"),
+                        new TimedTransition(150, "Watching")
+                    ),
+                    // he stays out in front of the Rift, watching
+                    new State("Watching"),
+                    new State("Interlude Speech",
+                        new Taunt(true, "She held you longer than most. Aurel... your turn.") { Bubble = false },
+                        new TimedTransition(500, "Watching")
+                    ),
+                    new State("Descend",
+                        new Flash(0xFFFFD24A, 0.3, 8),
+                        new Taunt(true, "Then you will face what they came from.") { Bubble = false },
+                        new TimedTransition(3000, "Gone")
+                    ),
+                    new State("Gone", new Suicide())
+                )
+            )
+
+            // ---- Trial I: Vesper, the Dusk Star ----
+            // - 100% to 75%: Dusk Volley (an aimed fan of bolts) and the Umbral Ring.
+            // - 75%: the Fourfold Veil (14 s, invulnerable).
+            // - 75% to 50%: the Starfall Waltz as well: she blinks round the platform, leaving dusk
+            //   mines that burst.
+            // - 50%: the Veil again, faster, her copies firing down its walls.
+            // - 50% to 20%: the Gravity Well in turn with her kit.
+            // - Below 20%: Nightfall: darkness on everyone, Dusk Shades drifting in.
+            .Init("Vesper, the Dusk Star",
+                new State(
+                    new BossStats(240000, 80, 1.0, 0.35),
+                    new State("Arrive",
+                        new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                        new Flash(0xFFB040FF, 0.3, 6),
+                        new Taunt(true, "As you wish, Father.") { Bubble = false },
+                        new TimedTransition(2500, "Dusk")
+                    ),
+                    new State("Dusk",
+                        new HpLessTransition(0.75, "Veil 1 Gather"),
+                        new Prioritize(new StayCloseToSpawn(0.6, 8), new Wander(0.4)),
+                        DuskVolley(1000),
+                        UmbralRing(3000)
+                    ),
+                    VeilPhase("Veil 1", "T1 Veil", 14000, "Waltz Stand"),
+                    new State("Waltz",
+                        new HpLessTransition(0.5, "Veil 2 Gather"),
+                        new State("Waltz Stand",
+                            new Prioritize(new StayCloseToSpawn(0.6, 12), new Wander(0.4)),
+                            DuskVolley(1000),
+                            UmbralRing(3000),
+                            new TimedTransition(3500, "Waltz Blink")
+                        ),
+                        new State("Waltz Blink",
+                            new TossObject("Dusk Mine", 0.5, 0, coolDown: 90000000),
+                            new TimedTransition(100, "Waltz Away")
+                        ),
+                        new State("Waltz Away",
+                            new BlinkAround(6, PlatformR - 3),
+                            new Flash(0xFFB040FF, 0.2, 2),
+                            new TimedTransition(400, "Waltz Stand")
+                        )
+                    ),
+                    VeilPhase("Veil 2", "T1 Veil Fast", 16000, "Well Kit"),
+                    new State("Well",
+                        new HpLessTransition(0.2, "Nightfall"),
+                        new State("Well Kit",
+                            new Order(40, "Observatory Heart", "T1 Calm"),
+                            new Prioritize(new StayCloseToSpawn(0.6, 8), new Wander(0.4)),
+                            DuskVolley(900),
+                            UmbralRing(2600),
+                            new TimedTransition(8000, "Well Pull")
+                        ),
+                        new State("Well Pull",
+                            new ReturnToSpawn(1.0),
+                            new Flash(0xFF5020A0, 0.3, 4),
+                            new Taunt(0.5, "Everything falls inward, in the end.") { Bubble = false },
+                            new Order(40, "Observatory Heart", "T1 Well"),
+                            DuskVolley(1400),
+                            new TimedTransition(9000, "Well Kit")
+                        )
+                    ),
+                    new State("Nightfall",
+                        new Order(40, "Observatory Heart", "T1 Calm"),
+                        new Taunt(true, "Then let it be night.") { Bubble = false },
+                        new ConditionAura(25, ConditionEffectIndex.Darkness, 1500, 1000),
+                        new Prioritize(new StayCloseToSpawn(0.7, 10), new Wander(0.5)),
+                        new TossObject("Dusk Shade", 9, coolDown: 4000),
+                        DuskVolley(800),
+                        UmbralRing(2200)
+                    )
+                )
+            )
+            .Init("Vesper's Veil Copy",
+                new State(
+                    new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                    new State("Live",
+                        new Shoot(12, 3, 15, projectileIndex: 0, predictive: 0.3, coolDown: 1600),
+                        // down the veil walls, towards the middle
+                        new ShootFromCenter("Observatory Heart", new[] { 0 }, inward: true, coolDown: 1100, coolDownOffset: 600)
+                    ),
+                    new State("Gone", new Suicide())
+                )
+            )
+            .Init("Dusk Mine",
+                new State(
+                    new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                    new State("Arm", new TimedTransition(1500, "Burst")),
+                    new State("Burst",
+                        new Shoot(0, 8, fixedAngle: 22.5, projectileIndex: 0, coolDown: 90000000),
+                        new TimedTransition(200, "Gone")
+                    ),
+                    new State("Gone", new Suicide())
+                )
+            )
+            .Init("Dusk Shade",
+                new State(
+                    new State("Drift",
+                        new Prioritize(new Follow(0.9, 20, 0), new Wander(0.4)),
+                        new PlayerWithinTransition(1.5, "Burst")
+                    ),
+                    new State("Burst",
+                        new Shoot(0, 10, fixedAngle: 0, projectileIndex: 0, coolDown: 90000000),
+                        new TimedTransition(150, "Gone")
+                    ),
+                    new State("Gone", new Suicide())
+                )
+            )
+
+            // ---- Trial II: Aurel, the Dawn Blade (AltTexture 1: the Solar Cyclone; 2: the Gauntlet
+            // Form, his sword planted) ----
+            // - 100% to 70%: Dawn Slash (three piercing crescents) and the Sunburst ring.
+            // - 70%: the Solar Cyclone: three dashes rim to rim, each through a player and marked first.
+            // - 70% to 40%: the Zenith Leap as well.
+            // - 40%: the Sundering: his sword in the middle (60,000 health), a wall of dawnlight
+            //   through it, one of him in each half and Dawn Templars from the sword. Break the sword
+            //   and he is stunned and armour-broken for 5 s; otherwise it ends after 30 s.
+            // - 40% to 15%: his kit with the Cyclone every so often; below 15%, High Noon.
+            .Init("Aurel, the Dawn Blade",
+                new State(
+                    new BossStats(280000, 100, 1.0, 0.35),
+                    new State("Arrive",
+                        new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                        new Flash(0xFFFFD24A, 0.3, 6),
+                        new Taunt(true, "Sister... I'll finish this.") { Bubble = false },
+                        new Shoot(0, 16, fixedAngle: 0, projectileIndex: 1, coolDown: 90000000),
+                        new TimedTransition(2500, "Dawn")
+                    ),
+                    new State("Dawn",
+                        new HpLessTransition(0.7, "Cyclone 1"),
+                        new Prioritize(new StayCloseToSpawn(0.9, 11), new Follow(0.75, 18, 3)),
+                        DawnSlash(1400),
+                        Sunburst(3000)
+                    ),
+                    Cyclone("Cyclone 1", "Zenith", 3),
+                    new State("Zenith",
+                        new SetAltTexture(0),
+                        new HpLessTransition(0.4, "Sunder Rise"),
+                        new Prioritize(new StayCloseToSpawn(0.9, 11), new Follow(0.75, 18, 3)),
+                        DawnSlash(1400),
+                        Sunburst(3000),
+                        new LeapStrike(20, 2.5, 420, 1500, 6000, 3)
+                    ),
+                    new State("Sundering",
+                        new State("Sunder Rise",
+                            new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                            new ReturnToSpawn(1.5),
+                            new Flash(0xFFFFD24A, 0.25, 8),
+                            new Taunt(true, "You want my sword? Then take it from the stone.") { Bubble = false },
+                            new TimedTransition(2000, "Sunder Plant")
+                        ),
+                        // each of him to a half first: the wall would stand in their way
+                        new State("Sunder Plant",
+                            new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                            new SetAltTexture(2),
+                            new Spawn("Sword of the Dawn", 1, 1),
+                            new TossObject("Aurel's Reflection", 5, 0, coolDown: 90000000),
+                            new MoveLine(1.5, 180, 5),
+                            new TimedTransition(1500, "Sunder Wall")
+                        ),
+                        new State("Sunder Wall",
+                            new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                            new SetAltTexture(2),
+                            new Order(40, "Observatory Heart", "T2 Sundering"),
+                            new TimedTransition(200, "Sunder Hunt")
+                        ),
+                        new State("Sunder Hunt",
+                            new Prioritize(new StayCloseToSpawn(1.0, 15), new Follow(0.85, 16, 1)),
+                            new Shoot(5, 3, 20, projectileIndex: 4, coolDown: 500),
+                            new Shoot(0, 10, fixedAngle: 0, projectileIndex: 5, coolDown: 2200),
+                            new EntityNotExistsTransition("Sword of the Dawn", 40, "Sunder Broken"),
+                            new TimedTransition(30000, "Sunder End")
+                        ),
+                        new State("Sunder Broken",
+                            new Order(40, "Aurel's Reflection", "Gone"),
+                            new Order(40, "Observatory Heart", "T2 Calm"),
+                            new Taunt(true, "My sword...!") { Bubble = false },
+                            new ConditionEffectBehavior(ConditionEffectIndex.Stunned, false, 5000),
+                            new ConditionEffectBehavior(ConditionEffectIndex.ArmorBroken, false, 5000),
+                            new TimedTransition(5000, "Noon Rise")
+                        ),
+                        new State("Sunder End",
+                            new Order(40, "Aurel's Reflection", "Gone"),
+                            new Order(40, "Sword of the Dawn", "Gone"),
+                            new Order(40, "Observatory Heart", "T2 Calm"),
+                            new TimedTransition(500, "Noon Rise")
+                        )
+                    ),
+                    new State("Noon Rise",
+                        new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                        new SetAltTexture(0),
+                        new ReturnToSpawn(1.5),
+                        new Taunt(true, "Again. From the top.") { Bubble = false },
+                        new TimedTransition(1500, "Noon Fight")
+                    ),
+                    new State("Noon",
+                        new HpLessTransition(0.15, "High Noon"),
+                        new State("Noon Fight",
+                            new SetAltTexture(0),
+                            new Prioritize(new StayCloseToSpawn(0.9, 11), new Follow(0.8, 18, 3)),
+                            DawnSlash(1200),
+                            Sunburst(2600),
+                            new LeapStrike(20, 2.5, 420, 1500, 7000, 3),
+                            new TimedTransition(9000, "Noon Cyclone")
+                        ),
+                        Cyclone("Noon Cyclone", "Noon Fight", 2)
+                    ),
+                    new State("High Noon",
+                        new State("High Noon Fight",
+                            new SetAltTexture(0),
+                            new Taunt(0.6, "HIGH NOON!") { Bubble = false },
+                            new Prioritize(new StayCloseToSpawn(0.9, 11), new Follow(0.85, 18, 3)),
+                            DawnSlash(1100),
+                            // a beam of sunsparks turning round him like a clock's hand, both ways
+                            new Shoot(0, 2, 180, fixedAngle: 0, rotateAngle: 12, projectileIndex: 1, coolDown: 160),
+                            new TimedTransition(8000, "High Noon Cyclone")
+                        ),
+                        Cyclone("High Noon Cyclone", "High Noon Fight", 2)
+                    )
+                )
+            )
+            .Init("Aurel's Reflection",
+                new State(
+                    new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                    new State("Hunt",
+                        new Prioritize(new StayCloseToSpawn(1.0, 15), new Follow(0.85, 16, 1)),
+                        new Shoot(5, 3, 20, projectileIndex: 0, coolDown: 500),
+                        new Shoot(0, 10, fixedAngle: 0, projectileIndex: 1, coolDown: 2200, coolDownOffset: 1100)
+                    ),
+                    new State("Gone", new Suicide())
+                )
+            )
+            .Init("Sword of the Dawn",
+                new State(
+                    new ConditionAura(1.5, ConditionEffectIndex.Slowed, 1500, 500),
+                    new State("Stand",
+                        new TossObject("Dawn Templar", 3, 0, coolDown: 6000, coolDownOffset: 1500),
+                        new TossObject("Dawn Templar", 3, 180, coolDown: 6000, coolDownOffset: 1500)
+                    ),
+                    new State("Gone", new Suicide())
+                )
+            )
+            .Init("Dawn Templar",
+                new State(
+                    new Prioritize(new Follow(0.9, 16, 1), new Wander(0.4)),
+                    new Shoot(6, 3, 25, projectileIndex: 0, coolDown: 1200)
+                )
+            )
+
+            // ---- Trial III: the Mysterious One ----
+            // - 100% to 70%: Twin Heritage: his violet eye (Vesper's kit, starshards at you) and his
+            //   gold eye (Aurel's kit, a spectral Cyclone) in turn; always a slow ring of Eclipse Orbs.
+            // - 70%: the Platform Breaks (15 s, invulnerable): its edge burns away to BrokenR for the
+            //   rest of the fight, meteors and a spectral Cyclone meanwhile.
+            // - 70% to 40%: Twin Heritage and the Eclipse in turn.
+            // - 40%: the Black Between (survive 22 s on the Constellation Path).
+            // - 40% to 10%: everything faster, his children's spectres casting in turn.
+            // - 10%: Supernova: get more than 9 tiles away from him in 5 s. Then the last 10%.
+            .Init("The Mysterious One",
+                new State(
+                    new BossStats(480000, 110, 1.0, 0.35),
+                    new AnnounceOnDeath("{PL_LIST} passed the Mysterious One's trials in the Black Between. \"This is... interesting.\""),
+                    new DropPortalOnDeath("Nexus Portal", 1.0, 60),
+                    new State("Arrive",
+                        new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                        new Flash(0xFFFFFFFF, 0.3, 8),
+                        new Taunt(true, "Dusk and dawn. Both mine. Both through me.") { Bubble = false },
+                        new TimedTransition(3000, "Heritage Dusk")
+                    ),
+                    new State("Heritage",
+                        new HpLessTransition(0.7, "Break"),
+                        new Prioritize(new StayCloseToSpawn(0.5, 4), new Wander(0.3)),
+                        EclipseRing(3200),
+                        HeritageDusk("Heritage Dusk", "Heritage Dawn", 6000, 1.0),
+                        HeritageDawn("Heritage Dawn", "Heritage Dusk", 6000, 1.0)
+                    ),
+                    new State("Break",
+                        new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                        new ReturnToSpawn(1.5),
+                        new Flash(0xFFFF4040, 0.3, 10),
+                        new Taunt(true, "This platform was a kindness. I take it back.") { Bubble = false },
+                        new Order(40, "Observatory Heart", "T3B Crumble"),
+                        new TossObject("Spectral Aurel", 2, 0, coolDown: 6000, coolDownOffset: 2000),
+                        new Shoot(0, 10, fixedAngle: 0, rotateAngle: 13, projectileIndex: 5, coolDown: 2400),
+                        new TimedTransition(15000, "Eclipse Heritage")
+                    ),
+                    new State("Eclipse",
+                        new HpLessTransition(0.4, "Black"),
+                        new State("Eclipse Heritage",
+                            new Order(40, "Observatory Heart", "T3B Calm"),
+                            new Prioritize(new StayCloseToSpawn(0.5, 4), new Wander(0.3)),
+                            EclipseRing(3000),
+                            HeritageDusk("E Dusk", "E Dawn", 5000, 0.9),
+                            HeritageDawn("E Dawn", "E Fall", 5000, 0.9),
+                            new State("E Fall", new TimedTransition(1, "Eclipse Fall"))
+                        ),
+                        new State("Eclipse Fall",
+                            new ReturnToSpawn(1.5),
+                            new Flash(0xFFB040FF, 0.3, 4),
+                            new Taunt(0.5, "Her veil. His walls. My stars.") { Bubble = false },
+                            new Order(40, "Observatory Heart", "T3B Eclipse"),
+                            new Shoot(0, 8, fixedAngle: 22.5, rotateAngle: 9, projectileIndex: 4, coolDown: 2800),
+                            new TimedTransition(14000, "Eclipse Heritage")
+                        )
+                    ),
+                    new State("Black",
+                        new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                        new ReturnToSpawn(1.5),
+                        new Taunt(true, "Now... see where I live. Stand in the light, while it lasts.") { Bubble = false },
+                        new Order(40, "Observatory Heart", "T3B Black"),
+                        new Shoot(0, 10, fixedAngle: 0, rotateAngle: 13, projectileIndex: 5, coolDown: 1700, coolDownOffset: 2500),
+                        new TimedTransition(22500, "Black End")
+                    ),
+                    new State("Black End",
+                        new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                        new Order(40, "Observatory Heart", "T3B Calm"),
+                        new TimedTransition(1500, "Children Heritage")
+                    ),
+                    new State("Children",
+                        new HpLessTransition(0.1, "Nova"),
+                        new Prioritize(new StayCloseToSpawn(0.6, 4), new Wander(0.3)),
+                        EclipseRing(2600),
+                        new State("Children Heritage",
+                            new Order(40, "Observatory Heart", "T3B Calm"),
+                            HeritageDusk("C Dusk", "C Dawn", 4000, 0.8),
+                            HeritageDawn("C Dawn", "C Daughter", 4000, 0.8),
+                            new State("C Daughter", new TimedTransition(1, "Children Daughter"))
+                        ),
+                        new State("Children Daughter",
+                            new Taunt(0.4, "Vesper.") { Bubble = false },
+                            new Order(40, "Observatory Heart", "T3B Rain"),
+                            DuskVolleyFather(1100),
+                            new TimedTransition(7000, "Children Son")
+                        ),
+                        new State("Children Son",
+                            new Order(40, "Observatory Heart", "T3B Calm"),
+                            new Taunt(0.4, "Aurel.") { Bubble = false },
+                            new TossObject("Spectral Aurel", 2, 0, coolDown: 90000000),
+                            new Shoot(14, 3, 20, projectileIndex: 2, coolDown: 1200),
+                            new TimedTransition(8000, "Children Heritage")
+                        )
+                    ),
+                    new State("Nova",
+                        new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                        new Order(40, "Observatory Heart", "T3B Calm"),
+                        new ReturnToSpawn(2),
+                        new Flash(0xFFFF2020, 0.25, 20),
+                        new Taunt(true, "Everything I am, all at once. RUN.") { Bubble = false },
+                        new Starfall(Starfall.Area.Host, 0, 9, 1600, 90000000, color: 0xFFFF2020, fillMs: 5000),
+                        new TimedTransition(6000, "Last")
+                    ),
+                    new State("Last",
+                        new Prioritize(new StayCloseToSpawn(0.7, 6), new Follow(0.6, 20, 4)),
+                        EclipseRing(2400),
+                        HeritageDusk("L Dusk", "L Dawn", 4000, 0.75),
+                        HeritageDawn("L Dawn", "L Dusk", 4000, 0.75)
+                    )
+                )
+            )
+            .Init("Spectral Vesper",
+                new State(
+                    new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                    new Shoot(12, 3, 15, projectileIndex: 0, predictive: 0.3, coolDown: 1600)
+                )
+            )
+            // a spectre of Aurel's Cyclone: one dash (AltTexture 1), then gone
+            .Init("Spectral Aurel",
+                new State(
+                    new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                    new State("Spin",
+                        new SetAltTexture(1),
+                        new CycloneDash(BrokenR + 3, 15, 900, 1, 0, contactDamage: 220),
+                        new TimedTransition(3800, "Gone")
+                    ),
+                    new State("Gone", new Suicide())
+                )
+            )
+
+            // ---- the Constellation Approach ----
+            .Init("Starbound Sentinel",
+                new State(
+                    new State("Idle", new PlayerWithinTransition(10, "Watch")),
+                    new State("Watch",
+                        new Prioritize(new StayCloseToSpawn(0.3, 1), new Wander(0.2)),
+                        new Shoot(0, 8, fixedAngle: 0, rotateAngle: 11, projectileIndex: 0, coolDown: 2200),
+                        new Shoot(10, 2, 14, projectileIndex: 1, coolDown: 1300)
+                    )
+                )
+            );
+
+        private static readonly string[] VesperNames = { "Vesper" };
+
+        // the Heart's Fourfold Veil: outside the diamond the floor burns, the cross is walls, and
+        // starshards fall into the four quadrants every `coolDown` ms, thrown by Vesper and her copies
+        private static State HeartVeil(string name, int coolDown) =>
+            new State(name,
+                new PaintFloor("Veil of Dusk", PlatformR, (dx, dy) => Math.Abs(dx) + Math.Abs(dy) > Diamond),
+                new PlaceObject("Veil Wall", 0, -Diamond, 0, Diamond, removeOnExit: true),
+                new PlaceObject("Veil Wall", -Diamond, 0, Diamond, 0, removeOnExit: true),
+                new Starfall(Starfall.Area.Diamond, Diamond, 1.6, 380, coolDown, color: Red,
+                    effect: ConditionEffectIndex.Quiet, effectMs: 1500, origins: VesperNames, throwColor: Violet)
+            );
+
+        // Vesper's Fourfold Veil: she goes to the middle, splits (copies east, south and west), goes
+        // to the north point herself, and the Heart raises the veil (heartState) for `ms`.
+        private static State VeilPhase(string name, string heartState, int ms, string next) =>
+            new State(name,
+                new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                new State(name + " Gather",
+                    new ReturnToSpawn(1.2),
+                    new Flash(0xFFB040FF, 0.25, 6),
+                    new Taunt(true, "Four of me. One of you. Choose your corner.") { Bubble = false },
+                    new TimedTransition(1800, name + " Split")
+                ),
+                // to the north point first: the walls would stand in her way
+                new State(name + " Split",
+                    new TossObject("Vesper's Veil Copy", Diamond, 0, coolDown: 90000000),
+                    new TossObject("Vesper's Veil Copy", Diamond, 90, coolDown: 90000000),
+                    new TossObject("Vesper's Veil Copy", Diamond, 180, coolDown: 90000000),
+                    new MoveLine(1.5, 270, Diamond),
+                    new TimedTransition(1200, name + " Hold")
+                ),
+                new State(name + " Hold",
+                    new Order(40, "Observatory Heart", heartState),
+                    new TimedTransition(ms, name + " End")
+                ),
+                new State(name + " End",
+                    new Order(40, "Vesper's Veil Copy", "Gone"),
+                    new Order(40, "Observatory Heart", "T1 Calm"),
+                    new ReturnToSpawn(1.0),
+                    new TimedTransition(1500, next)
+                )
+            );
+
+        private static Behavior DuskVolley(int coolDown) => new Shoot(14, 5, 12, projectileIndex: 0, predictive: 0.3, coolDown: coolDown);
+        private static Behavior UmbralRing(int coolDown) => new Shoot(0, 18, fixedAngle: 0, rotateAngle: 10, projectileIndex: 1, coolDown: coolDown);
+        private static Behavior DawnSlash(int coolDown) => new Shoot(14, 3, 20, projectileIndex: 0, coolDown: coolDown);
+        private static Behavior Sunburst(int coolDown) => new Shoot(0, 12, fixedAngle: 0, rotateAngle: 15, projectileIndex: 1, coolDown: coolDown);
+        private static Behavior EclipseRing(int coolDown) => new Shoot(0, 8, fixedAngle: 0, rotateAngle: 9, projectileIndex: 4, coolDown: coolDown);
+        private static Behavior DuskVolleyFather(int coolDown) => new Shoot(14, 5, 12, projectileIndex: 0, predictive: 0.3, coolDown: coolDown);
+
+        // Aurel's Solar Cyclone: `passes` dashes, his sprite the Cyclone's
+        private static State Cyclone(string name, string next, int passes) =>
+            new State(name,
+                new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                new State(name + " Spin",
+                    new SetAltTexture(1),
+                    new Flash(0xFFFFD24A, 0.2, 4),
+                    new CycloneDash(PlatformR, 16, 800, passes, 2),
+                    new TimedTransition(passes * 3300 + 800, name + " Down")
+                ),
+                new State(name + " Down",
+                    new SetAltTexture(0),
+                    new TimedTransition(1000, next)
+                )
+            );
+
+        // the father's violet eye: his daughter's volleys and starshards at the players
+        private static State HeritageDusk(string name, string next, int ms, double pace) =>
+            new State(name,
+                new Flash(0xFFB040FF, 0.3, 2),
+                new Shoot(14, 5, 12, projectileIndex: 0, predictive: 0.3, coolDown: (int)(1000 * pace)),
+                new Shoot(0, 16, fixedAngle: 0, rotateAngle: 11, projectileIndex: 1, coolDown: (int)(2600 * pace)),
+                new Starfall(Starfall.Area.Players, 20, 1.6, 340, (int)(1600 * pace), color: Red,
+                    effect: ConditionEffectIndex.Quiet, effectMs: 1500),
+                new TimedTransition(ms, next)
+            );
+
+        // his gold eye: his son's crescents and sunburst, and a spectre of the Cyclone
+        private static State HeritageDawn(string name, string next, int ms, double pace) =>
+            new State(name,
+                new Flash(0xFFFFD24A, 0.3, 2),
+                new Shoot(14, 3, 20, projectileIndex: 2, coolDown: (int)(1300 * pace)),
+                new Shoot(0, 12, fixedAngle: 0, rotateAngle: 15, projectileIndex: 3, coolDown: (int)(2400 * pace)),
+                new TossObject("Spectral Aurel", 2, 0, coolDown: 90000000),
+                new TimedTransition(ms, next)
+            );
+    }
+}

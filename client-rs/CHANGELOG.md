@@ -12,6 +12,12 @@ Keep each version short: changes go under `### ` group headings (Oryx 5, Arena, 
 on), one line per change players notice, summed up rather than item by item (the wiki has the
 details). Add to a group's line when a change adds to it, rather than adding another line.
 
+## Unreleased
+
+### Oryx 3 and Oryx 5
+- The gates that shut behind you in Oryx's Sanctuary and Oryx's Elysium now show as they close:
+  before, they blocked the way without being seen.
+
 ## 2.4.6 (2026-11-08)
 
 ### Elder dungeons
