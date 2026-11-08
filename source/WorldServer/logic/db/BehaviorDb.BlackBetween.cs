@@ -32,7 +32,6 @@ namespace WorldServer.logic
         private const double BrokenR = 12.5;
         // far enough to reach anyone on the platform from anywhere on it
         private const double Sight = 36;
-        private const uint Red = 0xFFFF3030;
         private const uint Gold = 0xFFFFD24A;
         private const uint Violet = 0xFFB040FF;
 
@@ -99,7 +98,8 @@ namespace WorldServer.logic
                             new State("T3 Broken",
                                 new LavaRing("Black Between", PlatformR, PlatformR, BrokenR, 3, 12000),
                                 new State("T3B Crumble",
-                                    new Starfall(Starfall.Area.Scatter, BrokenR, 1.8, 360, 400, color: Red, origins: new[] { "The Mysterious One" })
+                                    new Starfall(Starfall.Area.Scatter, BrokenR, 1.8, 360, 400, color: Violet, throwColor: Gold, twoTone: true,
+                                        origins: new[] { "The Mysterious One" })
                                 ),
                                 new State("T3B Calm"),
                                 // the Eclipse: Vesper's veil, starshards from her spectres
@@ -570,13 +570,11 @@ namespace WorldServer.logic
                 )
             )
 
-            // ---- the Constellation Approach: the Sentinels drift over the causeway, firing stars
-            // that do no harm (they're scenery, as Oryx 5's clouds: nothing hits them) ----
+            // ---- the Constellation Approach: the Sentinels drift over the causeway (scenery, as
+            // Oryx 5's clouds: they don't shoot, and nothing hits them) ----
             .Init("Starbound Sentinel",
                 new State(
-                    new Drift(0.3, 2),
-                    new Shoot(10, 8, 45, fixedAngle: 0, rotateAngle: 11, projectileIndex: 0, coolDown: 2200),
-                    new Shoot(10, 2, 14, projectileIndex: 1, coolDown: 1300)
+                    new Drift(0.3, 2)
                 )
             );
 

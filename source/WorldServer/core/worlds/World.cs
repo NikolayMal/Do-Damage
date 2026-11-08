@@ -964,6 +964,11 @@ namespace WorldServer.core.worlds
             }
             if (IsRealm || InstanceType != WorldResourceInstanceType.Dungeon || IdName.Contains("Arena") || IdName.Contains("Zombies"))
                 return;
+            // the Black Between: his children fall on the way, and only the Mysterious One's going
+            // clears it; he leaves his own way out (BehaviorDb.BlackBetween.cs), so no Realm Portal
+            var blackBetween = IdName == "The Black Between";
+            if (blackBetween && boss.ObjectDesc.IdName != "The Mysterious One")
+                return;
             var (x, y) = (boss.X, boss.Y);
             StartNewTimer(2000, (world, t) =>
             {
@@ -974,7 +979,7 @@ namespace WorldServer.core.worlds
                 }
                 // the Oryx chain leads on, not out: each stage's boss leaves the next one's portal,
                 // and the last leads home to the Nexus
-                if (world.Quests.Count > 0 || OryxChain.IsStage(world)
+                if (world.Quests.Count > 0 || OryxChain.IsStage(world) || blackBetween
                     || world.Portals.Values.Any(p => p.ObjectDesc.IdName is "Realm Portal" or "Random Realm Portal"))
                     return;
                 var portal = Entity.Resolve(world.GameServer, "Realm Portal");

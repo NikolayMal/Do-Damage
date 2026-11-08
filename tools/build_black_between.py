@@ -255,9 +255,9 @@ DISPLAY = {"Mysterious One Herald": "The Mysterious One", "Aurel's Twin Cyclone"
 
 # minions (8x8): name -> (health, defence, size, [projectiles])
 MINIONS = {}
-# the Starbound Sentinels over the causeway: scenery that drifts and shoots stars that do no harm
-# (not enemies: nothing hits them), as Oryx 5's clouds drift over his Landing
-SENTINEL_SHOTS = [shot(0, "Starbound Mote", 0, 50, 3000), shot(1, "Starbound Mote", 0, 90, 1800)]
+# the Starbound Sentinels over the causeway: scenery that drifts (not enemies, and they don't
+# shoot), as Oryx 5's clouds drift over his Landing
+SENTINEL_SHOTS = []
 
 # invisible helpers: name -> [projectiles]; not enemies, nothing hits them
 HELPERS = {
@@ -350,7 +350,7 @@ def objects(types, s8, s16, s32, c8, c32):
             e.append(p)
         out.append(e)
 
-    # the Starbound Sentinels: drifting scenery with harmless stars
+    # the Starbound Sentinels: drifting scenery
     sentinel = small.minions()["Starbound Sentinel"]
     e = ET.Element("Object", {"type": types.get("Starbound Sentinel", OBJECT_TYPES), "id": "Starbound Sentinel"})
     sub(e, "Class", "GameObject")

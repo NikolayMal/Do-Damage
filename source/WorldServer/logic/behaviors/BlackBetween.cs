@@ -136,7 +136,9 @@ namespace WorldServer.logic.behaviors
     // - Host: one great blast round the host itself (no throw).
     // The mark and the blast are `color`; the throw's trail is `throwColor` (the mark's colour if
     // none is given). With `lightning` nothing is thrown: when the mark has filled, a bolt comes
-    // down from the host (Aurel's divine lightning). `style` is the mark's (Strike.Mark).
+    // down from the host (Aurel's divine lightning). `style` is the mark's (Strike.Mark). With
+    // `twoTone` the strikes take `color` and `throwColor` in turn, each trailing the other (the
+    // Mysterious One's: his daughter's violet and his son's gold).
     internal class Starfall : Behavior
     {
         public enum Area { Diamond, Scatter, Players, Host }
@@ -156,11 +158,14 @@ namespace WorldServer.logic.behaviors
         private readonly uint _throwColor;
         private readonly bool _lightning;
         private readonly int _style;
+        private readonly bool _twoTone;
 
         public Starfall(Area area, double extent, double radius, int damage, Cooldown coolDown = new Cooldown(), int perVolley = 1,
             uint color = 0xFFFF3030, ConditionEffectIndex effect = 0, int effectMs = 0, string[] origins = null,
-            int fillMs = Strike.ThrowMs, int coolDownOffset = 0, uint throwColor = 0, bool lightning = false, int style = 0)
+            int fillMs = Strike.ThrowMs, int coolDownOffset = 0, uint throwColor = 0, bool lightning = false, int style = 0,
+            bool twoTone = false)
         {
+            _twoTone = twoTone;
             _lightning = lightning;
             _style = style;
             _throwColor = throwColor == 0 ? color : throwColor;
@@ -229,9 +234,12 @@ namespace WorldServer.logic.behaviors
             }
         }
 
+        private int _turn;
+
         private void Drop(Entity host, Position at)
         {
-            Strike.Mark(host, at, _radius, _fillMs, _color, _style);
+            var (color, trail) = _twoTone && (_turn++ & 1) == 1 ? (_throwColor, _color) : (_color, _throwColor);
+            Strike.Mark(host, at, _radius, _fillMs, color, _style);
             if (_area != Area.Host && !_lightning)
             {
                 Entity from = host;
@@ -241,14 +249,14 @@ namespace WorldServer.logic.behaviors
                     if (all.Count > 0)
                         from = all[Random.Next(all.Count)];
                 }
-                Strike.Throw(from, at, _throwColor);
+                Strike.Throw(from, at, trail);
             }
             var world = host.World;
             world.StartNewTimer(_fillMs, (w, t) =>
             {
                 if (_lightning && host.World == world)
                     Strike.Bolt(host, at, _color);
-                Strike.Land(world, host, at, _radius, _damage, _color, _effect, _effectMs);
+                Strike.Land(world, host, at, _radius, _damage, color, _effect, _effectMs);
             });
         }
     }

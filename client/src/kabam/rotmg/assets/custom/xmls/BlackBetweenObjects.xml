@@ -404,20 +404,6 @@
 		</Animation>
 		<Size>120</Size>
 		<NoMiniMap />
-		<Projectile id="0">
-			<ObjectId>Starbound Mote</ObjectId>
-			<Damage>0</Damage>
-			<Speed>50</Speed>
-			<LifetimeMS>3000</LifetimeMS>
-			<Size>100</Size>
-		</Projectile>
-		<Projectile id="1">
-			<ObjectId>Starbound Mote</ObjectId>
-			<Damage>0</Damage>
-			<Speed>90</Speed>
-			<LifetimeMS>1800</LifetimeMS>
-			<Size>100</Size>
-		</Projectile>
 	</Object>
 	<Object type="0x8D39" id="Dusk Pylon">
 		<Class>GameObject</Class>
