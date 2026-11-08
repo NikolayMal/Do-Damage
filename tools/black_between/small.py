@@ -224,22 +224,18 @@ def astral_stone(seed):
 
 
 def platform_rim(seed):
-    """The platform's rim: polished dark stone dressed in blocks, a gold band along it and a violet
-    glint now and then, where the floor ends over the drop."""
+    """The platform's rim: polished dark stone, lighter than the floor, flecked with gold and a
+    violet glint now and then. No band or seam along it, which reads as broken blocks where the
+    round edge steps from square to square."""
     def f(img, rnd):
         for y in range(8):
             for x in range(8):
-                c = "#3e3562" if y < 3 else ("#332b52" if y < 6 else "#251f3d")
-                if y == 3:
-                    c = "#c08a1c" if (x + seed) % 4 else "#ffd24a"
-                if y == 4:
-                    c = "#6a4a1a"
-                if x == (seed * 3) % 8 and y > 4:
-                    c = "#1c1830"
-                put(img, x, y, c)
-        put(img, rnd.randrange(1, 7), 1, "#8a7ad0")
+                v = rnd.random()
+                put(img, x, y, "#3a3260" if v > 0.25 else ("#342c56" if v > 0.08 else "#443a70"))
+        for _ in range(2):
+            put(img, rnd.randrange(8), rnd.randrange(8), "#d8a030" if rnd.random() < 0.7 else "#ffd24a")
         if seed % 2:
-            put(img, rnd.randrange(1, 7), 6, "#b070ff")
+            put(img, rnd.randrange(8), rnd.randrange(8), "#a070f0")
     return _tile(f, seed)
 
 
@@ -251,9 +247,7 @@ def underside(seed, rim=False):
         for y in range(8):
             for x in range(8):
                 if rim:
-                    c = "#2e2648" if y < 6 else "#211a36"
-                    if y == 1:
-                        c = "#a07418"
+                    c = "#2e2648" if y < 6 else "#251e3e"
                     if (x + y * 3 + seed) % 11 == 0:
                         c = "#3c3260"
                 else:

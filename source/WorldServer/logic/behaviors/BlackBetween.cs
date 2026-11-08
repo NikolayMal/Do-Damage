@@ -103,12 +103,34 @@ namespace WorldServer.logic.behaviors
 
         public static bool Walkable(Entity host, double x, double y) =>
             host.World != null && host.World.IsPassable(x, y);
+
+        // moves the host to `to` over `ms` in a few steps, then calls `then` (a jump in one go
+        // left clients drawing it oddly: its old sprite, or blown up)
+        public static void Glide(Entity host, Position to, int ms, Action then)
+        {
+            var world = host.World;
+            const int steps = 4;
+            var (fx, fy) = (host.X, host.Y);
+            for (var i = 1; i <= steps; i++)
+            {
+                var k = i / (float)steps;
+                var last = i == steps;
+                world.StartNewTimer(ms * i / steps, (w, t) =>
+                {
+                    if (host.World != world)
+                        return;
+                    host.Move(fx + (to.X - fx) * k, fy + (to.Y - fy) * k);
+                    if (last)
+                        then();
+                });
+            }
+        }
     }
 
     // Starshards, meteors and the Supernova: each strike is marked on the floor, thrown from one of
     // `origins` (the nearest of each name; the host when none is about) and lands when the mark has
     // filled. Where they land, round the host's spawn point:
-    // - Diamond: inside the diamond `extent` tiles to each point, off its cross (Vesper's Fourfold Veil);
+    // - Diamond: inside the diamond `extent` tiles to each point (Vesper's Fourfold Veil);
     // - Scatter: anywhere within `extent` tiles;
     // - Players: on a player within `extent` tiles of the host;
     // - Host: one great blast round the host itself (no throw).
@@ -193,7 +215,7 @@ namespace WorldServer.logic.behaviors
                     {
                         var dx = (Random.NextDouble() * 2 - 1) * _extent;
                         var dy = (Random.NextDouble() * 2 - 1) * _extent;
-                        if (Math.Abs(dx) + Math.Abs(dy) > _extent - 0.8 || Math.Abs(dx) < 1.2 || Math.Abs(dy) < 1.2)
+                        if (Math.Abs(dx) + Math.Abs(dy) > _extent - 0.8)
                             continue;
                         at = new Position(c.X + (float)dx, c.Y + (float)dy);
                         return true;
@@ -530,8 +552,11 @@ namespace WorldServer.logic.behaviors
 
     // Aurel's Solar Cyclone: `passes` dashes from rim to rim, each aimed through a player, each
     // marked along its line `telegraphMs` before it starts. While he dashes he sprays his projectile
-    // `projectile` in a turning spiral, and anyone he passes through takes `contactDamage`. Round
-    // the host's spawn point, within `radius` tiles.
+    // `projectile` in a turning spiral, and anyone he passes through takes `contactDamage`. Within
+    // `radius` tiles of the host's spawn point, or of the nearest `centreOn` (the Observatory
+    // Heart: the whole arena, whoever throws the tornado). With a `twin` (the nearest of that name),
+    // it dashes too, along the same line turned a quarter round the centre (so when he goes from
+    // north to south, it goes from east to west), spraying its own projectile 0.
     internal class CycloneDash : Behavior
     {
         private readonly double _radius;
@@ -542,10 +567,14 @@ namespace WorldServer.logic.behaviors
         private readonly int _fireMs;
         private readonly int _contactDamage;
         private readonly int _pauseMs;
+        private readonly string _centreOn;
+        private readonly string _twin;
 
         public CycloneDash(double radius, double speed = 16, int telegraphMs = 800, int passes = 3, int projectile = 2,
-            int fireMs = 100, int contactDamage = 260, int pauseMs = 500)
+            int fireMs = 100, int contactDamage = 260, int pauseMs = 500, string centreOn = null, string twin = null)
         {
+            _centreOn = centreOn;
+            _twin = twin;
             _radius = radius;
             _speed = speed;
             _telegraphMs = telegraphMs;
@@ -556,7 +585,7 @@ namespace WorldServer.logic.behaviors
             _pauseMs = pauseMs;
         }
 
-        private enum Phase { Pick, Telegraph, Dash, Pause, Done }
+        private enum Phase { Pick, Reposition, Telegraph, Dash, Pause, Done }
 
         private sealed class Run
         {
@@ -568,6 +597,17 @@ namespace WorldServer.logic.behaviors
             public int Fire;
             public double Spin;
             public HashSet<int> Hit = new();
+            public float StartX, StartY;
+            public Entity Twin;
+            public float TwinStartX, TwinStartY, TwinEndX, TwinEndY;
+            public int WaitedForTwin;
+        }
+
+        private Position Centre(Entity host)
+        {
+            if (_centreOn != null && host.GetNearestEntityByName(60, _centreOn) is Entity c)
+                return new Position(c.X, c.Y);
+            return host.SpawnPoint.Value;
         }
 
         protected override void OnStateEntry(Entity host, TickTime time, ref object state) => state = new Run();
@@ -579,24 +619,46 @@ namespace WorldServer.logic.behaviors
             switch (r.Phase)
             {
                 case Phase.Pick:
+                    // a moment for the twin to come in (it's summoned as the Cyclone starts)
+                    if (_twin != null && r.WaitedForTwin < 600 && host.GetNearestEntityByName(60, _twin) == null)
+                    {
+                        r.WaitedForTwin += time.ElapsedMsDelta;
+                        return;
+                    }
                     if (r.Pass >= _passes || !Aim(host, r))
                     {
                         r.Phase = Phase.Done;
                         return;
                     }
-                    for (var d = 0.0; ; d += 1.6)
+                    // he flies to the line's start (a jump there in one go left clients drawing his
+                    // old sprite rather than the tornado), then it's marked
+                    r.Phase = Phase.Reposition;
+                    r.Hit.Clear();
+                    return;
+                case Phase.Reposition:
+                    var hop = (float)(_speed * 2 * time.ElapsedMsDelta / 1000.0);
+                    var away = Math.Sqrt((r.StartX - host.X) * (r.StartX - host.X) + (r.StartY - host.Y) * (r.StartY - host.Y));
+                    if (away > hop)
                     {
-                        var px = host.X + r.Dx * d;
-                        var py = host.Y + r.Dy * d;
-                        if (d > 0 && (Math.Abs(px - host.X) > Math.Abs(r.EndX - host.X) + 0.01 || Math.Abs(py - host.Y) > Math.Abs(r.EndY - host.Y) + 0.01))
-                            break;
-                        Strike.Mark(host, new Position((float)px, (float)py), 0.9, _telegraphMs, 0xFFFFD24A);
-                        if (d > 40)
-                            break;
+                        host.Move(host.X + (float)((r.StartX - host.X) / away * hop), host.Y + (float)((r.StartY - host.Y) / away * hop));
+                        if (r.Twin != null)
+                        {
+                            var tAway = Math.Sqrt((r.TwinStartX - r.Twin.X) * (r.TwinStartX - r.Twin.X) + (r.TwinStartY - r.Twin.Y) * (r.TwinStartY - r.Twin.Y));
+                            if (tAway > 0.01)
+                            {
+                                var k = Math.Min(1, hop * 1.5 / tAway);
+                                r.Twin.Move(r.Twin.X + (float)((r.TwinStartX - r.Twin.X) * k), r.Twin.Y + (float)((r.TwinStartY - r.Twin.Y) * k));
+                            }
+                        }
+                        return;
                     }
+                    host.Move(r.StartX, r.StartY);
+                    r.Twin?.Move(r.TwinStartX, r.TwinStartY);
+                    MarkLine(host, r.StartX, r.StartY, r.EndX, r.EndY);
+                    if (r.Twin != null)
+                        MarkLine(host, r.TwinStartX, r.TwinStartY, r.TwinEndX, r.TwinEndY);
                     r.Phase = Phase.Telegraph;
                     r.Left = _telegraphMs;
-                    r.Hit.Clear();
                     return;
                 case Phase.Telegraph:
                     r.Left -= time.ElapsedMsDelta;
@@ -615,19 +677,37 @@ namespace WorldServer.logic.behaviors
                     }
                     else
                         host.Move(host.X + r.Dx * step, host.Y + r.Dy * step);
+                    // the twin as far along its line as he is along his
+                    var twin = r.Twin?.World == host.World ? r.Twin : null;
+                    if (twin != null)
+                    {
+                        var total = Math.Sqrt((r.EndX - r.StartX) * (r.EndX - r.StartX) + (r.EndY - r.StartY) * (r.EndY - r.StartY));
+                        var done = total < 0.01 ? 1 : 1 - Math.Sqrt((r.EndX - host.X) * (r.EndX - host.X) + (r.EndY - host.Y) * (r.EndY - host.Y)) / total;
+                        twin.Move(r.TwinStartX + (float)((r.TwinEndX - r.TwinStartX) * done), r.TwinStartY + (float)((r.TwinEndY - r.TwinStartY) * done));
+                    }
                     r.Fire -= time.ElapsedMsDelta;
                     if (r.Fire <= 0)
                     {
                         r.Fire = _fireMs;
                         r.Spin += 40 * Math.PI / 180;
                         Strike.Fire(host, _projectile, r.Spin, 2, Math.PI);
+                        if (twin != null)
+                            Strike.Fire(twin, 0, -r.Spin, 2, Math.PI);
                     }
                     if (_contactDamage > 0)
+                    {
+                        var dmg = (int)(_contactDamage * ((host as Enemy)?.DamageScale ?? 1));
                         host.AOE(1.3f, true, p =>
                         {
                             if (r.Hit.Add(p.Id))
-                                (p as IPlayer).Damage((int)(_contactDamage * ((host as Enemy)?.DamageScale ?? 1)), host);
+                                (p as IPlayer).Damage(dmg, host);
                         });
+                        twin?.AOE(1.3f, true, p =>
+                        {
+                            if (r.Hit.Add(-p.Id - 1))
+                                (p as IPlayer).Damage(dmg, host);
+                        });
+                    }
                     return;
                 case Phase.Pause:
                     r.Left -= time.ElapsedMsDelta;
@@ -637,10 +717,18 @@ namespace WorldServer.logic.behaviors
             }
         }
 
-        // a line from where he stands through a player, on to the far rim
+        private void MarkLine(Entity host, float x0, float y0, float x1, float y1)
+        {
+            var len = Math.Sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0));
+            for (var d = 0.0; d <= len && d <= 40; d += 1.6)
+                Strike.Mark(host, new Position((float)(x0 + (x1 - x0) * d / len), (float)(y0 + (y1 - y0) * d / len)), 0.9, _telegraphMs, 0xFFFFD24A);
+        }
+
+        // a line from where he stands through a player, on to the far rim (and his twin's, a quarter
+        // turn round the centre)
         private bool Aim(Entity host, Run r)
         {
-            var c = host.SpawnPoint.Value;
+            var c = Centre(host);
             var players = host.World.Players.Values.Where(p => p.DistTo(c.X, c.Y) <= _radius + 2 && p.IsVisibleToEnemy()).ToList();
             if (players.Count == 0)
                 return false;
@@ -655,17 +743,31 @@ namespace WorldServer.logic.behaviors
                     (dx, dy, len) = (1, 0, 1);
             }
             (dx, dy) = (dx / len, dy / len);
-            // where the ray from him leaves the circle `radius - 1.5` round the middle
-            double ox = host.X - c.X, oy = host.Y - c.Y, rr = _radius - 1.5;
+            // the whole chord of the circle `radius - 1.5` round the centre through the player, that
+            // way: from where it enters (he's whisked there first) to where it leaves
+            double ox = target.X - c.X, oy = target.Y - c.Y, rr = _radius - 1.5;
             var b = ox * dx + oy * dy;
             var disc = b * b - (ox * ox + oy * oy - rr * rr);
-            var t = disc > 0 ? -b + Math.Sqrt(disc) : 0;
-            if (t < 2)
+            if (disc <= 0)
+                return false;
+            var (t0, t1) = (-b - Math.Sqrt(disc), -b + Math.Sqrt(disc));
+            if (t1 - t0 < 3)
                 return false;
             r.Dx = (float)dx;
             r.Dy = (float)dy;
-            r.EndX = (float)(host.X + dx * t);
-            r.EndY = (float)(host.Y + dy * t);
+            r.StartX = (float)(target.X + dx * t0);
+            r.StartY = (float)(target.Y + dy * t0);
+            r.EndX = (float)(target.X + dx * t1);
+            r.EndY = (float)(target.Y + dy * t1);
+            r.Twin = _twin == null ? null : host.GetNearestEntityByName(60, _twin);
+            if (r.Twin != null)
+            {
+                // (x, y) round the centre a quarter turn: (-y, x)
+                r.TwinStartX = c.X - (r.StartY - c.Y);
+                r.TwinStartY = c.Y + (r.StartX - c.X);
+                r.TwinEndX = c.X - (r.EndY - c.Y);
+                r.TwinEndY = c.Y + (r.EndX - c.X);
+            }
             return true;
         }
     }
@@ -754,8 +856,8 @@ namespace WorldServer.logic.behaviors
     }
 
     // Vesper's Fourfold Veil, as it rises: anyone on the platform outside the diamond (`diamond`
-    // tiles to each point round the host's spawn) or on its cross is moved into the middle of the
-    // nearest quadrant, so no one starts on the burning floor or caught in the walls.
+    // tiles to each point round the host's spawn) is moved into the middle of the nearest quarter
+    // of it, so no one starts on the burning floor.
     internal class GatherIntoQuadrants : Behavior
     {
         private readonly int _diamond;
@@ -776,7 +878,7 @@ namespace WorldServer.logic.behaviors
                 float dx = player.X - c.X, dy = player.Y - c.Y;
                 if (Math.Sqrt(dx * dx + dy * dy) > _reach)
                     continue;
-                var inside = Math.Abs(dx) + Math.Abs(dy) < _diamond - 0.5 && Math.Abs(dx) >= 1 && Math.Abs(dy) >= 1;
+                var inside = Math.Abs(dx) + Math.Abs(dy) < _diamond - 0.5;
                 if (inside)
                     continue;
                 var sx = Math.Abs(dx) < 0.5 ? (Random.Next(2) == 0 ? -1 : 1) : Math.Sign(dx);
@@ -898,10 +1000,15 @@ namespace WorldServer.logic.behaviors
             {
                 if (host.World != world || host.HasConditionEffect(ConditionEffectIndex.Stunned))
                     return;
+                void Land()
+                {
+                    Strike.Land(world, host, at, _radius, _damage, 0xFFFFD24A, ConditionEffectIndex.Dazed, 1500);
+                    Strike.Fire(host, _projectile, 0, _ring, 2 * Math.PI / _ring);
+                }
                 if (Strike.Walkable(host, at.X, at.Y))
-                    host.Move(at.X, at.Y);
-                Strike.Land(world, host, at, _radius, _damage, 0xFFFFD24A, ConditionEffectIndex.Dazed, 1500);
-                Strike.Fire(host, _projectile, 0, _ring, 2 * Math.PI / _ring);
+                    Strike.Glide(host, at, 200, Land);
+                else
+                    Land();
             });
         }
     }
