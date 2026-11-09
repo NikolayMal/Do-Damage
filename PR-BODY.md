@@ -61,6 +61,13 @@ From the bottom of `..Context-Txts/11082026/mystery-updates1.txt` and its four s
 - The father's crumbling meteors violet and gold in turn, not red; the Sentinels no longer shoot.
 - Redeploy: servers and client. Checks: `bsk-bot` through the whole fight (no Realm Portal opened, no errors), the client at the platform's edge and in the Break.
 
+### The Black Between: the owner's fourth round (still admin only)
+
+- Everyone moved into the diamond as Vesper gathers for her Veil (and the father for his Eclipse), a few seconds before the floor outside it burns.
+- Aurel's leap aims where its target is heading.
+- The Mysterious One: 420,000 health (was 480,000); his black hole opens round him every 15 s from 40% (12 s below 10%) while he keeps attacking, and the 10% Supernova comes with his volleys, rings and starshards; his portal out reads "Part II: Coming Soon".
+- Redeploy: servers. Checks: the client through to his fade and his portal (named "Part II: Coming Soon").
+
 ### Placed objects show (Oryx 3's and Oryx 5's gates)
 
 - `PlaceObject` set a square's object without an object id and never told the players round it to look again, so clients were never sent it: Oryx 5's Holy Gates (as they shut, and in his Last Judgement) and Oryx 3's gate stood in the way unseen. It now gives each one an id and refreshes players' squares (`UpdateTiles`, as `RemoveObject` does); removal already worked (clients drop a square's object by its id). Found with the Black Between's walls of light.

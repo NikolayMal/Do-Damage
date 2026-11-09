@@ -60,7 +60,7 @@
 		<HitSound>monster/ghost_god_hit</HitSound>
 		<DeathSound>monster/ghost_god_death</DeathSound>
 		<Size>100</Size>
-		<MaxHitPoints>480000</MaxHitPoints>
+		<MaxHitPoints>420000</MaxHitPoints>
 		<Defense>110</Defense>
 		<NoArticle />
 		<StasisImmune />
@@ -81,7 +81,7 @@
 		<HitSound>monster/oryx_hit</HitSound>
 		<DeathSound>monster/oryx_death</DeathSound>
 		<Size>100</Size>
-		<MaxHitPoints>480000</MaxHitPoints>
+		<MaxHitPoints>420000</MaxHitPoints>
 		<Defense>110</Defense>
 		<Quest />
 		<Level>20</Level>

@@ -211,8 +211,8 @@ ARC = (1.2, 0.5)
 BOSSES = {
     # the father, who comes out of the Rift: his herald does the talking at first and watches the
     # first two trials from the Rift; the Mysterious One himself comes down for the third
-    "Mysterious One Herald": ("The Mysterious One", 100, 480000, 110, "herald", [], []),
-    "The Mysterious One": ("The Mysterious One", 100, 480000, 110, "boss", [], [
+    "Mysterious One Herald": ("The Mysterious One", 100, 420000, 110, "herald", [], []),
+    "The Mysterious One": ("The Mysterious One", 100, 420000, 110, "boss", [], [
         shot(0, "Dusk Bolt", 200, 90, 2400, amplitude=WAVE[0], frequency=WAVE[1]),
         shot(1, "Umbral Orb", 170, 55, 4000, 110, effects=[("Darkness", 2)], amplitude=ARC[0], frequency=ARC[1]),
         shot(2, "Dawn Crescent", 230, 70, 2600, 130, effects=[("Armor Broken", 2)], multi=True),
