@@ -273,8 +273,9 @@ namespace WorldServer.logic
             .Init("Vesper's Veil Copy",
                 new State(
                     new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                    // every 3 s: the starshards are the Veil's danger, the copies only harry
                     new State("Live",
-                        new Shoot(Sight, 3, 15, projectileIndex: 0, predictive: 0.3, coolDown: 1600)
+                        new Shoot(Sight, 3, 15, projectileIndex: 0, predictive: 0.3, coolDown: 3000, coolDownOffset: 1000)
                     ),
                     new State("Gone", new Suicide())
                 )
