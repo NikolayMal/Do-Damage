@@ -148,7 +148,7 @@ def texture(parent, file, index, tag="Texture"):
     return t
 
 
-def shot(pid, obj, damage, speed, life, size=100, effects=(), multi=False, amplitude=None, frequency=None):
+def shot(pid, obj, damage, speed, life, size=100, effects=(), multi=False, amplitude=None, frequency=None, piercing=False):
     p = ET.Element("Projectile", {"id": str(pid)})
     sub(p, "ObjectId", obj)
     sub(p, "Damage", damage)
@@ -160,6 +160,8 @@ def shot(pid, obj, damage, speed, life, size=100, effects=(), multi=False, ampli
         sub(p, "Frequency", frequency)
     if multi:
         sub(p, "MultiHit")
+    if piercing:
+        sub(p, "ArmorPiercing")
     for effect, duration in effects:
         sub(p, "ConditionEffect", effect, duration=duration)
     return p
@@ -225,8 +227,9 @@ BOSSES = {
         shot(0, "Dusk Bolt", 190, 95, 2300, amplitude=WAVE[0], frequency=WAVE[1]),
         shot(1, "Umbral Orb", 160, 50, 4200, 110, effects=[("Darkness", 1.5)], amplitude=ARC[0], frequency=ARC[1]),
     ]),
+    # her copies' bolts in the Veil: light, but through any armour
     "Vesper's Veil Copy": ("Vesper's Veil Copy", 85, 100000, 0, "helper", [], [
-        shot(0, "Dusk Bolt", 180, 80, 2200, amplitude=WAVE[0], frequency=WAVE[1]),
+        shot(0, "Dusk Bolt", 35, 80, 2200, amplitude=WAVE[0], frequency=WAVE[1], piercing=True),
     ]),
     "Spectral Vesper": ("Spectral Vesper", 85, 100000, 0, "helper", [], [
         shot(0, "Dusk Bolt", 180, 80, 2200, amplitude=WAVE[0], frequency=WAVE[1]),

@@ -215,12 +215,13 @@
 		<XpMult>0</XpMult>
 		<Projectile id="0">
 			<ObjectId>Dusk Bolt</ObjectId>
-			<Damage>180</Damage>
+			<Damage>35</Damage>
 			<Speed>80</Speed>
 			<LifetimeMS>2200</LifetimeMS>
 			<Size>100</Size>
 			<Amplitude>1.0</Amplitude>
 			<Frequency>1.5</Frequency>
+			<ArmorPiercing />
 		</Projectile>
 	</Object>
 	<Object type="0x8D2A" id="Spectral Vesper">
