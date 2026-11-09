@@ -408,16 +408,17 @@ namespace WorldServer.logic
             // - 40%: the Black Between (22 s, his last survival phase): everyone is put on the
             //   Constellation Path's start and must follow it while he fires on them.
             // - 40% to 10%: everything faster, his children in turn: Vesper's spectres casting
-            //   starshards, then Aurel's sword flying its lanes and a spectral Cyclone.
+            //   starshards, then Aurel's sword flying its lanes and a spectral Cyclone; and every 15 s
+            //   his black hole opens round him while all of that goes on.
             // - 10%: Supernova: back to the middle, then his rift opens round him, 9 tiles across in 5 s.
             //   Then the last 10% down to 5%, where he fades instead of dying: he speaks, sinks into his
             //   rift and is gone. His violet eye's rifts and his gold eye's lightning come all through.
             .Init("The Mysterious One",
                 new State(
-                    new BossStats(480000, 110, 1.0, 0.35),
+                    new BossStats(420000, 110, 1.0, 0.35),
                     new AnnounceOnDeath("{PL_LIST} passed the Mysterious One's trials in the Black Between, and he withdrew into the void. \"I will return.\""),
-                    // the only way out, once he falls
-                    new DropPortalOnDeath("Nexus Portal", 1.0, 60),
+                    // the only way out, once he's gone: a Nexus Portal, named for what's to come
+                    new DropPortalOnDeath("Nexus Portal", 1.0, 60, name: "Part II: Coming Soon"),
                     new State("Arrive",
                         new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
                         new Flash(0xFFFFFFFF, 0.3, 8),
@@ -449,12 +450,18 @@ namespace WorldServer.logic
                             EclipseRing(3000),
                             HeritageDusk("E Dusk", "E Dawn", 5000, 0.9),
                             HeritageDawn("E Dawn", "E Fall", 5000, 0.9),
-                            new State("E Fall", new TimedTransition(1, "Eclipse Fall"))
+                            new State("E Fall", new TimedTransition(1, "Eclipse Gather"))
+                        ),
+                        // everyone into the diamond a moment before the veil's floor burns
+                        new State("Eclipse Gather",
+                            new GatherIntoQuadrants(Diamond, PlatformR + 2),
+                            new ReturnToSpawn(1.5),
+                            new Flash(0xFFB040FF, 0.3, 4),
+                            new Taunt(0.5, "Her veil. My stars.") { Bubble = false },
+                            new TimedTransition(1500, "Eclipse Fall")
                         ),
                         new State("Eclipse Fall",
                             new ReturnToSpawn(1.5),
-                            new Flash(0xFFB040FF, 0.3, 4),
-                            new Taunt(0.5, "Her veil. His walls. My stars.") { Bubble = false },
                             new Order(60, "Observatory Heart", "T3B Eclipse"),
                             new Shoot(0, 8, fixedAngle: 22.5, rotateAngle: 9, projectileIndex: 4, coolDown: 2800),
                             new TimedTransition(14000, "Eclipse Heritage")
@@ -483,6 +490,7 @@ namespace WorldServer.logic
                         new HpLessTransition(0.1, "Nova Gather"),
                         new Prioritize(new StayCloseToSpawn(0.6, 4), new Wander(0.3)),
                         EclipseRing(2600),
+                        BlackHole(15000, 6000),
                         new State("Children Heritage",
                             new Order(60, "Observatory Heart", "T3B Calm"),
                             HeritageDusk("C Dusk", "C Dawn", 4000, 0.8),
@@ -513,16 +521,23 @@ namespace WorldServer.logic
                         new Taunt(true, "Everything I am, all at once. RUN.") { Bubble = false },
                         new TimedTransition(2500, "Nova")
                     ),
+                    // and it keeps shooting while it opens: his volleys, rings and starshards
                     S("Nova", Survival(true),
                         new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
                         new Flash(0xFFB040FF, 0.25, 12),
                         new Starfall(Starfall.Area.Host, 0, 9, 1600, 90000000, color: Violet, fillMs: 5000, style: 1),
+                        EclipseRing(1800),
+                        new Shoot(Sight, 5, 12, projectileIndex: 0, predictive: 0.3, coolDown: 900),
+                        new Shoot(0, 16, fixedAngle: 0, rotateAngle: 11, projectileIndex: 1, coolDown: 2200),
+                        new Starfall(Starfall.Area.Players, Sight, 1.6, 340, 1400, color: Violet,
+                            effect: ConditionEffectIndex.Quiet, effectMs: 1500),
                         new TimedTransition(6000, "Last")
                     ),
                     new State("Last",
                         new HpLessTransition(0.05, "Fading"),
                         new Prioritize(new StayCloseToSpawn(0.7, 6), new Follow(0.6, Sight, 4)),
                         EclipseRing(2400),
+                        BlackHole(12000, 4000),
                         HeritageDusk("L Dusk", "L Dawn", 4000, 0.75),
                         HeritageDawn("L Dawn", "L Dusk", 4000, 0.75)
                     ),
@@ -612,7 +627,10 @@ namespace WorldServer.logic
         private static State VeilPhase(string name, string heartState, int ms, string next, bool last) =>
             new State(name,
                 new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                // everyone into the diamond as she gathers, a few seconds before the floor burns
+                // (and again as it does, for anyone who wandered out)
                 new State(name + " Gather",
+                    new GatherIntoQuadrants(Diamond, PlatformR + 2),
                     new ReturnToSpawn(1.2),
                     new Flash(0xFFB040FF, 0.25, 6),
                     new Taunt(true, "Four of me. One of you. Choose your corner.") { Bubble = false },
@@ -714,6 +732,11 @@ namespace WorldServer.logic
                 Portals(pace),
                 new TimedTransition(ms, next)
             );
+
+        // his black hole in the thick of his attacks: his rift opening round where he stands, 6.5 tiles
+        // across in 3.5 s, every `coolDown`
+        private static Behavior BlackHole(int coolDown, int offset) =>
+            new Starfall(Starfall.Area.Host, 0, 6.5, 900, coolDown, color: Violet, fillMs: 3500, style: 1, coolDownOffset: offset);
 
         // his portals: small rifts opening about the arena, two at a time, bursting as they open
         private static Behavior Portals(double pace) =>

@@ -963,8 +963,9 @@ namespace WorldServer.logic.behaviors
         protected override void TickCore(Entity host, TickTime time, ref object state) { }
     }
 
-    // Aurel's Zenith Leap: he marks a player's spot (`fillMs`), and when the mark has filled he lands
-    // there with a blast (`damage` within `radius`) and a ring of his projectile `projectile`.
+    // Aurel's Zenith Leap: he marks where a player will be when the mark has filled (`fillMs`: where
+    // they're heading, at the pace they're going, not where they stand), and then lands there with a
+    // blast (`damage` within `radius`) and a ring of his projectile `projectile`.
     internal class LeapStrike : Behavior
     {
         private readonly double _range;
@@ -1001,7 +1002,13 @@ namespace WorldServer.logic.behaviors
             if (players.Count == 0)
                 return;
             var target = players[Random.Next(players.Count)];
-            var at = new Position(target.X, target.Y);
+            // a tick's movement (PrevX/PrevY, the last tick's place) for each tick of the mark, most
+            // of the way: a player who keeps going runs into it
+            var ticks = _fillMs / 100.0 * 0.85;
+            var at = new Position(target.X + (float)((target.X - target.PrevX) * ticks), target.Y + (float)((target.Y - target.PrevY) * ticks));
+            var c = host.SpawnPoint.Value;
+            if (!Strike.Walkable(host, at.X, at.Y) || at.DistTo(c.X, c.Y) > 16)
+                at = new Position(target.X, target.Y);
             Strike.Mark(host, at, _radius, _fillMs, 0xFFFFD24A);
             var world = host.World;
             world.StartNewTimer(_fillMs, (w, t) =>
