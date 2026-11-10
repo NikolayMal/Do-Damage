@@ -376,6 +376,38 @@ def cosmic_anvil(frame):
     return img
 
 
+# the Mysterious One's family's gear (8x8 items): name -> (pixel rows, palette)
+ITEM_PAL = {
+    "w": "#ffffff", "Y": "#fff0a8", "G": "#ffd24a", "g": "#a07418", "3": "#ece6d6", "k": "#1a1430",
+    "K": "#2e2648", "V": "#b040ff", "v": "#5f34a3", "X": "#f0e4ff", "q": "#4cc8ff", "2": "#3a1d6a",
+    "4": "#e0b0ff", "b": "#6a3a18",
+}
+ITEMS = {
+    # Aurel's tornado in a quiver: gold and ivory, three bright arrowheads
+    "Quiver of the Solar Cyclone": [".....wY.", "....YwGY", "...gGGY.", "..gG3g..", ".gG3g...", "gG3g....", "G3g.....", ".g......"],
+    # three rings, one of each of them: Aurel's gold, Vesper's violet, the father's rift at the heart
+    "Trinity Trap": ["..VVYY..", ".V....Y.", "V..kk..Y", "V.kXqk.Y", "Y.kqXk.V", "Y..kk..V", ".Y....V.", "..YYVV.."],
+    # a winged gold helm, a sky gem at its brow
+    "Helm of the Dawn Blade": ["w.GGGG.w", "wwGYYGww", ".wGqGGw.", "..GGGG..", "..Gk.G..", "..GGGG..", "...gg...", "........"],
+    # a dusk crystal with a veiled figure in it
+    "Prism of the Dusk Veil": ["...v....", "..vVv...", ".vV4Vv..", "vV4XVVv.", ".vVVVv..", "..vVv...", "...v....", "........"],
+    # the night itself as a cloak, gold-edged, a rift at its clasp
+    "Cloak of the Planar Rift": ["..kkkk..", ".kGKKGk.", ".kKVYKk.", "kKKYVKKk", "kKKKKKKk", "kGKKKKGk", "kG.KK.Gk", "G......G"],
+    # a vial of the dusk, its stopper gold
+    "Vial of Cascading Dusk": ["...GG...", "...bb...", "..k22k..", ".k2VV2k.", ".k2V4Vk.", ".k2VV2k.", "..kkkk..", "........"],
+}
+
+
+def item_icon(name):
+    img = _blank()
+    for y, r in enumerate(ITEMS[name]):
+        assert len(r) == 8, (name, r)
+        for x, ch in enumerate(r):
+            if ch != ".":
+                put(img, x, y, ITEM_PAL[ch])
+    return img
+
+
 TILES = {
     "Astral Stone": [astral_stone(s) for s in (3, 4, 5, 6)],
     "Platform Rim": [platform_rim(s) for s in (1, 2, 3, 4)],

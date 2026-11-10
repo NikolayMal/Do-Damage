@@ -44,6 +44,8 @@ namespace WorldServer.core.objects
 
         public override void Tick(ref TickTime time)
         {
+            // the Prism of the Dusk Veil's decoy casts (Player.BetweenPowers.cs)
+            _player.DecoyTick(this);
             if (Health > _duration - 2000 && CheckDistance(_pos))
                 ValidateAndMove(X + (_direction.X * _speed) * time.BehaviourTickTime, Y + (_direction.Y * _speed) * time.BehaviourTickTime);
 
