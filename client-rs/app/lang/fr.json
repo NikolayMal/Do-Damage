@@ -1098,5 +1098,16 @@
 "Stop": "Arrêter",
 "Next roll": "Tirage suivant",
 "Skip all": "Tout passer",
-"Items go to the gift chest in your vault.": "Les objets vont dans le coffre à cadeaux de votre coffre-fort."
+"Items go to the gift chest in your vault.": "Les objets vont dans le coffre à cadeaux de votre coffre-fort.",
+"Corrupt": "Corrompre",
+"Corrupt Enthroned gear": "Corrompre un équipement Intronisé",
+"Corrupted.": "Corrompu.",
+"Corrupted. Its shots now fly back to you.": "Corrompu. Ses tirs reviennent désormais vers vous.",
+"Corruption": "Corruption",
+"Cosmic Anvil": "Enclume cosmique",
+"Each Unstable Essence moves its damage, range, rate of fire and stats by -3 to +2 each, between -6 and +6. Rate of fire moves twice as far. A staff may also turn its shots round.": "Chaque Unstable Essence modifie ses dégâts, sa portée, sa cadence de tir et ses stats de -3 à +2 chacun, entre -6 et +6. La cadence de tir varie deux fois plus. Un bâton peut aussi inverser ses tirs.",
+"Pick Enthroned gear on the left to corrupt it.": "Choisissez à gauche un équipement Intronisé pour le corrompre.",
+"Reversed: its shots fly from the end of their range back to you.": "Inversé : ses tirs partent du bout de leur portée et reviennent vers vous.",
+"Unstable Essence in your inventory: {n}": "Unstable Essence dans votre inventaire : {n}",
+"You need an Unstable Essence.": "Il vous faut une Unstable Essence."
 }

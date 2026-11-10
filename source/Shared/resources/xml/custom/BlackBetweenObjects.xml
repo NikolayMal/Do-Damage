@@ -715,6 +715,31 @@
 		<Size>220</Size>
 		<ShadowSize>0</ShadowSize>
 	</Object>
+	<Object type="0x8D41" id="Cosmic Anvil">
+		<Class>CosmicAnvil</Class>
+		<Texture>
+			<File>blackBetween16x16</File>
+			<Index>0x0b</Index>
+		</Texture>
+		<Animation prob="1.0">
+			<Frame time="0.5">
+				<Texture>
+					<File>blackBetween16x16</File>
+					<Index>0x0b</Index>
+				</Texture>
+			</Frame>
+			<Frame time="0.5">
+				<Texture>
+					<File>blackBetween16x16</File>
+					<Index>0x0c</Index>
+				</Texture>
+			</Frame>
+		</Animation>
+		<Size>130</Size>
+		<Static />
+		<OccupySquare />
+		<EnemyOccupySquare />
+	</Object>
 	<Object type="0x8D40" id="Unstable Essence">
 		<Class>Equipment</Class>
 		<Item />

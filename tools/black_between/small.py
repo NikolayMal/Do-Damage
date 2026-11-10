@@ -340,6 +340,42 @@ def unstable_essence():
     return img
 
 
+def cosmic_anvil(frame):
+    """The Cosmic Anvil (16x16): a black anvil of star-iron on a plinth, gold-edged, a rift of the
+    Between glowing in its face, pulsing violet and gold."""
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    rows = [
+        "................",
+        "................",
+        "..GGGGGGGGGGGG..",
+        ".gkkkkkkkkkkkkg.",
+        "gkk3kkkkkkkkkkkg",
+        ".gkkkkkkkkkkkkg.",
+        "...gkkkkkkkkg...",
+        ".....kkkkkk.....",
+        ".....kkVYkk.....",
+        ".....kkYVkk.....",
+        ".....kkkkkk.....",
+        "....gkkkkkkg....",
+        "...gkkkkkkkkg...",
+        "..GGGGGGGGGGGG..",
+        "..gggggggggggg..",
+        "................",
+    ]
+    glow = (("#b040ff", "#ffd24a"), ("#ffd24a", "#e0b0ff"))[frame % 2]
+    pal = {"G": "#ffd24a", "g": "#a07418", "k": "#1a1430", "3": "#4a3a86", "V": glow[0], "Y": glow[1]}
+    for y, r in enumerate(rows):
+        for x, ch in enumerate(r):
+            if ch != ".":
+                put(img, x, y, pal[ch])
+    # starlight on the iron, and the glow spilling round the rift
+    for (x, y) in ((4, 3), (9, 4), (12, 3), (7, 11), (10, 12)):
+        put(img, x, y, "#8a7ad0" if (x + y + frame) % 2 else "#d8d0ff")
+    for (x, y) in ((6, 7), (9, 7), (6, 10), (9, 10)):
+        put(img, x, y, glow[0], 160)
+    return img
+
+
 TILES = {
     "Astral Stone": [astral_stone(s) for s in (3, 4, 5, 6)],
     "Platform Rim": [platform_rim(s) for s in (1, 2, 3, 4)],

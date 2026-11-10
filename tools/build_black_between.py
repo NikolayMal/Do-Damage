@@ -463,6 +463,20 @@ def objects(types, s8, s16, s32, c8, c32):
     sub(e, "ShadowSize", 0)
     out.append(e)
 
+    # the Cosmic Anvil, which he leaves where he fades: corrupts Enthroned gear (CorruptHandler.cs)
+    e = ET.Element("Object", {"type": types.get("Cosmic Anvil", OBJECT_TYPES), "id": "Cosmic Anvil"})
+    sub(e, "Class", "CosmicAnvil")
+    first = s16.add(small.cosmic_anvil(0))
+    texture(e, SHEET16[0], first)
+    anim = sub(e, "Animation", prob="1.0")
+    for idx in (first, s16.add(small.cosmic_anvil(1))):
+        texture(sub(anim, "Frame", time="0.5"), SHEET16[0], idx)
+    sub(e, "Size", 130)
+    sub(e, "Static")
+    sub(e, "OccupySquare")
+    sub(e, "EnemyOccupySquare")
+    out.append(e)
+
     # Unstable Essence: the Mysterious One's drop, which the Cosmic Anvil corrupts Enthroned gear with
     e = ET.Element("Object", {"type": types.get("Unstable Essence", OBJECT_TYPES), "id": "Unstable Essence"})
     sub(e, "Class", "Equipment")

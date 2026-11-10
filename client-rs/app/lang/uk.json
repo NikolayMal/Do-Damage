@@ -1098,5 +1098,16 @@
 "Stop": "Стоп",
 "Next roll": "Наступний кидок",
 "Skip all": "Пропустити все",
-"Items go to the gift chest in your vault.": "Предмети — до скрині з подарунками у сховищі."
+"Items go to the gift chest in your vault.": "Предмети — до скрині з подарунками у сховищі.",
+"Corrupt": "Осквернити",
+"Corrupt Enthroned gear": "Осквернити спорядження Звеличених",
+"Corrupted.": "Осквернено.",
+"Corrupted. Its shots now fly back to you.": "Осквернено. Тепер його постріли летять назад до вас.",
+"Corruption": "Осквернення",
+"Cosmic Anvil": "Космічне ковадло",
+"Each Unstable Essence moves its damage, range, rate of fire and stats by -3 to +2 each, between -6 and +6. Rate of fire moves twice as far. A staff may also turn its shots round.": "Кожна Unstable Essence зсуває шкоду, дальність, скорострільність і стати на величину від -3 до +2, у межах від -6 до +6. Скорострільність зсувається вдвічі сильніше. Посох може ще й розвернути свої постріли.",
+"Pick Enthroned gear on the left to corrupt it.": "Виберіть ліворуч спорядження Звеличених, щоб осквернити його.",
+"Reversed: its shots fly from the end of their range back to you.": "Розвернуто: його постріли летять від кінця дальності назад до вас.",
+"Unstable Essence in your inventory: {n}": "Unstable Essence в інвентарі: {n}",
+"You need an Unstable Essence.": "Потрібна Unstable Essence."
 }
