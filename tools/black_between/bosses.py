@@ -333,32 +333,109 @@ def dawn_sword_shot():
     return cv.img
 
 
+A_COAT = R("#7a7464", "#c4bca8", "#ece6d6", "#fffcf2")
+A2_PAL = {"h": "#9a6410", "H": "#d8a028", "j": "#f6d060", "J": "#fff0b0", "y": "#7a4e10", "g": "#c08a1c",
+          "G": "#eec04a", "Y": "#fff0a8", "q": "#4cc8ff", "s": "#c08c64", "S": "#f0c8a0", "T": "#ffe6cc",
+          "e": "#2a5cd0", "b": "#8a5a20", "a": "#8a8478", "m": "#c8c2b2", "c": "#ebe6da", "d": "#ffffff"}
+# his sister's figure, a man's: swept golden hair under a sun circlet, a strong jaw, gold pauldrons
+# over white plate with the sun on it, a belt with a sky-blue gem
+A2_BODY = {
+    1: [(16, "hHHh")],
+    2: [(14, "hHjJjHh")],
+    3: [(13, "hHjgGYGgh")],
+    4: [(13, "hHHgGqGgh")],
+    5: [(12, "hHjH"), (16, "SSTTSh")],
+    6: [(12, "hHjh"), (16, "STbbS")],
+    7: [(12, "hHHh"), (16, "STTeS")],
+    8: [(11, "hHjH"), (16, "STTTs")],
+    9: [(11, "hHHh"), (16, "sSTTs")],
+    10: [(11, "hjh"), (16, "ssSs")],
+    11: [(16, "sSs")],
+    12: [(11, "yGYGy"), (16, "acddca"), (22, "yGYGy")],
+    13: [(11, "yGGGy"), (16, "acGYca"), (22, "yGGGy")],
+    14: [(12, "ama"), (16, "acYGca"), (22, "ama")],
+    15: [(12, "ama"), (16, "amccma"), (22, "am")],
+    16: [(12, "aSa"), (15, "gyGqGyg")],
+}
+
+
 def aurel(frame=0, slash=False, gauntlets=False):
+    """His sister's look in white and gold: wings white edged in gold, swept golden hair, a long coat
+    flaring and swept back as her gown is, and a great sword in his hand (upright; swung down and
+    forward when he strikes), or empty gauntlets blazing while his sword flies (`gauntlets`)."""
     cv = Canvas()
     flap = (-5, 0, 4)[frame % 3]
     wing(cv, [(20, 12), (25, 5), (31, 2)], 75, -8, 10, 9, A_WING_FAR, A_WING_FAR, n=8, flap=-flap * .6)
-    wing(cv, [(12, 12), (6, 4), (0, 1)], 100, 200, 13, 10, A_WING, R("#9c9cb6", "#d0d0e4", "#f0f0fa", "#ffffff"), n=10, tip=frame, tipcol=A_GOLD[2], flap=flap)
+    wing(cv, [(12, 12), (6, 4), (0, 1)], 100, 200, 13, 10, A_WING, R("#9c9cb6", "#d0d0e4", "#f0f0fa", "#ffffff"),
+         n=10, tip=frame, tipcol=A_GOLD[2], flap=flap)
     for (x, y) in ((11, 11), (10, 10), (9, 9), (8, 7), (7, 6), (6, 5), (5, 4), (4, 3), (3, 2)):  # gold along the wing's edge
         cv.px(x, y, A_GOLD[2] if (x + y) % 2 else A_GOLD[3])
-    # legs in a stride, greaves of plate, gold sabatons; the tabard hangs between them
-    for (x0, x1, top) in ((15, 13.5, 21), (19, 20.5, 21)):
-        leg = poly_mask([(x0 - 1.4, top), (x0 + 1.4, top), (x1 + 1.3, 29), (x1 - 1.3, 29)])
-        cv.shade(leg, A_PLATE, grad=lin(x0 - 1, top, x1 + 1, 29))
-        cv.shade(ell_mask((x0 + x1) / 2, 24.5, 1.6, 1.2), A_GOLD)
-        cv.shade(poly_mask([(x1 - 1.8, 28.5), (x1 + 2.6, 28.5), (x1 + 2.6, 30.6), (x1 - 1.8, 30.6)]), A_GOLD)
-    cv.shade(poly_mask([(15.5, 21), (18.5, 21), (18.2, 28), (16.8, 29), (15.8, 28)]), A_CLOTH, grad=lin(15, 21, 18, 28))
-    cv.px(17, 27, A_GOLD[2]); cv.px(17, 23, A_GOLD[3])
-    paint(cv, A_BODY, A_PAL)
+    # hair swept back to his shoulders
+    cv.shade(poly_mask([(13, 3), (17, 3), (16, 10), (14, 14), (11, 15), (10, 11), (11, 6)]), A_HAIR, grad=lin(11, 4, 12, 14))
+    for (x, y) in ((11, 9), (11, 12), (12, 14)):
+        cv.px(x, y, A_HAIR[3])
+    # the long coat: ivory, flaring and swept back, a glowing gold hem, sky-blue lining in its slit
+    coat = poly_mask([(15, 16), (22, 16), (24, 22), (27, 30), (24, 29.5), (22, 31), (19, 29.5), (16, 31), (13, 29.5),
+                      (9, 31), (8, 29), (12, 22)])
+    cv.shade(coat, A_COAT, grad=lambda x, y: 2 if x < 17 - (y - 16) * .3 + 3 else 1)
+    for (x, y) in coat:
+        if (x, y + 1) not in coat and (x + y) % 2 == 0:
+            cv.px(x, y, A_GOLD[2])
+        if (x, y + 2) not in coat and (x, y + 1) in coat and (x * 7 + y) % 5 == 0:
+            cv.px(x, y, A_GOLD[3])
+    for (x, y) in ((18, 18), (19, 19), (20, 20), (20, 21), (21, 22), (22, 24), (23, 26)):  # the slit, its blue lining
+        cv.px(x, y, "#2e56a0" if y < 22 else "#4c86d0")
+    for (x, y) in ((14, 25), (12, 27), (17, 22)):  # gold thread in the cloth
+        cv.px(x, y, A_GOLD[1])
+    paint(cv, A2_BODY, A2_PAL)
     if gauntlets:
-        paint(cv, {13: [(23, "bcGG")], 14: [(23, "abGY")], 12: [(25, "G")]}, A_PAL)
-        for (x, y) in ((27, 12), (28, 14), (27, 16), (25, 16), (28, 11), (26, 10)):
+        # his hands empty, gauntlets blazing while his sword flies
+        cv.shade(ell_mask(24.5, 15.5, 1.8, 1.6), A_GOLD)
+        cv.shade(ell_mask(12.8, 17.2, 1.5, 1.3), A_GOLD)
+        for (x, y) in ((27, 12), (28, 14), (27, 16), (25, 18), (28, 11), (26, 10), (11, 19), (10, 16)):
             cv.px(x, y, A_GOLD[3] if (x + y) % 2 else A_GOLD[2])
-        paint(cv, {17: [(10, "YGY")], 18: [(10, "GY")]}, A_PAL)
     elif slash:
-        flight_sword(cv, 25.5, 24, -60, 1.1)
+        # swung down and forward
+        greatsword(cv, 23.5, 16, 34)
+        paint(cv, {15: [(23, "SS")], 16: [(23, "ST")]}, A2_PAL)
     else:
-        flight_sword(cv, 28, 17, -86, 1.05)
+        # held upright before him
+        greatsword(cv, 24.5, 15.5, -66)
+        paint(cv, {15: [(24, "SSs")], 16: [(24, "STs")]}, A2_PAL)
     return cv.img
+
+
+def greatsword(cv, x, y, ang):
+    """His great sword, gripped at (x, y), its blade along `ang` degrees: broad and long, white with
+    a gold fuller and a pale fire along its edge, a gold winged guard and a sun gem."""
+    a = math.radians(ang)
+    dx, dy = math.cos(a), math.sin(a)
+    nx, ny = -dy, dx
+    gx, gy = x + dx * 2.2, y + dy * 2.2       # the guard, just past the hand
+    L = 14.5
+    blade = [(gx + nx * 2.4, gy + ny * 2.4), (gx + dx * L * .78 + nx * 2.2, gy + dy * L * .78 + ny * 2.2),
+             (gx + dx * L, gy + dy * L), (gx + dx * L * .78 - nx * 2.2, gy + dy * L * .78 - ny * 2.2),
+             (gx - nx * 2.4, gy - ny * 2.4)]
+    m = poly_mask(blade)
+    # a dark steel edge round it first, so the blade reads against his pale wings
+    for (px_, py_) in m:
+        for ox, oy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            if (px_ + ox, py_ + oy) not in m:
+                cv.px(px_ + ox, py_ + oy, "#2a3450")
+    cv.shade(m, A_BLADE)
+    for t in range(2, int(L) - 1):  # the fuller, gold
+        cv.px(gx + dx * t, gy + dy * t, A_GOLD[2] if t % 3 else A_GOLD[3])
+    for (px_, py_) in m:  # pale fire along the lower edge
+        if (px_ + 1, py_ + 1) not in m and (px_ + py_) % 2 == 0:
+            cv.px(px_ + 1, py_ + 1, A_EDGE, 170)
+    guard = [(gx + nx * 4.2 - dx, gy + ny * 4.2 - dy), (gx + nx * 1.2 + dx * .7, gy + ny * 1.2 + dy * .7),
+             (gx - nx * 1.2 + dx * .7, gy - ny * 1.2 + dy * .7), (gx - nx * 4.2 - dx, gy - ny * 4.2 - dy),
+             (gx - dx * 1.3, gy - dy * 1.3)]
+    cv.shade(poly_mask(guard), A_GOLD)
+    cv.px(gx, gy, "#4cc8ff")
+    for t in range(0, 3):  # grip, under his hand, and the pommel
+        cv.px(x - dx * t, y - dy * t, "#6a3a18" if t % 2 else "#9a5a28")
+    cv.px(x - dx * 3.2, y - dy * 3.2, A_GOLD[3])
 
 
 def cyclone(frame):

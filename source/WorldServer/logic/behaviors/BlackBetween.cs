@@ -965,7 +965,11 @@ namespace WorldServer.logic.behaviors
 
     // Aurel's Zenith Leap: he marks where a player will be when the mark has filled (`fillMs`: where
     // they're heading, at the pace they're going, not where they stand), and then lands there with a
-    // blast (`damage` within `radius`) and a ring of his projectile `projectile`.
+    // blast (`damage` within `radius`, breaking armour) and a ring of his projectile `projectile`.
+    // With an `echo` (an object that looks just like him), a second mark goes down on another
+    // player (alone: across the arena from the first), the echo leaps to one and he to the other,
+    // which at random, so no one can tell which is him; the echo then strikes and is gone (its own
+    // behaviour).
     internal class LeapStrike : Behavior
     {
         private readonly double _range;
@@ -976,8 +980,12 @@ namespace WorldServer.logic.behaviors
         private readonly int _projectile;
         private readonly int _ring;
 
-        public LeapStrike(double range, double radius, int damage, int fillMs, Cooldown coolDown, int projectile, int ring = 12)
+        private readonly string _echo;
+
+        public LeapStrike(double range, double radius, int damage, int fillMs, Cooldown coolDown, int projectile, int ring = 12,
+            string echo = null)
         {
+            _echo = echo;
             _range = range;
             _radius = radius;
             _damage = damage;
@@ -1002,29 +1010,68 @@ namespace WorldServer.logic.behaviors
             if (players.Count == 0)
                 return;
             var target = players[Random.Next(players.Count)];
-            // a tick's movement (PrevX/PrevY, the last tick's place) for each tick of the mark, most
-            // of the way: a player who keeps going runs into it
-            var ticks = _fillMs / 100.0 * 0.85;
-            var at = new Position(target.X + (float)((target.X - target.PrevX) * ticks), target.Y + (float)((target.Y - target.PrevY) * ticks));
             var c = host.SpawnPoint.Value;
-            if (!Strike.Walkable(host, at.X, at.Y) || at.DistTo(c.X, c.Y) > 16)
-                at = new Position(target.X, target.Y);
-            Strike.Mark(host, at, _radius, _fillMs, 0xFFFFD24A);
+            var at = Lead(host, target, c);
             var world = host.World;
+            Entity echo = null;
+            var echoAt = at;
+            if (_echo != null)
+            {
+                var others = players.Where(p => p != target).ToList();
+                echoAt = others.Count > 0 ? Lead(host, others[Random.Next(others.Count)], c)
+                    : new Position(2 * c.X - at.X, 2 * c.Y - at.Y);
+                if (!Strike.Walkable(host, echoAt.X, echoAt.Y))
+                    echoAt = new Position(c.X, c.Y);
+                echo = Entity.Resolve(host.GameServer, _echo);
+                if (echo != null)
+                {
+                    echo.Move(host.X, host.Y);
+                    echo.SummonedBy(host);
+                    world.EnterWorld(echo);
+                    // which of the two is him
+                    if (Random.Next(2) == 0)
+                        (at, echoAt) = (echoAt, at);
+                    Strike.Mark(host, echoAt, _radius, _fillMs, 0xFFFFD24A);
+                }
+            }
+            Strike.Mark(host, at, _radius, _fillMs, 0xFFFFD24A);
             world.StartNewTimer(_fillMs, (w, t) =>
             {
-                if (host.World != world || host.HasConditionEffect(ConditionEffectIndex.Stunned))
+                if (host.World != world)
                     return;
-                void Land()
-                {
-                    Strike.Land(world, host, at, _radius, _damage, 0xFFFFD24A, ConditionEffectIndex.Dazed, 1500);
-                    Strike.Fire(host, _projectile, 0, _ring, 2 * Math.PI / _ring);
-                }
-                if (Strike.Walkable(host, at.X, at.Y))
-                    Strike.Glide(host, at, 200, Land);
-                else
-                    Land();
+                Leap(host, host, at, world);
+                if (echo != null && echo.World == world)
+                    Leap(echo, host, echoAt, world);
             });
+        }
+
+        // where `target` will be when the mark has filled: a tick's movement (PrevX/PrevY, the last
+        // tick's place) for each tick of the mark, most of the way, so a player who keeps going runs
+        // into it; where they stand if that's off the platform
+        private Position Lead(Entity host, Entity target, Position c)
+        {
+            var ticks = _fillMs / 100.0 * 0.85;
+            var at = new Position(target.X + (float)((target.X - target.PrevX) * ticks), target.Y + (float)((target.Y - target.PrevY) * ticks));
+            if (!Strike.Walkable(host, at.X, at.Y) || at.DistTo(c.X, c.Y) > 16)
+                at = new Position(target.X, target.Y);
+            return at;
+        }
+
+        // `who` (him, or his echo) glides down onto `at`: the blast (as his: `owner`'s damage) and a
+        // ring of `who`'s projectile
+        private void Leap(Entity who, Entity owner, Position at, World world)
+        {
+            if (who.HasConditionEffect(ConditionEffectIndex.Stunned))
+                return;
+            void Land()
+            {
+                Strike.Land(world, owner, at, _radius, _damage, 0xFFFFD24A, ConditionEffectIndex.ArmorBroken, 3000);
+                Strike.Fire(who, who == owner ? _projectile : 0, 0, _ring, 2 * Math.PI / _ring);
+            }
+            if (Strike.Walkable(who, at.X, at.Y))
+                Strike.Glide(who, at, 200, Land);
+            else
+                Land();
         }
     }
 }
