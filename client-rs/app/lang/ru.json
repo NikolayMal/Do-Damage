@@ -1090,5 +1090,16 @@
 "chars::Newest": "Новые",
 "key::Mouse 4": "Мышь 4",
 "key::Mouse 5": "Мышь 5",
-"{shown} of {all}": "{shown} из {all}"
+"{shown} of {all}": "{shown} из {all}",
+"Corrupt": "Осквернить",
+"Corrupt Enthroned gear": "Осквернить снаряжение Возведённых",
+"Corrupted.": "Осквернено.",
+"Corrupted. Its shots now fly back to you.": "Осквернено. Теперь его выстрелы летят обратно к вам.",
+"Corruption": "Осквернение",
+"Cosmic Anvil": "Космическая наковальня",
+"Each Unstable Essence moves its damage, range, rate of fire and stats by -3 to +2 each, between -6 and +6. Rate of fire moves twice as far. A staff may also turn its shots round.": "Каждая Unstable Essence сдвигает урон, дальность, скорострельность и статы на величину от -3 до +2, в пределах от -6 до +6. Скорострельность сдвигается вдвое сильнее. Посох может ещё и развернуть свои выстрелы.",
+"Pick Enthroned gear on the left to corrupt it.": "Выберите слева снаряжение Возведённых, чтобы осквернить его.",
+"Reversed: its shots fly from the end of their range back to you.": "Развёрнут: его выстрелы летят от конца дальности обратно к вам.",
+"Unstable Essence in your inventory: {n}": "Unstable Essence в инвентаре: {n}",
+"You need an Unstable Essence.": "Нужна Unstable Essence."
 }

@@ -1090,5 +1090,16 @@
 "chars::Newest": "En yeni",
 "key::Mouse 4": "Fare 4",
 "key::Mouse 5": "Fare 5",
-"{shown} of {all}": "{all} içinden {shown}"
+"{shown} of {all}": "{all} içinden {shown}",
+"Corrupt": "Yozlaştır",
+"Corrupt Enthroned gear": "Tahtlı teçhizatı yozlaştır",
+"Corrupted.": "Yozlaştırıldı.",
+"Corrupted. Its shots now fly back to you.": "Yozlaştırıldı. Atışları artık sana geri uçuyor.",
+"Corruption": "Yozlaşma",
+"Cosmic Anvil": "Kozmik Örs",
+"Each Unstable Essence moves its damage, range, rate of fire and stats by -3 to +2 each, between -6 and +6. Rate of fire moves twice as far. A staff may also turn its shots round.": "Her Unstable Essence hasarı, menzili, atış hızını ve özellikleri -3 ile +2 arasında oynatır; her biri -6 ile +6 arasında kalır. Atış hızı iki kat oynar. Bir değnek atışlarını tersine de çevirebilir.",
+"Pick Enthroned gear on the left to corrupt it.": "Yozlaştırmak için soldan Tahtlı teçhizat seç.",
+"Reversed: its shots fly from the end of their range back to you.": "Ters: atışları menzilinin sonundan sana geri uçar.",
+"Unstable Essence in your inventory: {n}": "Envanterdeki Unstable Essence: {n}",
+"You need an Unstable Essence.": "Bir Unstable Essence gerekiyor."
 }

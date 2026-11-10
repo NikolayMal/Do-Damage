@@ -446,6 +446,8 @@ namespace WorldServer.logic
                     // once he's gone, the Rift he came out of (on the north rim, 17 tiles north of the
                     // middle, where he fades) is a portal to what's to come: locked, for now
                     new RemoveObjectOnDeath("Rift of the Between", 20),
+                    // and the Cosmic Anvil, three squares south of the middle, for his Unstable Essence
+                    new PlaceOnDeath("Cosmic Anvil", 0, 3),
                     new DropPortalOnDeath("Rift of the Between: Part II", 1.0, 0, 0, -17, name: "Part II: Coming Soon",
                         lockedHint: "The Between stirs beyond the Rift... Part II is coming soon."),
                     new State("Arrive",

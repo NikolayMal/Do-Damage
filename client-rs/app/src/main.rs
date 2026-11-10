@@ -340,6 +340,10 @@ fn npc_open(kind: npc::NpcKind, game: &Game, npcs: &mut npc::Npcs, market: &mut 
             forge_acts.extend(forge.show_enchanter(data));
             return false;
         }
+        NpcKind::CosmicAnvil => {
+            forge_acts.extend(forge.show_anvil(data));
+            return false;
+        }
         // the Tinkerer: the quests (the tab with something to claim); the Chronicler: the daily
         // reward while it waits, else the achievements
         NpcKind::QuestMaster | NpcKind::Chronicler => {

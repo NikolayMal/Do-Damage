@@ -90,6 +90,13 @@ From the bottom of `..Context-Txts/11082026/mystery-updates1.txt` and its four s
 - Redeploy: servers and client. Checks: on the slot 3 stack, an Oryx 5 spawned in his Elysium and smitten: the Rift, the void ground and the Mysterious One's lines (screenshot), and `bsk-bot` entering the Rift into the Black Between.
 - Still to do before release: the changelog and wiki for the dungeon (it's reachable now), the Cosmic Anvil and corruption, the new items.
 
+### Corruption: the Cosmic Anvil (updates 4, part 2)
+
+- The Mysterious One leaves the Cosmic Anvil when he fades. Its window (the Divine Workbench as the anvil, one tab) spends an Unstable Essence to corrupt a piece of Enthroned gear: damage, range, rate of fire (doubled) and stats each move by -3 to +2, between -6 and +6; a staff is reversed a tenth of the time (its shots fly from the far end of their range back to where they were fired). Corrupted gear has a purple edge and a Corruption section in its tooltip.
+- **Message change:** `CORRUPT` (160) and `CORRUPT_RESULT` (161), client and server ship together. Item data gains `Corruption` and `Unique` (JSON fields, left out when empty; no migration).
+- Files: `Shared/resources/Corruption.cs`, `ItemData.cs`, `Imprints.cs` (`ImprintShot.Of`), `Player.Imprints.cs`, `CorruptHandler.cs`, `CorruptResult.cs`, `MessageIds.cs`, `BlackBetween.cs` (`PlaceOnDeath`), `BehaviorDb.BlackBetween.cs`; generator (anvil art and object); client `forge.rs`, `forge/corrupt.rs`, `forge/imprints.rs`, `hud.rs`, `npc.rs`, `main.rs`, `game.rs`, `bsk-data` `imprint.rs` (+ a test), `bsk-proto` `messages.rs`, `combat.rs`, ten language tables.
+- Checks: tests (server 169, client 82, data/world/proto); on the slot 3 stack the whole fight, the anvil window, three corruptions of an Enthroned Staff: the values, the purple edge in the window and the HUD, defense +15 from the stats value (screenshots). The reversed staff not seen (a tenth of the time).
+
 ### Placed objects show (Oryx 3's and Oryx 5's gates)
 
 - `PlaceObject` set a square's object without an object id and never told the players round it to look again, so clients were never sent it: Oryx 5's Holy Gates (as they shut, and in his Last Judgement) and Oryx 3's gate stood in the way unseen. It now gives each one an id and refreshes players' squares (`UpdateTiles`, as `RemoveObject` does); removal already worked (clients drop a square's object by its id). Found with the Black Between's walls of light.

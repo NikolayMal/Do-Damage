@@ -1090,5 +1090,16 @@
 "chars::Newest": "Nieuwste",
 "key::Mouse 4": "Muis 4",
 "key::Mouse 5": "Muis 5",
-"{shown} of {all}": "{shown} van {all}"
+"{shown} of {all}": "{shown} van {all}",
+"Corrupt": "Verderven",
+"Corrupt Enthroned gear": "Getroonde uitrusting verderven",
+"Corrupted.": "Verdorven.",
+"Corrupted. Its shots now fly back to you.": "Verdorven. Zijn schoten vliegen nu naar je terug.",
+"Corruption": "Verderf",
+"Cosmic Anvil": "Kosmisch Aambeeld",
+"Each Unstable Essence moves its damage, range, rate of fire and stats by -3 to +2 each, between -6 and +6. Rate of fire moves twice as far. A staff may also turn its shots round.": "Elke Unstable Essence verschuift schade, bereik, vuursnelheid en stats elk met -3 tot +2, tussen -6 en +6. Vuursnelheid verschuift twee keer zo ver. Een staf kan ook zijn schoten omdraaien.",
+"Pick Enthroned gear on the left to corrupt it.": "Kies links Getroonde uitrusting om die te verderven.",
+"Reversed: its shots fly from the end of their range back to you.": "Omgekeerd: zijn schoten vliegen van het eind van hun bereik naar je terug.",
+"Unstable Essence in your inventory: {n}": "Unstable Essence in je inventaris: {n}",
+"You need an Unstable Essence.": "Je hebt een Unstable Essence nodig."
 }

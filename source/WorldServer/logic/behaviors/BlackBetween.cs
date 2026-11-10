@@ -932,6 +932,44 @@ namespace WorldServer.logic.behaviors
         }
     }
 
+    // When the host dies, `objName` stands on the square `dx`, `dy` from its spawn point, as a map
+    // object (a square's object, as the map's own are: the Cosmic Anvil, which the server finds by
+    // its square, DoomedEconomy.NearObject).
+    internal class PlaceOnDeath : Behavior
+    {
+        private readonly string _objName;
+        private readonly int _dx;
+        private readonly int _dy;
+
+        public PlaceOnDeath(string objName, int dx, int dy)
+        {
+            _objName = objName;
+            _dx = dx;
+            _dy = dy;
+        }
+
+        protected override void TickCore(Entity host, TickTime time, ref object state) { }
+
+        public override void OnDeath(Entity host, ref TickTime time)
+        {
+            var world = host.World;
+            var data = host.GameServer.Resources.GameData;
+            if (world == null || !data.IdToObjectType.TryGetValue(_objName, out var objType))
+                return;
+            var c = host.SpawnPoint.Value;
+            var (x, y) = ((int)c.X + _dx, (int)c.Y + _dy);
+            if (!world.Map.Contains(x, y) || world.Map[x, y].ObjType != 0)
+                return;
+            var tile = world.Map[x, y];
+            tile.ObjType = objType;
+            tile.ObjDesc = data.ObjectDescs[objType];
+            tile.ObjId = world.GetNextEntityId();
+            tile.UpdateCount++;
+            foreach (var player in world.Players.Values)
+                player.UpdateTiles();
+        }
+    }
+
     // Oryx the Ascended God's fall, in his Elysium: a quarter of the time (every time while a server
     // event says so: ServerEvent.mysteriousOne), the Mysterious One's Rift opens a few seconds later,
     // `ahead` tiles north of where Oryx began (the middle of his temple), and he steps out of it (the

@@ -1090,5 +1090,16 @@
 "chars::Newest": "Najnowsze",
 "key::Mouse 4": "Mysz 4",
 "key::Mouse 5": "Mysz 5",
-"{shown} of {all}": "{shown} z {all}"
+"{shown} of {all}": "{shown} z {all}",
+"Corrupt": "Skaź",
+"Corrupt Enthroned gear": "Skaź sprzęt Intronizowany",
+"Corrupted.": "Skażono.",
+"Corrupted. Its shots now fly back to you.": "Skażono. Jego pociski lecą teraz z powrotem do ciebie.",
+"Corruption": "Skaza",
+"Cosmic Anvil": "Kosmiczne Kowadło",
+"Each Unstable Essence moves its damage, range, rate of fire and stats by -3 to +2 each, between -6 and +6. Rate of fire moves twice as far. A staff may also turn its shots round.": "Każda Unstable Essence zmienia obrażenia, zasięg, szybkostrzelność i statystyki o -3 do +2 każde, między -6 a +6. Szybkostrzelność zmienia się dwa razy bardziej. Kostur może też odwrócić swoje pociski.",
+"Pick Enthroned gear on the left to corrupt it.": "Wybierz po lewej sprzęt Intronizowany, by go skazić.",
+"Reversed: its shots fly from the end of their range back to you.": "Odwrócony: jego pociski lecą od końca zasięgu z powrotem do ciebie.",
+"Unstable Essence in your inventory: {n}": "Unstable Essence w ekwipunku: {n}",
+"You need an Unstable Essence.": "Potrzebujesz Unstable Essence."
 }
