@@ -197,6 +197,7 @@
 			<Amplitude>1.2</Amplitude>
 			<Frequency>0.5</Frequency>
 			<ConditionEffect duration="1.5">Darkness</ConditionEffect>
+			<ConditionEffect duration="1.5">Slowed</ConditionEffect>
 		</Projectile>
 	</Object>
 	<Object type="0x8D29" id="Vesper's Veil Copy">

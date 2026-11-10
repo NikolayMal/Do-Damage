@@ -18,6 +18,10 @@ details). Add to a group's line when a change adds to it, rather than adding ano
 - The gates that shut behind you in Oryx's Sanctuary and Oryx's Elysium now show as they close:
   before, they blocked the way without being seen.
 
+### Game
+- Darkness now darkens your view, leaving only a little light round you, as it should: before,
+  it only showed its icon.
+
 ## 2.4.6 (2026-11-08)
 
 ### Elder dungeons

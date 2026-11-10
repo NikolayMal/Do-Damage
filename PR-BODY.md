@@ -70,7 +70,8 @@ From the bottom of `..Context-Txts/11082026/mystery-updates1.txt` and its four s
 
 ### The Black Between: Vesper's copies (still admin only)
 
-- In the Veil her copies fire every 3 s (was 1.6 s); their bolts do 35 damage, armour-piercing (was 180). `tools/build_black_between.py` (`shot(piercing=)`), `BehaviorDb.BlackBetween.cs`. Redeploy: servers and client (XML). Checks: server tests, the generated XML.
+- In the Veil her copies fire every 2.5 s (was 1.6 s); their bolts do 35 damage, armour-piercing (was 180). Her rings' orbs darken and slow for 1.5 s.
+- **Darkness shows (client):** the Rust client showed only Darkness's icon; it now darkens the world but for a little light round you (`view.rs`, `death::vignette`), as the AIR client did. Every shot or aura that darkens (the Black Between's, and elsewhere in the game) now does something players can see. `tools/build_black_between.py` (`shot(piercing=)`), `BehaviorDb.BlackBetween.cs`. Redeploy: servers and client (XML). Checks: server tests, the generated XML.
 
 ### Placed objects show (Oryx 3's and Oryx 5's gates)
 
