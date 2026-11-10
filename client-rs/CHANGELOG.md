@@ -19,6 +19,8 @@ details). Add to a group's line when a change adds to it, rather than adding ano
   before, they blocked the way without being seen.
 
 ### Game
+- Imprinted gear's border is thinner: its colour sits at the slot's edge with a fine gold line
+  inside, leaving more room for the item.
 - Darkness now darkens your view, leaving only a little light round you, as it should: before,
   it only showed its icon.
 

@@ -2039,10 +2039,11 @@ fn draw_slot(ui: &mut Ui, lay: &Layout, slot: &Slot, dragged: bool, target: bool
 }
 
 /// An item's imprints as a border round its slot `r`: each imprint it carries a band in its colour
-/// edged in gold, in the order Offensive (red), Defensive (green), Misc (purple), Apotheosis
-/// (light blue). One goes all the way round; two share it half and half, left and right; three
-/// take the top's two halves and the bottom; four a quarter each, red at the top left and light
-/// blue at the bottom right (`theme::part_of`). Gold lines part them. Nothing when it has none.
+/// at the slot's edge, a thin gold line inside it, in the order Offensive (red), Defensive (green),
+/// Misc (purple), Apotheosis (light blue). One goes all the way round; two share it half and half,
+/// left and right; three take the top's two halves and the bottom; four a quarter each, red at the
+/// top left and light blue at the bottom right (`theme::part_of`). Gold lines part them. Nothing
+/// when it has none.
 pub(crate) fn draw_imprint_marks(ui: &mut Ui, imprints: [u32; 4], r: [f32; 4], s: f32) {
     use bsk_data::imprint::Kind;
     let colours: Vec<(u32, f32)> = Kind::ALL.into_iter().filter(|&k| imprints[k as usize] != 0).map(|k| (k.color(), 1.0)).collect();
@@ -2051,18 +2052,18 @@ pub(crate) fn draw_imprint_marks(ui: &mut Ui, imprints: [u32; 4], r: [f32; 4], s
     }
     let gold = s.round().max(1.0);
     let band = (2.0 * s).round().max(2.0);
-    let all = 2.0 * gold + band;
+    let all = band + gold;
     let r = [r[0].round(), r[1].round(), r[2].round(), r[3].round()];
     let radius = (5.0 * s).max(all);
-    // gold all round, the colours inside it, gold between them
-    theme::split_ring(ui.renderer, r, radius, all, &[(color::GOLD, 1.0)]);
-    theme::split_ring(ui.renderer, [r[0] + gold, r[1] + gold, r[2] - 2.0 * gold, r[3] - 2.0 * gold], radius - gold, band, &colours);
+    // the colours at the edge, a gold line inside them, gold between them
+    theme::split_ring(ui.renderer, r, radius, band, &colours);
+    theme::split_ring(ui.renderer, [r[0] + band, r[1] + band, r[2] - 2.0 * band, r[3] - 2.0 * band], radius - band, gold, &[(color::GOLD, 1.0)]);
     let (cx, cy) = ((r[0] + r[2] / 2.0 - gold / 2.0).round(), (r[1] + r[3] / 2.0 - gold / 2.0).round());
     let (top, bottom, left, right) = (
-        [cx, r[1], gold, all],
-        [cx, r[1] + r[3] - all, gold, all],
-        [r[0], cy, all, gold],
-        [r[0] + r[2] - all, cy, all, gold],
+        [cx, r[1], gold, band],
+        [cx, r[1] + r[3] - band, gold, band],
+        [r[0], cy, band, gold],
+        [r[0] + r[2] - band, cy, band, gold],
     );
     let lines: &[[f32; 4]] = match colours.len() {
         1 => &[],
@@ -2077,7 +2078,7 @@ pub(crate) fn draw_imprint_marks(ui: &mut Ui, imprints: [u32; 4], r: [f32; 4], s
 
 /// How far in from a slot's edge its contents start when it carries imprints (their border).
 pub(crate) fn imprint_border(s: f32) -> f32 {
-    2.0 * s.round().max(1.0) + (2.0 * s).round().max(2.0)
+    (2.0 * s).round().max(2.0) + s.round().max(1.0)
 }
 
 /// The Imprints section at the foot of an item's tooltip: a bar with its title, each imprint's

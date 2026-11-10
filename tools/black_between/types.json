@@ -21,9 +21,11 @@
  "Eclipse Orb": "0x8D24",
  "Gravity Point": "0x8D37",
  "Mysterious One Herald": "0x8D26",
+ "Mysterious One Visitant": "0x8D3E",
  "Observatory Heart": "0x8D36",
  "Platform Rim": "0x8D02",
  "Rift of the Between": "0x8D35",
+ "Rift of the Between (Open)": "0x8D3F",
  "Rift of the Between: Part II": "0x8D3D",
  "Spectral Aurel": "0x8D2D",
  "Spectral Vesper": "0x8D2A",
@@ -33,8 +35,10 @@
  "Sword of the Dawn": "0x8D2E",
  "The Mysterious One": "0x8D27",
  "Umbral Orb": "0x8D21",
+ "Unstable Essence": "0x8D40",
  "Veil Wall": "0x8D33",
  "Veil of Dusk": "0x8D03",
  "Vesper's Veil Copy": "0x8D29",
- "Vesper, the Dusk Star": "0x8D28"
+ "Vesper, the Dusk Star": "0x8D28",
+ "Void Scar": "0x8D08"
 }

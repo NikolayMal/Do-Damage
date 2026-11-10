@@ -4,42 +4,42 @@
 		<Class>Projectile</Class>
 		<Texture>
 			<File>blackBetween8x8</File>
-			<Index>0x16</Index>
+			<Index>0x19</Index>
 		</Texture>
 	</Object>
 	<Object type="0x8D21" id="Umbral Orb">
 		<Class>Projectile</Class>
 		<Texture>
 			<File>blackBetween8x8</File>
-			<Index>0x17</Index>
+			<Index>0x1a</Index>
 		</Texture>
 	</Object>
 	<Object type="0x8D22" id="Dawn Crescent">
 		<Class>Projectile</Class>
 		<Texture>
 			<File>blackBetween8x8</File>
-			<Index>0x18</Index>
+			<Index>0x1b</Index>
 		</Texture>
 	</Object>
 	<Object type="0x8D23" id="Sunspark">
 		<Class>Projectile</Class>
 		<Texture>
 			<File>blackBetween8x8</File>
-			<Index>0x19</Index>
+			<Index>0x1c</Index>
 		</Texture>
 	</Object>
 	<Object type="0x8D24" id="Eclipse Orb">
 		<Class>Projectile</Class>
 		<Texture>
 			<File>blackBetween8x8</File>
-			<Index>0x1a</Index>
+			<Index>0x1d</Index>
 		</Texture>
 	</Object>
 	<Object type="0x8D25" id="Starbound Mote">
 		<Class>Projectile</Class>
 		<Texture>
 			<File>blackBetween8x8</File>
-			<Index>0x1b</Index>
+			<Index>0x1e</Index>
 		</Texture>
 	</Object>
 	<Object type="0x8D38" id="Dawn Sword">
@@ -50,6 +50,28 @@
 		</Texture>
 	</Object>
 	<Object type="0x8D26" id="Mysterious One Herald">
+		<DisplayId>The Mysterious One</DisplayId>
+		<Class>Character</Class>
+		<Enemy />
+		<AnimatedTexture>
+			<File>blackBetweenChars32x32</File>
+			<Index>0</Index>
+		</AnimatedTexture>
+		<HitSound>monster/ghost_god_hit</HitSound>
+		<DeathSound>monster/ghost_god_death</DeathSound>
+		<Size>100</Size>
+		<MaxHitPoints>420000</MaxHitPoints>
+		<Defense>110</Defense>
+		<NoArticle />
+		<StasisImmune />
+		<StunImmune />
+		<ParalyzeImmune />
+		<PetrifyImmune />
+		<SlowedImmune />
+		<DazedImmune />
+		<XpMult>0</XpMult>
+	</Object>
+	<Object type="0x8D3E" id="Mysterious One Visitant">
 		<DisplayId>The Mysterious One</DisplayId>
 		<Class>Character</Class>
 		<Enemy />
@@ -450,19 +472,19 @@
 		<Class>GameObject</Class>
 		<Texture>
 			<File>blackBetween8x8</File>
-			<Index>0x1c</Index>
+			<Index>0x1f</Index>
 		</Texture>
 		<Animation prob="1.0">
 			<Frame time="0.4">
 				<Texture>
 					<File>blackBetween8x8</File>
-					<Index>0x1c</Index>
+					<Index>0x1f</Index>
 				</Texture>
 			</Frame>
 			<Frame time="0.4">
 				<Texture>
 					<File>blackBetween8x8</File>
-					<Index>0x1d</Index>
+					<Index>0x20</Index>
 				</Texture>
 			</Frame>
 		</Animation>
@@ -473,19 +495,19 @@
 		<Class>GameObject</Class>
 		<Texture>
 			<File>blackBetween8x8</File>
-			<Index>0x1e</Index>
+			<Index>0x21</Index>
 		</Texture>
 		<Animation prob="1.0">
 			<Frame time="0.5">
 				<Texture>
 					<File>blackBetween8x8</File>
-					<Index>0x1e</Index>
+					<Index>0x21</Index>
 				</Texture>
 			</Frame>
 			<Frame time="0.5">
 				<Texture>
 					<File>blackBetween8x8</File>
-					<Index>0x1f</Index>
+					<Index>0x22</Index>
 				</Texture>
 			</Frame>
 		</Animation>
@@ -498,19 +520,19 @@
 		<Class>GameObject</Class>
 		<Texture>
 			<File>blackBetween8x8</File>
-			<Index>0x20</Index>
+			<Index>0x23</Index>
 		</Texture>
 		<Animation prob="1.0">
 			<Frame time="0.5">
 				<Texture>
 					<File>blackBetween8x8</File>
-					<Index>0x20</Index>
+					<Index>0x23</Index>
 				</Texture>
 			</Frame>
 			<Frame time="0.5">
 				<Texture>
 					<File>blackBetween8x8</File>
-					<Index>0x21</Index>
+					<Index>0x24</Index>
 				</Texture>
 			</Frame>
 		</Animation>
@@ -524,19 +546,19 @@
 		<Enemy />
 		<Texture>
 			<File>blackBetween8x8</File>
-			<Index>0x22</Index>
+			<Index>0x25</Index>
 		</Texture>
 		<Animation prob="1.0">
 			<Frame time="0.2">
 				<Texture>
 					<File>blackBetween8x8</File>
-					<Index>0x22</Index>
+					<Index>0x25</Index>
 				</Texture>
 			</Frame>
 			<Frame time="0.2">
 				<Texture>
 					<File>blackBetween8x8</File>
-					<Index>0x23</Index>
+					<Index>0x26</Index>
 				</Texture>
 			</Frame>
 		</Animation>
@@ -654,6 +676,55 @@
 		<Size>220</Size>
 		<ShadowSize>0</ShadowSize>
 		<Static />
+	</Object>
+	<Object type="0x8D3F" id="Rift of the Between (Open)">
+		<DisplayId>The Black Between</DisplayId>
+		<Class>Portal</Class>
+		<IntergamePortal />
+		<DungeonName>The Black Between</DungeonName>
+		<Texture>
+			<File>blackBetween16x16</File>
+			<Index>0x07</Index>
+		</Texture>
+		<Animation prob="1.0">
+			<Frame time="0.12">
+				<Texture>
+					<File>blackBetween16x16</File>
+					<Index>0x07</Index>
+				</Texture>
+			</Frame>
+			<Frame time="0.12">
+				<Texture>
+					<File>blackBetween16x16</File>
+					<Index>0x08</Index>
+				</Texture>
+			</Frame>
+			<Frame time="0.12">
+				<Texture>
+					<File>blackBetween16x16</File>
+					<Index>0x09</Index>
+				</Texture>
+			</Frame>
+			<Frame time="0.12">
+				<Texture>
+					<File>blackBetween16x16</File>
+					<Index>0x0a</Index>
+				</Texture>
+			</Frame>
+		</Animation>
+		<Size>220</Size>
+		<ShadowSize>0</ShadowSize>
+	</Object>
+	<Object type="0x8D40" id="Unstable Essence">
+		<Class>Equipment</Class>
+		<Item />
+		<Texture>
+			<File>blackBetween8x8</File>
+			<Index>0x27</Index>
+		</Texture>
+		<SlotType>10</SlotType>
+		<Description>A phial of the Between, never still. At the Cosmic Anvil it corrupts Enthroned gear: each one changes its damage, range, rate of fire and stats, for better or worse.</Description>
+		<BagType>6</BagType>
 	</Object>
 	<Object type="0x8D3D" id="Rift of the Between: Part II">
 		<Class>Portal</Class>
