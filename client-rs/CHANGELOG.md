@@ -14,6 +14,18 @@ details). Add to a group's line when a change adds to it, rather than adding ano
 
 ## Unreleased
 
+### The Black Between
+- A new endgame dungeon, harder than Oryx 5: the Mysterious One, the voice of Realm 2, and his
+  children Vesper, the Dusk Star, and Aurel, the Dawn Blade, on a platform floating in the void.
+  When Oryx the Ascended God falls, his Rift opens a quarter of the time, and every time during
+  The Voice in the Void (10 November to 1 December).
+- The Mysterious One drops life and mana potions, every Max potion, six new abilities (one for the
+  Archer, Huntress, Warrior, Trickster, Rogue and Assassin, each with its own power) and Unstable
+  Essence.
+- Corruption: the Cosmic Anvil he leaves behind spends an Unstable Essence to reroll a piece of
+  Enthroned gear's damage, range, rate of fire and stats, for better or worse. Corrupted gear has
+  a purple edge, and a staff may even turn its shots round.
+
 ### Oryx 3 and Oryx 5
 - The gates that shut behind you in Oryx's Sanctuary and Oryx's Elysium now show as they close:
   before, they blocked the way without being seen.

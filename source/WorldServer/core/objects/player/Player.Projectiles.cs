@@ -249,6 +249,8 @@ namespace WorldServer.core.objects
                     ImprintHit(entity, dmg, entity.Health <= 0, ref tickTime);
                     RelicHit(entity, dmg, entity.Health <= 0, ref tickTime);
                 }
+                else if (!projectile.FromWeapon && Inventory[1]?.ObjectType == projectile.ContainerType)
+                    BetweenHit(entity, dmg, projectileDesc, ref tickTime);
 
                 // At 0 health, as in Enemy.Damage: the client counts a shot that leaves it at 0 as
                 // a kill and stops hitting it.

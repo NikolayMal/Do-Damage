@@ -622,7 +622,14 @@ namespace WorldServer.logic
                     new ItemLoot("Potion of Max Speed", 0.025),
                     new ItemLoot("Potion of Max Dexterity", 0.025),
                     new ItemLoot("Potion of Max Vitality", 0.025),
-                    new ItemLoot("Potion of Max Wisdom", 0.025)
+                    new ItemLoot("Potion of Max Wisdom", 0.025),
+                    // the family's gear, white bags: about one in a hundred each
+                    new ItemLoot("Quiver of the Solar Cyclone", 0.01),
+                    new ItemLoot("Trinity Trap", 0.01),
+                    new ItemLoot("Helm of the Dawn Blade", 0.01),
+                    new ItemLoot("Prism of the Dusk Veil", 0.01),
+                    new ItemLoot("Cloak of the Planar Rift", 0.01),
+                    new ItemLoot("Vial of Cascading Dusk", 0.01)
                 )
             )
 

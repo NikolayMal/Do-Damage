@@ -296,6 +296,70 @@ def projectile(types, sheet, name, img, file=SHEET8[0]):
     return e
 
 
+# name -> (slot type, MP cost, cooldown s, [(stat, amount)], relic power, description, [activates],
+# [projectiles], extra XML tags)
+STAT = {"HP": 0, "MP": 3, "ATT": 20, "DEF": 21, "SPD": 22, "DEX": 28, "VIT": 26, "WIS": 27}
+ITEM_SPECS = {
+    "Quiver of the Solar Cyclone": (15, 100, 5, [("ATT", 6), ("DEX", 4)], "SolarCyclone",
+        "Aurel's Solar Cyclone, bound in a quiver. Its arrow is a tornado: where it strikes an enemy it "
+        "bursts for 2,000 to everything round it, and throws eight sunsparks of 300 each.",
+        [("Shoot", {})],
+        [shot(0, "Cyclone Arrow", 340, 150, 1000, 150), shot(1, "Sunspark", 300, 90, 900)], {}),
+    "Trinity Trap": (20, 110, 0, [("ATT", 6), ("HP", 25), ("MP", 25)], "TrinityTrap",
+        "One trap, three of them. Aurel's lightning comes first (300, paralysed for 2 s), then Vesper's "
+        "veil (300, slowed for 4 s), then their father's rift (200, and 450 more as it bleeds them over 3 s).",
+        [], [], {}),
+    "Helm of the Dawn Blade": (16, 90, 3, [("HP", 60), ("MP", 60), ("DEF", 7), ("ATT", 7)], "DawnHelm",
+        "Aurel's three swords rise from its crest and fly where you aim, 1,200 each, and every one that "
+        "strikes heals you for 8% of the damage it does.",
+        [("Shoot", {})], [shot(0, "Dawn Sword", 1200, 140, 900, 120, multi=True)],
+        {"NumProjectiles": 3, "ArcGap": 14}),
+    "Prism of the Dusk Veil": (22, 85, 0, [("WIS", 8), ("HP", 60), ("MP", 60)], "DuskVeil",
+        "Vesper's veil, cut into a prism. Your decoy is one of her copies: while it lasts it casts her "
+        "three weaving dusk bolts at the nearest enemy, 320 each, every second.",
+        [("Decoy", {"duration": 11, "speed": 1.3}), ("Teleport", {"maxDistance": 13})],
+        [shot(0, "Dusk Bolt", 320, 95, 1600, amplitude=WAVE[0], frequency=WAVE[1])], {}),
+    "Cloak of the Planar Rift": (13, 100, 1.5, [("SPD", 7), ("DEX", 7)], "PlanarRift",
+        "The Planewalker's cloak, through the Between. Where you land, the ground bursts as when Aurel "
+        "lands, five sunsparks fly out (250 each, through any armour) and you are armored for 2 s.",
+        [("ConditionEffectSelf", {"effect": "Invisible", "duration": 5.5}), ("Teleport", {"maxDistance": 13})],
+        [shot(0, "Sunspark", 250, 110, 700)], {}),
+    "Vial of Cascading Dusk": (18, 90, 0, [("ATT", 3), ("WIS", 3)], "CascadeDusk",
+        "A splash of the dusk that never ends where it lands: 200, and 1,500 over 6 s; then four splashes "
+        "round it, each half that; then four more beyond, each half again.",
+        [], [], {}),
+}
+
+
+def gear_item(types, sheet, name, spec):
+    slot, mp, cooldown, stats, power, text, activates, shots, extra = spec
+    e = ET.Element("Object", {"type": types.get(name, OBJECT_TYPES), "id": name})
+    sub(e, "Class", "Equipment")
+    sub(e, "Item")
+    texture(e, SHEET8[0], sheet.add(small.item_icon(name)))
+    sub(e, "SlotType", slot)
+    sub(e, "Description", text)
+    for stat, amount in stats:
+        sub(e, "ActivateOnEquip", "IncrementStat", stat=STAT[stat], amount=amount)
+    sub(e, "Usable")
+    sub(e, "MpCost", mp)
+    if cooldown:
+        sub(e, "Cooldown", cooldown)
+    for effect, attrs in activates:
+        sub(e, "Activate", effect, **attrs)
+    for k, v in extra.items():
+        sub(e, k, v)
+    for p in shots:
+        e.append(p)
+    # the cloak's sunsparks pass through armour
+    if name == "Cloak of the Planar Rift":
+        sub(e.find("Projectile"), "ArmorPiercing")
+    sub(e, "RelicPower", power)
+    sub(e, "BagType", 6)
+    sub(e, "FameBonus", 5)
+    return e
+
+
 def objects(types, s8, s16, s32, c8, c32):
     out = []
     # shots
@@ -487,6 +551,13 @@ def objects(types, s8, s16, s32, c8, c32):
         "each one changes its damage, range, rate of fire and stats, for better or worse.")
     sub(e, "BagType", 6)
     out.append(e)
+
+    # the family's gear, the Mysterious One's white bags (BehaviorDb.BlackBetween.cs): what each does
+    # beyond its numbers is its <RelicPower> (Player.BetweenPowers.cs)
+    cyclone_arrow = projectile(types, s16, "Cyclone Arrow", bosses.cyclone(0).resize((16, 16)), SHEET16[0])
+    out.append(cyclone_arrow)
+    for name, spec in ITEM_SPECS.items():
+        out.append(gear_item(types, s8, name, spec))
 
     # the Rift once he's gone: a locked portal ("Part II: Coming Soon", BehaviorDb.BlackBetween.cs)
     e = ET.Element("Object", {"type": types.get("Rift of the Between: Part II", OBJECT_TYPES), "id": "Rift of the Between: Part II"})
