@@ -332,6 +332,68 @@
 			<Size>200</Size>
 			<MultiHit />
 		</Projectile>
+		<Projectile id="6">
+			<ObjectId>Sunspark</ObjectId>
+			<Damage>180</Damage>
+			<Speed>95</Speed>
+			<LifetimeMS>2300</LifetimeMS>
+			<Size>100</Size>
+			<Amplitude>1.0</Amplitude>
+			<Frequency>1.5</Frequency>
+		</Projectile>
+		<Projectile id="7">
+			<ObjectId>Dawn Crescent</ObjectId>
+			<Damage>190</Damage>
+			<Speed>50</Speed>
+			<LifetimeMS>4200</LifetimeMS>
+			<Size>120</Size>
+			<Amplitude>1.2</Amplitude>
+			<Frequency>0.5</Frequency>
+			<MultiHit />
+			<ConditionEffect duration="2">Armor Broken</ConditionEffect>
+		</Projectile>
+	</Object>
+	<Object type="0x8D3C" id="Aurel's Echo">
+		<DisplayId>Aurel, the Dawn Blade</DisplayId>
+		<Class>Character</Class>
+		<Enemy />
+		<AnimatedTexture>
+			<File>blackBetweenChars32x32</File>
+			<Index>4</Index>
+		</AnimatedTexture>
+		<HitSound>monster/ghost_god_hit</HitSound>
+		<DeathSound>monster/ghost_god_death</DeathSound>
+		<Size>85</Size>
+		<MaxHitPoints>100000</MaxHitPoints>
+		<Defense>100</Defense>
+		<StasisImmune />
+		<XpMult>0</XpMult>
+		<Projectile id="0">
+			<ObjectId>Dawn Crescent</ObjectId>
+			<Damage>230</Damage>
+			<Speed>75</Speed>
+			<LifetimeMS>2600</LifetimeMS>
+			<Size>130</Size>
+			<MultiHit />
+			<ConditionEffect duration="2">Armor Broken</ConditionEffect>
+		</Projectile>
+		<Projectile id="1">
+			<ObjectId>Sunspark</ObjectId>
+			<Damage>180</Damage>
+			<Speed>85</Speed>
+			<LifetimeMS>2400</LifetimeMS>
+			<Size>100</Size>
+			<ConditionEffect duration="1">Blind</ConditionEffect>
+		</Projectile>
+		<Projectile id="2">
+			<ObjectId>Sunspark</ObjectId>
+			<Damage>180</Damage>
+			<Speed>95</Speed>
+			<LifetimeMS>2300</LifetimeMS>
+			<Size>100</Size>
+			<Amplitude>1.0</Amplitude>
+			<Frequency>1.5</Frequency>
+		</Projectile>
 	</Object>
 	<Object type="0x8D3B" id="Aurel's Twin Cyclone">
 		<DisplayId>Aurel, the Dawn Blade</DisplayId>
@@ -592,6 +654,42 @@
 		<Size>220</Size>
 		<ShadowSize>0</ShadowSize>
 		<Static />
+	</Object>
+	<Object type="0x8D3D" id="Rift of the Between: Part II">
+		<Class>Portal</Class>
+		<LockedPortal />
+		<Texture>
+			<File>blackBetween16x16</File>
+			<Index>0x07</Index>
+		</Texture>
+		<Animation prob="1.0">
+			<Frame time="0.12">
+				<Texture>
+					<File>blackBetween16x16</File>
+					<Index>0x07</Index>
+				</Texture>
+			</Frame>
+			<Frame time="0.12">
+				<Texture>
+					<File>blackBetween16x16</File>
+					<Index>0x08</Index>
+				</Texture>
+			</Frame>
+			<Frame time="0.12">
+				<Texture>
+					<File>blackBetween16x16</File>
+					<Index>0x09</Index>
+				</Texture>
+			</Frame>
+			<Frame time="0.12">
+				<Texture>
+					<File>blackBetween16x16</File>
+					<Index>0x0a</Index>
+				</Texture>
+			</Frame>
+		</Animation>
+		<Size>220</Size>
+		<ShadowSize>0</ShadowSize>
 	</Object>
 	<Object type="0x8D36" id="Observatory Heart">
 		<Class>GameObject</Class>

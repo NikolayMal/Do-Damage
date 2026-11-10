@@ -295,8 +295,10 @@ namespace WorldServer.logic
             // his sword flying) ----
             // All through his fight he calls divine lightning down all over the arena and on the
             // players (gold marks, then a bolt from him).
-            // - 100% to 70%: Dawn Slash (three piercing crescents), the Sunburst ring and the Zenith
-            //   Leap (he lands on a marked player).
+            // - 100% to 70%: Dawn Slash (three piercing crescents, breaking armour), the Sunburst ring,
+            //   a weaving fan of sunsparks and a bowing ring of crescents (armour-breaking), and the
+            //   Zenith Leap: he lands where a player is heading and his echo on another (alone: across
+            //   the arena), which is which at random, and the echo strikes once and is gone.
             // - 70%: the Solar Cyclone: three dashes rim to rim, each through a player and marked
             //   first, a twin tornado crossing each at right angles (a first survival phase).
             // - 70% to 40%: Radiance: his kit, and the Sunwheel in turn (he stands and spins out four
@@ -322,7 +324,9 @@ namespace WorldServer.logic
                             new Prioritize(new StayCloseToSpawn(0.9, 11), new Follow(0.75, Sight, 3)),
                             DawnSlash(1400),
                             Sunburst(3000),
-                            new LeapStrike(Sight, 2.5, 420, 1500, 6000, 3)
+                            DawnFan(1700),
+                            CrescentRing(4200),
+                            new LeapStrike(Sight, 2.5, 420, 1500, 6000, 3, echo: "Aurel's Echo")
                         ),
                         Cyclone("Cyclone 1", "Radiance Chase", 3, Survival(false)),
                         new State("Radiance",
@@ -332,6 +336,8 @@ namespace WorldServer.logic
                                 new Prioritize(new StayCloseToSpawn(0.9, 11), new Follow(0.8, Sight, 3)),
                                 DawnSlash(1200),
                                 Sunburst(2600),
+                                DawnFan(1500),
+                                CrescentRing(3800),
                                 new TimedTransition(6000, "Sunwheel")
                             ),
                             new State("Sunwheel",
@@ -369,7 +375,9 @@ namespace WorldServer.logic
                                 new Prioritize(new StayCloseToSpawn(0.9, 11), new Follow(0.8, Sight, 3)),
                                 DawnSlash(1200),
                                 Sunburst(2600),
-                                new LeapStrike(Sight, 2.5, 420, 1500, 7000, 3),
+                                DawnFan(1500),
+                                CrescentRing(3800),
+                                new LeapStrike(Sight, 2.5, 420, 1500, 7000, 3, echo: "Aurel's Echo"),
                                 new TimedTransition(9000, "Noon Cyclone")
                             ),
                             Cyclone("Noon Cyclone", "Noon Fight", 2)
@@ -380,6 +388,7 @@ namespace WorldServer.logic
                                 new Taunt(0.6, "HIGH NOON!") { Bubble = false },
                                 new Prioritize(new StayCloseToSpawn(0.9, 11), new Follow(0.85, Sight, 3)),
                                 DawnSlash(1100),
+                                DawnFan(1300),
                                 // a beam of sunsparks turning round him like a clock's hand, both ways
                                 new Shoot(0, 2, 180, fixedAngle: 0, rotateAngle: 12, projectileIndex: 1, coolDown: 160),
                                 new TimedTransition(8000, "High Noon Cyclone")
@@ -387,6 +396,21 @@ namespace WorldServer.logic
                             Cyclone("High Noon Cyclone", "High Noon Fight", 2)
                         )
                     )
+                )
+            )
+
+            // the echo of his leap (LeapStrike moves it and lands it): then it strikes as he does,
+            // once, and is gone. Not invulnerable, so nothing gives it away
+            .Init("Aurel's Echo",
+                new State(
+                    new State("Leaping", new TimedTransition(1800, "Strike")),
+                    new State("Strike",
+                        new Shoot(Sight, 3, 20, projectileIndex: 0, coolDown: 90000000),
+                        new Shoot(0, 12, fixedAngle: 0, projectileIndex: 1, coolDown: 90000000, coolDownOffset: 400),
+                        new Shoot(Sight, 5, 12, projectileIndex: 2, predictive: 0.3, coolDown: 90000000, coolDownOffset: 800),
+                        new TimedTransition(1400, "Gone")
+                    ),
+                    new State("Gone", new Suicide())
                 )
             )
 
@@ -418,8 +442,11 @@ namespace WorldServer.logic
                 new State(
                     new BossStats(420000, 110, 1.0, 0.35),
                     new AnnounceOnDeath("{PL_LIST} passed the Mysterious One's trials in the Black Between, and he withdrew into the void. \"I will return.\""),
-                    // the only way out, once he's gone: a Nexus Portal, named for what's to come
-                    new DropPortalOnDeath("Nexus Portal", 1.0, 60, name: "Part II: Coming Soon"),
+                    // once he's gone, the Rift he came out of (on the north rim, 17 tiles north of the
+                    // middle, where he fades) is a portal to what's to come: locked, for now
+                    new RemoveObjectOnDeath("Rift of the Between", 20),
+                    new DropPortalOnDeath("Rift of the Between: Part II", 1.0, 0, 0, -17, name: "Part II: Coming Soon",
+                        lockedHint: "The Between stirs beyond the Rift... Part II is coming soon."),
                     new State("Arrive",
                         new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
                         new Flash(0xFFFFFFFF, 0.3, 8),
@@ -669,6 +696,12 @@ namespace WorldServer.logic
         private static Behavior UmbralRing(int coolDown) => new Shoot(0, 18, fixedAngle: 0, rotateAngle: 10, projectileIndex: 1, coolDown: coolDown);
         private static Behavior DawnSlash(int coolDown) => new Shoot(Sight, 3, 20, projectileIndex: 0, coolDown: coolDown);
         private static Behavior Sunburst(int coolDown) => new Shoot(0, 12, fixedAngle: 0, rotateAngle: 15, projectileIndex: 1, coolDown: coolDown);
+        // in his sister's manner: five sunsparks weaving at you, and a ring of crescents bowing out
+        // as they spread, breaking armour
+        private static Behavior DawnFan(int coolDown) =>
+            new Shoot(Sight, 5, 12, projectileIndex: 6, predictive: 0.3, coolDown: coolDown, coolDownOffset: 700);
+        private static Behavior CrescentRing(int coolDown) =>
+            new Shoot(0, 14, fixedAngle: 0, rotateAngle: -12, projectileIndex: 7, coolDown: coolDown, coolDownOffset: 1500);
         private static Behavior EclipseRing(int coolDown) => new Shoot(0, 8, fixedAngle: 0, rotateAngle: 9, projectileIndex: 4, coolDown: coolDown);
         private static Behavior DuskVolleyFather(int coolDown) => new Shoot(Sight, 5, 12, projectileIndex: 0, predictive: 0.3, coolDown: coolDown);
 

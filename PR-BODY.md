@@ -73,6 +73,15 @@ From the bottom of `..Context-Txts/11082026/mystery-updates1.txt` and its four s
 - In the Veil her copies fire every 2.5 s (was 1.6 s); their bolts do 35 damage, armour-piercing (was 180). Her rings' orbs darken and slow for 1.5 s.
 - **Darkness shows (client):** the Rust client showed only Darkness's icon; it now darkens the world but for a little light round you (`view.rs`, `death::vignette`), as the AIR client did. Every shot or aura that darkens (the Black Between's, and elsewhere in the game) now does something players can see. `tools/build_black_between.py` (`shot(piercing=)`), `BehaviorDb.BlackBetween.cs`. Redeploy: servers and client (XML). Checks: server tests, the generated XML.
 
+### The Black Between: updates 3 (still admin only)
+
+- Aurel redrawn like his sister (wings, flowing hair, a long coat), a man with a broad greatsword in hand.
+- Richer default attacks (a weaving sunspark fan, a bowing ring of crescents), armour break on the crescents and the leap.
+- His leap has an echo, his look and name, on another player (or across the arena when alone); which is him is random each leap; the echo strikes once and is gone.
+- The father's way out: the Rift itself becomes a locked "Part II: Coming Soon" portal (no Nexus Portal; leave by the Nexus key).
+- `ReturnToSpawn` never steps past the spawn (the father shuffled in the middle; any boss returning to a small radius did).
+- Redeploy: servers and client (art, XML). Checks: the client at Aurel's arrival and leap (new art, bowing ring), a bot run logging an echo per leap across the arena, the client at the Rift after his fade (its name in the interact panel, the coming-soon message on entering), server tests.
+
 ### Placed objects show (Oryx 3's and Oryx 5's gates)
 
 - `PlaceObject` set a square's object without an object id and never told the players round it to look again, so clients were never sent it: Oryx 5's Holy Gates (as they shut, and in his Last Judgement) and Oryx 3's gate stood in the way unseen. It now gives each one an id and refreshes players' squares (`UpdateTiles`, as `RemoveObject` does); removal already worked (clients drop a square's object by its id). Found with the Black Between's walls of light.

@@ -244,6 +244,18 @@ BOSSES = {
         # the Sunwheel's spiral, and his sword flying across the arena (the Sword Lanes)
         shot(4, "Dawn Crescent", 200, 80, 1800, 110, multi=True),
         shot(5, "Dawn Sword", 400, 160, 2400, 200, multi=True),
+        # in his sister's manner: a fan of sunsparks that weave as they fly, and a ring of crescents
+        # that bow as they spread and break armour
+        shot(6, "Sunspark", 180, 95, 2300, amplitude=WAVE[0], frequency=WAVE[1]),
+        shot(7, "Dawn Crescent", 190, 50, 4200, 120, effects=[("Armor Broken", 2)], multi=True,
+             amplitude=ARC[0], frequency=ARC[1]),
+    ]),
+    # the echo of his leap: him to the life, landing on someone else while he lands on you (which
+    # is which changes each time)
+    "Aurel's Echo": ("Aurel, the Dawn Blade", 85, 100000, 100, "helper", [], [
+        shot(0, "Dawn Crescent", 230, 75, 2600, 130, effects=[("Armor Broken", 2)], multi=True),
+        shot(1, "Sunspark", 180, 85, 2400, effects=[("Blind", 1)]),
+        shot(2, "Sunspark", 180, 95, 2300, amplitude=WAVE[0], frequency=WAVE[1]),
     ]),
     # the second tornado of his Solar Cyclone, crossing each dash of his at right angles
     "Aurel's Twin Cyclone": ("Aurel, Solar Cyclone", 85, 100000, 0, "helper", [], [
@@ -255,7 +267,8 @@ BOSSES = {
 }
 # like Oryx 3 to 5, none of them can be stunned, paralysed, petrified, slowed or dazed
 IMMUNE = {"The Mysterious One", "Mysterious One Herald", "Vesper, the Dusk Star", "Aurel, the Dawn Blade"}
-DISPLAY = {"Mysterious One Herald": "The Mysterious One", "Aurel's Twin Cyclone": "Aurel, the Dawn Blade"}
+DISPLAY = {"Mysterious One Herald": "The Mysterious One", "Aurel's Twin Cyclone": "Aurel, the Dawn Blade",
+           "Aurel's Echo": "Aurel, the Dawn Blade"}
 
 # minions (8x8): name -> (health, defence, size, [projectiles])
 MINIONS = {}
@@ -424,11 +437,24 @@ def objects(types, s8, s16, s32, c8, c32):
     first = s16.add(small.rift(0))
     texture(e, SHEET16[0], first)
     anim = sub(e, "Animation", prob="1.0")
-    for idx in [first] + [s16.add(small.rift(f)) for f in (1, 2, 3)]:
+    rift_cells = [first] + [s16.add(small.rift(f)) for f in (1, 2, 3)]
+    for idx in rift_cells:
         texture(sub(anim, "Frame", time="0.12"), SHEET16[0], idx)
     sub(e, "Size", 220)
     sub(e, "ShadowSize", 0)
     sub(e, "Static")
+    out.append(e)
+
+    # the Rift once he's gone: a locked portal ("Part II: Coming Soon", BehaviorDb.BlackBetween.cs)
+    e = ET.Element("Object", {"type": types.get("Rift of the Between: Part II", OBJECT_TYPES), "id": "Rift of the Between: Part II"})
+    sub(e, "Class", "Portal")
+    sub(e, "LockedPortal")
+    texture(e, SHEET16[0], rift_cells[0])
+    anim = sub(e, "Animation", prob="1.0")
+    for idx in rift_cells:
+        texture(sub(anim, "Frame", time="0.12"), SHEET16[0], idx)
+    sub(e, "Size", 220)
+    sub(e, "ShadowSize", 0)
     out.append(e)
 
     # invisible helpers
