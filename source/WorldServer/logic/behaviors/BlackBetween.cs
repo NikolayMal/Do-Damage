@@ -932,6 +932,52 @@ namespace WorldServer.logic.behaviors
         }
     }
 
+    // Oryx the Ascended God's fall, in his Elysium: a quarter of the time (every time while a server
+    // event says so: ServerEvent.mysteriousOne), the Mysterious One's Rift opens a few seconds later,
+    // `ahead` tiles north of where Oryx began (the middle of his temple), and he steps out of it (the
+    // Mysterious One Visitant, BehaviorDb.BlackBetween.cs). The Rift is the way into the Black
+    // Between, open until the Elysium closes. Never in an Arena game.
+    internal class OpenTheBetween : Behavior
+    {
+        private readonly double _chance;
+        private readonly float _ahead;
+
+        public OpenTheBetween(double chance = 0.25, float ahead = 6)
+        {
+            _chance = chance;
+            _ahead = ahead;
+        }
+
+        protected override void TickCore(Entity host, TickTime time, ref object state) { }
+
+        public override void OnDeath(Entity host, ref TickTime time)
+        {
+            var world = host.World;
+            if (world == null || WorldServer.logic.transitions.ArenaTransition.InArena(host) || world.IdName != "Oryx's Elysium")
+                return;
+            var always = Shared.resources.ServerEvents.Active(host.GameServer.Configuration.serverSettings.events, DateTime.UtcNow)
+                .Any(e => e.mysteriousOne);
+            if (!always && Random.NextDouble() >= _chance)
+                return;
+            var c = host.SpawnPoint.Value;
+            var at = new Position(c.X, c.Y - _ahead);
+            if (!world.IsPassable(at.X, at.Y))
+                at = new Position(host.X, host.Y);
+            var server = host.GameServer;
+            world.StartNewTimer(3500, (w, t) =>
+            {
+                var rift = Entity.Resolve(server, "Rift of the Between (Open)");
+                var visitant = Entity.Resolve(server, "Mysterious One Visitant");
+                if (rift == null || visitant == null)
+                    return;
+                rift.Move(at.X, at.Y);
+                w.EnterWorld(rift);
+                visitant.Move(at.X, at.Y);
+                w.EnterWorld(visitant);
+            });
+        }
+    }
+
     // Vesper's Starfall Waltz: on entering the state the host blinks to a random walkable spot
     // between `min` and `max` tiles from its spawn point.
     internal class BlinkAround : Behavior

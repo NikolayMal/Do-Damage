@@ -312,6 +312,34 @@ def constellation(seed):
     return _tile(f, seed)
 
 
+def void_scar(seed):
+    """The ground round the Mysterious One where he steps into another world (Oryx's Elysium): the
+    void showing through cracks, harmless to stand on."""
+    def f(img, rnd):
+        for y in range(8):
+            for x in range(8):
+                put(img, x, y, "#0c0820" if rnd.random() > 0.1 else "#1a1036")
+        for _ in range(3):
+            put(img, rnd.randrange(8), rnd.randrange(8), "#c8c0ff" if rnd.random() < 0.5 else "#6a5aa8")
+        x, y = rnd.randrange(8), rnd.randrange(8)
+        for i in range(4):
+            put(img, (x + i) % 8, (y + (i * (seed % 3 - 1))) % 8, "#7a2ad0" if i % 2 else "#d8a030")
+    return _tile(f, seed)
+
+
+def unstable_essence():
+    """Unstable Essence (8x8): a cracked phial of the Between, its void swirling violet and gold."""
+    img = _blank()
+    rows = ["...gg...", "..gYYg..", "..k22k..", ".k2v42k.", ".k4vy2k.", ".k2y42k.", "..k22k..", "...kk..."]
+    pal = {"g": "#a07418", "Y": "#ffe070", "k": "#1a0f36", "2": "#3a1d6a", "4": "#7a3ad0", "v": "#e0b0ff", "y": "#ffd24a"}
+    for y, r in enumerate(rows):
+        for x, ch in enumerate(r):
+            if ch != ".":
+                put(img, x, y, pal[ch])
+    put(img, 2, 4, "#ffffff")
+    return img
+
+
 TILES = {
     "Astral Stone": [astral_stone(s) for s in (3, 4, 5, 6)],
     "Platform Rim": [platform_rim(s) for s in (1, 2, 3, 4)],
@@ -321,6 +349,8 @@ TILES = {
     # under the platform's edges (the client's undersides, never on the map)
     "BB Underside Rock": [underside(s) for s in (1, 2, 3, 4)],
     "BB Underside Rim": [underside(s, rim=True) for s in (1, 2)],
+    # in Oryx's Elysium, round the Mysterious One as he steps out of his Rift (harmless)
+    "Void Scar": [void_scar(s) for s in (1, 2, 3)],
 }
 
 

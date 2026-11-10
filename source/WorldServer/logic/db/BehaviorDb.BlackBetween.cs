@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Shared.resources;
 using WorldServer.logic.behaviors;
+using WorldServer.logic.loot;
 using WorldServer.logic.transitions;
 
 namespace WorldServer.logic
@@ -592,6 +593,63 @@ namespace WorldServer.logic
                         ),
                         new State("Gone", new Suicide())
                     )
+                ),
+                // his potions, as many as Oryx 5's, life and mana only; the Max potions as the Elder
+                // bosses drop them, at half their rate; and Unstable Essence, nine tenths as often
+                // as one of Oryx 5's Ascended shards, for the Cosmic Anvil
+                new Threshold(0.01,
+                    new ItemLoot("Potion of Life", 1),
+                    new ItemLoot("Potion of Life", 1),
+                    new ItemLoot("Potion of Life", 1),
+                    new ItemLoot("Potion of Mana", 1),
+                    new ItemLoot("Potion of Mana", 1),
+                    new ItemLoot("Potion of Mana", 1),
+                    new ItemLoot("Greater Potion of Life", 0.5),
+                    new ItemLoot("Greater Potion of Mana", 0.5),
+                    new ItemLoot("Unstable Essence", 0.1125)
+                ),
+                new Threshold(0.03,
+                    new ItemLoot("Potion of Life", 0.7),
+                    new ItemLoot("Potion of Mana", 0.7),
+                    new ItemLoot("Potion of Life", 0.7),
+                    new ItemLoot("Potion of Mana", 0.7),
+                    new ItemLoot("Potion of Max Life", 0.025),
+                    new ItemLoot("Potion of Max Mana", 0.025),
+                    new ItemLoot("Potion of Max Attack", 0.025),
+                    new ItemLoot("Potion of Max Defense", 0.025),
+                    new ItemLoot("Potion of Max Speed", 0.025),
+                    new ItemLoot("Potion of Max Dexterity", 0.025),
+                    new ItemLoot("Potion of Max Vitality", 0.025),
+                    new ItemLoot("Potion of Max Wisdom", 0.025)
+                )
+            )
+
+            // ---- in Oryx's Elysium: when Oryx 5 falls (OpenTheBetween), he steps out of his Rift onto
+            // ground he turns to the void, speaks, and watches over the Rift while it stays open ----
+            .Init("Mysterious One Visitant",
+                new State(
+                    new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                    new PaintFloor("Void Scar", 4.5, (dx, dy) => true),
+                    new State("Step Out",
+                        new Flash(0xFFB040FF, 0.3, 6),
+                        new MoveLine(0.5, 90, 2.5),
+                        new Taunt(true, "This is interesting...") { Bubble = false },
+                        new TimedTransition(3500, "Speak 1")
+                    ),
+                    new State("Speak 1",
+                        new Taunt(true, "So. You are the ones who have been silencing this realm, one god at a time.") { Bubble = false },
+                        new TimedTransition(4500, "Speak 2")
+                    ),
+                    new State("Speak 2",
+                        new Taunt(true, "Oryx only kept this place. I am what it was kept from.") { Bubble = false },
+                        new TimedTransition(4500, "Speak 3")
+                    ),
+                    new State("Speak 3",
+                        new Flash(0xFFFFD24A, 0.3, 4),
+                        new Taunt(true, "My Rift is open. Step into the Between, if you would meet my children... and me.") { Bubble = false },
+                        new TimedTransition(3000, "Watching")
+                    ),
+                    new State("Watching")
                 )
             )
             .Init("Spectral Vesper",

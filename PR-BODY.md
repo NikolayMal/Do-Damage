@@ -82,6 +82,14 @@ From the bottom of `..Context-Txts/11082026/mystery-updates1.txt` and its four s
 - `ReturnToSpawn` never steps past the spawn (the father shuffled in the middle; any boss returning to a small radius did).
 - Redeploy: servers and client (art, XML). Checks: the client at Aurel's arrival and leap (new art, bowing ring), a bot run logging an echo per leap across the arena, the client at the Rift after his fade (its name in the interact panel, the coming-soon message on entering), server tests.
 
+### The Black Between: the way in and the Mysterious One's loot (updates 4, part 1)
+
+- When Oryx 5 falls, a quarter of the time (every time during the November event "The Voice in the Void", 10 November to 1 December: `wServer.json`, `ServerEvent.mysteriousOne`), the Mysterious One's Rift opens in his temple a few seconds later: he steps out onto ground turned to the void, speaks, and the Rift leads into the Black Between. **This makes the dungeon reachable for players once released.**
+- His loot: life and mana potions only (about Oryx 5's count), the eight Max potions at 2.5% each, and the Unstable Essence (white bag, 11.25%) for the Cosmic Anvil (next part).
+- Imprinted gear's border: thinner, its colours at the edge with a gold line inside (client).
+- Redeploy: servers and client. Checks: on the slot 3 stack, an Oryx 5 spawned in his Elysium and smitten: the Rift, the void ground and the Mysterious One's lines (screenshot), and `bsk-bot` entering the Rift into the Black Between.
+- Still to do before release: the changelog and wiki for the dungeon (it's reachable now), the Cosmic Anvil and corruption, the new items.
+
 ### Placed objects show (Oryx 3's and Oryx 5's gates)
 
 - `PlaceObject` set a square's object without an object id and never told the players round it to look again, so clients were never sent it: Oryx 5's Holy Gates (as they shut, and in his Last Judgement) and Oryx 3's gate stood in the way unseen. It now gives each one an id and refreshes players' squares (`UpdateTiles`, as `RemoveObject` does); removal already worked (clients drop a square's object by its id). Found with the Black Between's walls of light.

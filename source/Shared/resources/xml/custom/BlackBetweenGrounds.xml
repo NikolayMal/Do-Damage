@@ -127,4 +127,21 @@
 		</RandomTexture>
 		<Color>0x2E2648</Color>
 	</Ground>
+	<Ground type="0x8D08" id="Void Scar">
+		<RandomTexture>
+			<Texture>
+				<File>blackBetween8x8</File>
+				<Index>0x16</Index>
+			</Texture>
+			<Texture>
+				<File>blackBetween8x8</File>
+				<Index>0x17</Index>
+			</Texture>
+			<Texture>
+				<File>blackBetween8x8</File>
+				<Index>0x18</Index>
+			</Texture>
+		</RandomTexture>
+		<Color>0x1A1036</Color>
+	</Ground>
 </GroundTypes>

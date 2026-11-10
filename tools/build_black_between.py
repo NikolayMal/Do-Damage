@@ -182,6 +182,8 @@ GROUNDS = {
     # the floor (islands.rs)
     "BB Underside Rock": ("0x1A1430", {}),
     "BB Underside Rim": ("0x2E2648", {}),
+    # where the Mysterious One steps into Oryx's Elysium (harmless)
+    "Void Scar": ("0x1A1036", {}),
 }
 
 
@@ -214,6 +216,8 @@ BOSSES = {
     # the father, who comes out of the Rift: his herald does the talking at first and watches the
     # first two trials from the Rift; the Mysterious One himself comes down for the third
     "Mysterious One Herald": ("The Mysterious One", 100, 420000, 110, "herald", [], []),
+    # in Oryx's Elysium when Oryx 5 falls: he steps out of his Rift and invites them in
+    "Mysterious One Visitant": ("The Mysterious One", 100, 420000, 110, "herald", [], []),
     "The Mysterious One": ("The Mysterious One", 100, 420000, 110, "boss", [], [
         shot(0, "Dusk Bolt", 200, 90, 2400, amplitude=WAVE[0], frequency=WAVE[1]),
         shot(1, "Umbral Orb", 170, 55, 4000, 110, effects=[("Darkness", 2)], amplitude=ARC[0], frequency=ARC[1]),
@@ -266,8 +270,8 @@ BOSSES = {
     ]),
 }
 # like Oryx 3 to 5, none of them can be stunned, paralysed, petrified, slowed or dazed
-IMMUNE = {"The Mysterious One", "Mysterious One Herald", "Vesper, the Dusk Star", "Aurel, the Dawn Blade"}
-DISPLAY = {"Mysterious One Herald": "The Mysterious One", "Aurel's Twin Cyclone": "Aurel, the Dawn Blade",
+IMMUNE = {"The Mysterious One", "Mysterious One Herald", "Mysterious One Visitant", "Vesper, the Dusk Star", "Aurel, the Dawn Blade"}
+DISPLAY = {"Mysterious One Herald": "The Mysterious One", "Mysterious One Visitant": "The Mysterious One", "Aurel's Twin Cyclone": "Aurel, the Dawn Blade",
            "Aurel's Echo": "Aurel, the Dawn Blade"}
 
 # minions (8x8): name -> (health, defence, size, [projectiles])
@@ -443,6 +447,31 @@ def objects(types, s8, s16, s32, c8, c32):
     sub(e, "Size", 220)
     sub(e, "ShadowSize", 0)
     sub(e, "Static")
+    out.append(e)
+
+    # the Rift open, in Oryx's Elysium when Oryx 5 falls (BehaviorDb.Elysium.cs): the way in
+    e = ET.Element("Object", {"type": types.get("Rift of the Between (Open)", OBJECT_TYPES), "id": "Rift of the Between (Open)"})
+    sub(e, "DisplayId", "The Black Between")
+    sub(e, "Class", "Portal")
+    sub(e, "IntergamePortal")
+    sub(e, "DungeonName", "The Black Between")
+    texture(e, SHEET16[0], rift_cells[0])
+    anim = sub(e, "Animation", prob="1.0")
+    for idx in rift_cells:
+        texture(sub(anim, "Frame", time="0.12"), SHEET16[0], idx)
+    sub(e, "Size", 220)
+    sub(e, "ShadowSize", 0)
+    out.append(e)
+
+    # Unstable Essence: the Mysterious One's drop, which the Cosmic Anvil corrupts Enthroned gear with
+    e = ET.Element("Object", {"type": types.get("Unstable Essence", OBJECT_TYPES), "id": "Unstable Essence"})
+    sub(e, "Class", "Equipment")
+    sub(e, "Item")
+    texture(e, SHEET8[0], s8.add(small.unstable_essence()))
+    sub(e, "SlotType", 10)
+    sub(e, "Description", "A phial of the Between, never still. At the Cosmic Anvil it corrupts Enthroned gear: "
+        "each one changes its damage, range, rate of fire and stats, for better or worse.")
+    sub(e, "BagType", 6)
     out.append(e)
 
     # the Rift once he's gone: a locked portal ("Part II: Coming Soon", BehaviorDb.BlackBetween.cs)
