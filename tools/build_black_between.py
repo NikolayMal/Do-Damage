@@ -225,7 +225,8 @@ BOSSES = {
     ]),
     "Vesper, the Dusk Star": ("Vesper, the Dusk Star", 85, 240000, 80, "boss", [], [
         shot(0, "Dusk Bolt", 190, 95, 2300, amplitude=WAVE[0], frequency=WAVE[1]),
-        shot(1, "Umbral Orb", 160, 50, 4200, 110, effects=[("Darkness", 1.5)], amplitude=ARC[0], frequency=ARC[1]),
+        # her rings darken and slow (the slow as her Gravity Well's)
+        shot(1, "Umbral Orb", 160, 50, 4200, 110, effects=[("Darkness", 1.5), ("Slowed", 1.5)], amplitude=ARC[0], frequency=ARC[1]),
     ]),
     # her copies' bolts in the Veil: light, but through any armour
     "Vesper's Veil Copy": ("Vesper's Veil Copy", 85, 100000, 0, "helper", [], [
