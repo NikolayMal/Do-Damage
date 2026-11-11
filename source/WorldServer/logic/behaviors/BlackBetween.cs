@@ -609,6 +609,7 @@ namespace WorldServer.logic.behaviors
             public Entity Twin;
             public float TwinStartX, TwinStartY, TwinEndX, TwinEndY;
             public int WaitedForTwin;
+            public bool Reported;
         }
 
         private Position Centre(Entity host)
@@ -618,7 +619,14 @@ namespace WorldServer.logic.behaviors
             return host.SpawnPoint.Value;
         }
 
-        protected override void OnStateEntry(Entity host, TickTime time, ref object state) => state = new Run();
+        // the hosts whose dashes are all done (CycloneDoneTransition takes them out)
+        internal static readonly System.Collections.Concurrent.ConcurrentDictionary<int, bool> Finished = new();
+
+        protected override void OnStateEntry(Entity host, TickTime time, ref object state)
+        {
+            state = new Run();
+            Finished.TryRemove(host.Id, out _);
+        }
 
         protected override void TickCore(Entity host, TickTime time, ref object state)
         {
@@ -626,6 +634,15 @@ namespace WorldServer.logic.behaviors
                 return;
             switch (r.Phase)
             {
+                case Phase.Done:
+                    // (the spectral Cyclone's ids are never taken out: keep the list short)
+                    if (r.Reported)
+                        return;
+                    r.Reported = true;
+                    if (Finished.Count > 500)
+                        Finished.Clear();
+                    Finished[host.Id] = true;
+                    return;
                 case Phase.Pick:
                     // a moment for the twin to come in (it's summoned as the Cyclone starts)
                     if (_twin != null && r.WaitedForTwin < 600 && host.GetNearestEntityByName(60, _twin) == null)
@@ -1157,5 +1174,16 @@ namespace WorldServer.logic.behaviors
             else
                 Land();
         }
+    }
+
+    // to the target state once the host's CycloneDash has made all its dashes: the Cyclone ends as
+    // its last dash does, not on a timer that could cut one short (which sent the twin away
+    // mid-flight and left him wherever he stopped)
+    internal class CycloneDoneTransition : logic.Transition
+    {
+        public CycloneDoneTransition(string targetState) : base(targetState) { }
+
+        protected override bool TickCore(Entity host, TickTime time, ref object state) =>
+            CycloneDash.Finished.TryRemove(host.Id, out _);
     }
 }

@@ -57,8 +57,8 @@
 			<File>blackBetweenChars32x32</File>
 			<Index>0</Index>
 		</AnimatedTexture>
-		<HitSound>monster/ghost_god_hit</HitSound>
-		<DeathSound>monster/ghost_god_death</DeathSound>
+		<HitSound>monster/mysterious_hit</HitSound>
+		<DeathSound>monster/mysterious_death</DeathSound>
 		<Size>100</Size>
 		<MaxHitPoints>420000</MaxHitPoints>
 		<Defense>110</Defense>
@@ -79,8 +79,8 @@
 			<File>blackBetweenChars32x32</File>
 			<Index>0</Index>
 		</AnimatedTexture>
-		<HitSound>monster/ghost_god_hit</HitSound>
-		<DeathSound>monster/ghost_god_death</DeathSound>
+		<HitSound>monster/mysterious_hit</HitSound>
+		<DeathSound>monster/mysterious_death</DeathSound>
 		<Size>100</Size>
 		<MaxHitPoints>420000</MaxHitPoints>
 		<Defense>110</Defense>
@@ -100,10 +100,10 @@
 			<File>blackBetweenChars32x32</File>
 			<Index>0</Index>
 		</AnimatedTexture>
-		<HitSound>monster/oryx_hit</HitSound>
-		<DeathSound>monster/oryx_death</DeathSound>
+		<HitSound>monster/mysterious_hit</HitSound>
+		<DeathSound>monster/mysterious_death</DeathSound>
 		<Size>100</Size>
-		<MaxHitPoints>420000</MaxHitPoints>
+		<MaxHitPoints>504000</MaxHitPoints>
 		<Defense>110</Defense>
 		<Quest />
 		<Level>20</Level>
@@ -185,10 +185,10 @@
 			<File>blackBetweenChars32x32</File>
 			<Index>1</Index>
 		</AnimatedTexture>
-		<HitSound>monster/oryx_hit</HitSound>
-		<DeathSound>monster/oryx_death</DeathSound>
+		<HitSound>monster/vesper_hit</HitSound>
+		<DeathSound>monster/vesper_death</DeathSound>
 		<Size>85</Size>
-		<MaxHitPoints>240000</MaxHitPoints>
+		<MaxHitPoints>288000</MaxHitPoints>
 		<Defense>80</Defense>
 		<Quest />
 		<Level>20</Level>
@@ -209,6 +209,7 @@
 			<Size>100</Size>
 			<Amplitude>1.0</Amplitude>
 			<Frequency>1.5</Frequency>
+			<ConditionEffect duration="1.5">Silenced</ConditionEffect>
 		</Projectile>
 		<Projectile id="1">
 			<ObjectId>Umbral Orb</ObjectId>
@@ -238,7 +239,7 @@
 		<XpMult>0</XpMult>
 		<Projectile id="0">
 			<ObjectId>Dusk Bolt</ObjectId>
-			<Damage>35</Damage>
+			<Damage>50</Damage>
 			<Speed>80</Speed>
 			<LifetimeMS>2200</LifetimeMS>
 			<Size>100</Size>
@@ -254,8 +255,8 @@
 			<File>blackBetweenChars32x32</File>
 			<Index>3</Index>
 		</AnimatedTexture>
-		<HitSound>monster/ghost_god_hit</HitSound>
-		<DeathSound>monster/ghost_god_death</DeathSound>
+		<HitSound>monster/vesper_hit</HitSound>
+		<DeathSound>monster/vesper_death</DeathSound>
 		<Size>85</Size>
 		<MaxHitPoints>100000</MaxHitPoints>
 		<Defense>0</Defense>
@@ -290,10 +291,10 @@
 				<Index>6</Index>
 			</AnimatedTexture>
 		</AltTexture>
-		<HitSound>monster/oryx_hit</HitSound>
-		<DeathSound>monster/oryx_death</DeathSound>
+		<HitSound>monster/aurel_hit</HitSound>
+		<DeathSound>monster/aurel_death</DeathSound>
 		<Size>85</Size>
-		<MaxHitPoints>280000</MaxHitPoints>
+		<MaxHitPoints>336000</MaxHitPoints>
 		<Defense>100</Defense>
 		<Quest />
 		<Level>20</Level>
@@ -383,8 +384,8 @@
 			<File>blackBetweenChars32x32</File>
 			<Index>4</Index>
 		</AnimatedTexture>
-		<HitSound>monster/ghost_god_hit</HitSound>
-		<DeathSound>monster/ghost_god_death</DeathSound>
+		<HitSound>monster/aurel_hit</HitSound>
+		<DeathSound>monster/aurel_death</DeathSound>
 		<Size>85</Size>
 		<MaxHitPoints>100000</MaxHitPoints>
 		<Defense>100</Defense>
@@ -453,8 +454,8 @@
 				<Index>8</Index>
 			</AnimatedTexture>
 		</AltTexture>
-		<HitSound>monster/ghost_god_hit</HitSound>
-		<DeathSound>monster/ghost_god_death</DeathSound>
+		<HitSound>monster/aurel_hit</HitSound>
+		<DeathSound>monster/aurel_death</DeathSound>
 		<Size>85</Size>
 		<MaxHitPoints>100000</MaxHitPoints>
 		<Defense>0</Defense>
@@ -748,7 +749,7 @@
 			<Index>0x27</Index>
 		</Texture>
 		<SlotType>10</SlotType>
-		<Description>A phial of the Between, never still. At the Cosmic Anvil it corrupts Enthroned gear: each one changes its damage, range, rate of fire and stats, for better or worse.</Description>
+		<Description>A phial of the Between, never still. The Cosmic Anvil knows what to do with it.</Description>
 		<BagType>6</BagType>
 	</Object>
 	<Object type="0x8D42" id="Cyclone Arrow">

@@ -206,7 +206,7 @@ namespace WorldServer.logic
             // From her last Veil on, two rings of orbs at once, turning opposite ways.
             .Init("Vesper, the Dusk Star",
                 new State(
-                    new BossStats(240000, 80, 1.0, 0.35),
+                    new BossStats(288000, 80, 1.0, 0.35),
                     new State("Arrive",
                         new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
                         new Flash(0xFFB040FF, 0.3, 6),
@@ -241,13 +241,18 @@ namespace WorldServer.logic
                     ),
                     VeilPhase("Veil 2", "T1 Veil Fast", 16000, "Well Kit", true),
                     // from her last Veil on: two rings at once, one turning clockwise, one the other way
+                    // and the Gravity Well's orbs never stop coming in from the edge, and her dusk
+                    // mines keep falling about the arena
                     new State("Late",
                     new Shoot(0, 18, fixedAngle: 0, rotateAngle: 10, projectileIndex: 1, coolDown: 2400),
+                    MinesEvery(4000, 0),
+                    MinesEvery(4000, 1300),
+                    MinesEvery(4000, 2600),
                     new Shoot(0, 18, fixedAngle: 10, rotateAngle: -10, projectileIndex: 1, coolDown: 2400, coolDownOffset: 1200),
                     new State("Well",
                         new HpLessTransition(0.2, "Nightfall"),
                         new State("Well Kit",
-                            new Order(60, "Observatory Heart", "T1 Calm"),
+                            new Order(60, "Observatory Heart", "T1 Well"),
                             new Prioritize(new StayCloseToSpawn(0.6, 8), new Wander(0.4)),
                             DuskVolley(900),
                             new TimedTransition(8000, "Well Pull")
@@ -262,7 +267,7 @@ namespace WorldServer.logic
                         )
                     ),
                     new State("Nightfall",
-                        new Order(60, "Observatory Heart", "T1 Calm"),
+                        new Order(60, "Observatory Heart", "T1 Well"),
                         new Taunt(true, "Then let it be night.") { Bubble = false },
                         new ConditionAura(Sight, ConditionEffectIndex.Darkness, 1500, 1000),
                         new Prioritize(new StayCloseToSpawn(0.7, 10), new Wander(0.5)),
@@ -311,7 +316,7 @@ namespace WorldServer.logic
             // - 40% to 15%: his kit with the Cyclone every so often; below 15%, High Noon.
             .Init("Aurel, the Dawn Blade",
                 new State(
-                    new BossStats(280000, 100, 1.0, 0.35),
+                    new BossStats(336000, 100, 1.0, 0.35),
                     new State("Arrive",
                         new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
                         new Flash(0xFFFFD24A, 0.3, 6),
@@ -329,7 +334,7 @@ namespace WorldServer.logic
                             CrescentRing(4200),
                             new LeapStrike(Sight, 2.5, 420, 1500, 6000, 3, echo: "Aurel's Echo")
                         ),
-                        Cyclone("Cyclone 1", "Radiance Chase", 3, Survival(false)),
+                        Cyclone("Cyclone 1", "Radiance Chase", 3, Survival(false).Concat(DivineLightning(900, 1300)).ToArray()),
                         new State("Radiance",
                             new SetAltTexture(0),
                             new HpLessTransition(0.4, "Sword Rise"),
@@ -356,9 +361,14 @@ namespace WorldServer.logic
                                 new Taunt(true, "Stand where my sword is not.") { Bubble = false },
                                 new TimedTransition(2000, "Sword Lanes")
                             ),
-                            S("Sword Lanes", Survival(true),
+                            S("Sword Lanes", Survival(true).Concat(DivineLightning(900, 1300)).ToArray(),
                                 new SetAltTexture(2),
                                 new SwordLanes(PlatformR, 5),
+                                // and he fights on from the middle meanwhile
+                                DawnSlash(1400),
+                                Sunburst(3000),
+                                DawnFan(1700),
+                                CrescentRing(4200),
                                 new TimedTransition(16500, "Noon Rise")
                             )
                         ),
@@ -379,7 +389,13 @@ namespace WorldServer.logic
                                 DawnFan(1500),
                                 CrescentRing(3800),
                                 new LeapStrike(Sight, 2.5, 420, 1500, 7000, 3, echo: "Aurel's Echo"),
-                                new TimedTransition(9000, "Noon Cyclone")
+                                new TimedTransition(6000, "Noon Sunwheel")
+                            ),
+                            new State("Noon Sunwheel",
+                                new Flash(0xFFFFD24A, 0.25, 4),
+                                new Shoot(0, 4, 90, fixedAngle: 0, rotateAngle: 14, projectileIndex: 4, coolDown: 180),
+                                DawnFan(1500),
+                                new TimedTransition(3500, "Noon Cyclone")
                             ),
                             Cyclone("Noon Cyclone", "Noon Fight", 2)
                         ),
@@ -441,7 +457,9 @@ namespace WorldServer.logic
             //   rift and is gone. His violet eye's rifts and his gold eye's lightning come all through.
             .Init("The Mysterious One",
                 new State(
-                    new BossStats(420000, 110, 1.0, 0.35),
+                    new BossStats(504000, 110, 1.0, 0.35),
+                    // no pets in his trial: they're held in stasis all through it
+                    new PetAura(Sight, ConditionEffectIndex.Stasis, 1000, 500),
                     new AnnounceOnDeath("{PL_LIST} passed the Mysterious One's trials in the Black Between, and he withdrew into the void. \"I will return.\""),
                     // once he's gone, the Rift he came out of (on the north rim, 17 tiles north of the
                     // middle, where he fades) is a portal to what's to come: locked, for now
@@ -759,6 +777,9 @@ namespace WorldServer.logic
             new TossObject("Dusk Mine", Sight, coolDown: 90000000, minAngle: 0, maxAngle: 360, minRange: 4, maxRange: 13),
         };
 
+        private static Behavior MinesEvery(int ms, int offset) =>
+            new TossObject("Dusk Mine", Sight, coolDown: ms, coolDownOffset: offset, minAngle: 0, maxAngle: 360, minRange: 4, maxRange: 13);
+
         private static Behavior DuskVolley(int coolDown) => new Shoot(Sight, 5, 12, projectileIndex: 0, predictive: 0.3, coolDown: coolDown);
         private static Behavior UmbralRing(int coolDown) => new Shoot(0, 18, fixedAngle: 0, rotateAngle: 10, projectileIndex: 1, coolDown: coolDown);
         private static Behavior DawnSlash(int coolDown) => new Shoot(Sight, 3, 20, projectileIndex: 0, coolDown: coolDown);
@@ -793,7 +814,9 @@ namespace WorldServer.logic
                     new SetAltTexture(1),
                     new Flash(0xFFFFD24A, 0.2, 4),
                     new CycloneDash(PlatformR, 16, 800, passes, 2, centreOn: "Observatory Heart", twin: "Aurel's Twin Cyclone"),
-                    new TimedTransition(passes * 3300 + 800, name + " Down"),
+                    new CycloneDoneTransition(name + " Down"),
+                    // only should something hold it up
+                    new TimedTransition(passes * 6000 + 2000, name + " Down"),
                     // his twin, once (a Spawn left running sends another whenever the twin is away)
                     new State(name + " Twin",
                         new Spawn("Aurel's Twin Cyclone", 1, 1),

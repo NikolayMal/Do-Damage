@@ -102,6 +102,7 @@ namespace WorldServer.core.worlds
             Persist = resource.Persists;
             ShowDisplays = Id == -2 || resource.ShowDisplays;
             Blocking = resource.VisibilityType;
+            MinSightRadius = resource.MinSightRadius;
             AllowTeleport = resource.AllowTeleport;
             DisableShooting = resource.DisableShooting;
             DisableAbilities = resource.DisableAbilities;
@@ -125,6 +126,9 @@ namespace WorldServer.core.worlds
             if (day != DayOfWeek.Saturday && day != DayOfWeek.Sunday) { }
             else isWeekend = true;
         }
+
+        // the least sight radius players get here (WorldResource.MinSightRadius)
+        public int MinSightRadius { get; private set; }
 
         public bool HasLabel(string labelName) => Labels.Contains(labelName.ToLower());
         public bool SetLabel(string labelName) => Labels.Equals(labelName.ToLower());

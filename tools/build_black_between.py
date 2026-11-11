@@ -218,7 +218,7 @@ BOSSES = {
     "Mysterious One Herald": ("The Mysterious One", 100, 420000, 110, "herald", [], []),
     # in Oryx's Elysium when Oryx 5 falls: he steps out of his Rift and invites them in
     "Mysterious One Visitant": ("The Mysterious One", 100, 420000, 110, "herald", [], []),
-    "The Mysterious One": ("The Mysterious One", 100, 420000, 110, "boss", [], [
+    "The Mysterious One": ("The Mysterious One", 100, 504000, 110, "boss", [], [
         shot(0, "Dusk Bolt", 200, 90, 2400, amplitude=WAVE[0], frequency=WAVE[1]),
         shot(1, "Umbral Orb", 170, 55, 4000, 110, effects=[("Darkness", 2)], amplitude=ARC[0], frequency=ARC[1]),
         shot(2, "Dawn Crescent", 230, 70, 2600, 130, effects=[("Armor Broken", 2)], multi=True),
@@ -227,19 +227,19 @@ BOSSES = {
         shot(5, "Eclipse Orb", 190, 45, 5500, 110, effects=[("Darkness", 1.5)]),
         shot(6, "Dawn Sword", 400, 160, 2400, 200, multi=True),
     ]),
-    "Vesper, the Dusk Star": ("Vesper, the Dusk Star", 85, 240000, 80, "boss", [], [
-        shot(0, "Dusk Bolt", 190, 95, 2300, amplitude=WAVE[0], frequency=WAVE[1]),
+    "Vesper, the Dusk Star": ("Vesper, the Dusk Star", 85, 288000, 80, "boss", [], [
+        shot(0, "Dusk Bolt", 190, 95, 2300, effects=[("Silenced", 1.5)], amplitude=WAVE[0], frequency=WAVE[1]),
         # her rings darken and slow (the slow as her Gravity Well's)
         shot(1, "Umbral Orb", 160, 50, 4200, 110, effects=[("Darkness", 1.5), ("Slowed", 1.5)], amplitude=ARC[0], frequency=ARC[1]),
     ]),
     # her copies' bolts in the Veil: light, but through any armour
     "Vesper's Veil Copy": ("Vesper's Veil Copy", 85, 100000, 0, "helper", [], [
-        shot(0, "Dusk Bolt", 35, 80, 2200, amplitude=WAVE[0], frequency=WAVE[1], piercing=True),
+        shot(0, "Dusk Bolt", 50, 80, 2200, amplitude=WAVE[0], frequency=WAVE[1], piercing=True),
     ]),
     "Spectral Vesper": ("Spectral Vesper", 85, 100000, 0, "helper", [], [
         shot(0, "Dusk Bolt", 180, 80, 2200, amplitude=WAVE[0], frequency=WAVE[1]),
     ]),
-    "Aurel, the Dawn Blade": ("Aurel, the Dawn Blade", 85, 280000, 100, "boss",
+    "Aurel, the Dawn Blade": ("Aurel, the Dawn Blade", 85, 336000, 100, "boss",
                               ["Aurel, Solar Cyclone", "Aurel, Gauntlet Form"], [
         shot(0, "Dawn Crescent", 230, 75, 2600, 130, effects=[("Armor Broken", 2)], multi=True),
         shot(1, "Sunspark", 180, 85, 2400, effects=[("Blind", 1)]),
@@ -270,6 +270,12 @@ BOSSES = {
     ]),
 }
 # like Oryx 3 to 5, none of them can be stunned, paralysed, petrified, slowed or dazed
+# who sounds like whom when hit and when they fall (web/sfx/monster/<voice>_hit.mp3, _death.mp3)
+FAMILY_SOUND = {
+    "Vesper, the Dusk Star": "vesper", "Spectral Vesper": "vesper",
+    "Aurel, the Dawn Blade": "aurel", "Aurel's Echo": "aurel", "Spectral Aurel": "aurel",
+    "The Mysterious One": "mysterious", "Mysterious One Herald": "mysterious", "Mysterious One Visitant": "mysterious",
+}
 IMMUNE = {"The Mysterious One", "Mysterious One Herald", "Mysterious One Visitant", "Vesper, the Dusk Star", "Aurel, the Dawn Blade"}
 DISPLAY = {"Mysterious One Herald": "The Mysterious One", "Mysterious One Visitant": "The Mysterious One", "Aurel's Twin Cyclone": "Aurel, the Dawn Blade",
            "Aurel's Echo": "Aurel, the Dawn Blade"}
@@ -397,8 +403,10 @@ def objects(types, s8, s16, s32, c8, c32):
         for k, alt in enumerate(alts, start=1):
             holder = sub(e, "AltTexture", id=k)
             texture(holder, CHARS32[0], row(alt), "AnimatedTexture")
-        sub(e, "HitSound", "monster/ghost_god_hit" if kind != "boss" else "monster/oryx_hit")
-        sub(e, "DeathSound", "monster/ghost_god_death" if kind != "boss" else "monster/oryx_death")
+        # the family's own sounds (black_between/sound.py), the rest the ghost god's
+        voice = FAMILY_SOUND.get(name)
+        sub(e, "HitSound", "monster/%s_hit" % voice if voice else "monster/ghost_god_hit")
+        sub(e, "DeathSound", "monster/%s_death" % voice if voice else "monster/ghost_god_death")
         sub(e, "Size", size)
         sub(e, "MaxHitPoints", hp)
         sub(e, "Defense", defense)
@@ -547,8 +555,8 @@ def objects(types, s8, s16, s32, c8, c32):
     sub(e, "Item")
     texture(e, SHEET8[0], s8.add(small.unstable_essence()))
     sub(e, "SlotType", 10)
-    sub(e, "Description", "A phial of the Between, never still. At the Cosmic Anvil it corrupts Enthroned gear: "
-        "each one changes its damage, range, rate of fire and stats, for better or worse.")
+    # what it does is for players to find out
+    sub(e, "Description", "A phial of the Between, never still. The Cosmic Anvil knows what to do with it.")
     sub(e, "BagType", 6)
     out.append(e)
 

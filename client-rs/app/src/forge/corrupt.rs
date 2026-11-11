@@ -114,7 +114,7 @@ impl Forge {
             ui.label(tr("Cosmic Anvil"), x0 + 62.0 * s, y + 6.0 * s, font(17.0), true, color::TEXT);
             ui.label(tr("Pick Enthroned gear on the left to corrupt it."), x0 + 62.0 * s, y + 30.0 * s, font(11.5), false, color::TEXT_MUTED);
             y += 80.0 * s;
-            let rules = tr("Each Unstable Essence moves its damage, range, rate of fire and stats by -3 to +2 each, between -6 and +6. Rate of fire moves twice as far. A staff may also turn its shots round.");
+            let rules = tr("No one knows quite what an Unstable Essence will do. Try one and see.");
             for (k, l) in crate::npc::wrap(ui, rules, font(12.0), inner_w).iter().enumerate() {
                 ui.label(l, x0, y + k as f32 * 17.0 * s, font(12.0), false, color::TEXT_DIM);
             }
