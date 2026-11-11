@@ -1,4 +1,4 @@
-Release 2.4.7 (deploys client and servers; nobody is disconnected)
+Release 2.4.11 (deploys client and servers; nobody is disconnected)
 
 ## For players
 
