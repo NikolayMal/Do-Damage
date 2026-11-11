@@ -37,6 +37,7 @@ import base64
 import json
 import math
 import os
+import re
 import sys
 import xml.etree.ElementTree as ET
 import zlib
@@ -305,34 +306,45 @@ def projectile(types, sheet, name, img, file=SHEET8[0]):
 # name -> (slot type, MP cost, cooldown s, [(stat, amount)], relic power, description, [activates],
 # [projectiles], extra XML tags)
 STAT = {"HP": 0, "MP": 3, "ATT": 20, "DEF": 21, "SPD": 22, "DEX": 28, "VIT": 26, "WIS": 27}
+# a number and its unit stay on one line in the game's tooltips
+def _nb(text):
+    return re.sub(r"(\d) (s|tiles)\b", "\\1\u00a0\\2", text)
+
+
 ITEM_SPECS = {
     "Quiver of the Solar Cyclone": (15, 100, 5, [("ATT", 6), ("DEX", 4)], "SolarCyclone",
-        "Aurel's Solar Cyclone, bound in a quiver. Its arrow is a tornado: where it strikes an enemy it "
-        "bursts for 2,000 to everything round it, and throws eight sunsparks of 300 each.",
+        _nb("Aurel's Solar Cyclone, bound in a quiver. Its arrow is a whirling tornado that throws sunsparks "
+            "to either side as it flies; where it strikes an enemy or comes down, it bursts for 2,000 to "
+            "everything round it and throws eight sunsparks of 300 each."),
         [("Shoot", {})],
-        [shot(0, "Cyclone Arrow", 340, 150, 1000, 150), shot(1, "Sunspark", 300, 90, 900)], {}),
+        [shot(0, "Cyclone Arrow", 340, 90, 1600, 120), shot(1, "Sunspark", 300, 90, 900)], {}),
     "Trinity Trap": (20, 110, 0, [("ATT", 6), ("HP", 25), ("MP", 25)], "TrinityTrap",
-        "One trap, three of them. Aurel's lightning comes first (300, paralysed for 2 s), then Vesper's "
-        "veil (300, slowed for 4 s), then their father's rift (200, and 450 more as it bleeds them over 3 s).",
+        _nb("Thrown, it opens three times where it lands, each marked on the ground as it comes: Aurel's "
+            "lightning (300, paralysed for 2 s), Vesper's veil (300, slowed for 4 s) and their father's rift "
+            "(200, and 450 more as it bleeds them over 3 s)."),
         [], [], {}),
     "Helm of the Dawn Blade": (16, 90, 3, [("HP", 60), ("MP", 60), ("DEF", 7), ("ATT", 7)], "DawnHelm",
-        "Aurel's three swords rise from its crest and fly where you aim, 1,200 each, and every one that "
-        "strikes heals you for 8% of the damage it does.",
-        [("Shoot", {})], [shot(0, "Dawn Sword", 1200, 140, 900, 120, multi=True)],
+        _nb("Berserk for everyone near you and speed for you, as the finest helms give. Aurel's three swords "
+            "rise from its crest and fly where you aim, 1,200 each, and every one that strikes heals you for "
+            "6% of the damage it does."),
+        [("ConditionEffectAura", {"effect": "Berserk", "duration": 6.5, "range": 7.5}),
+         ("ConditionEffectSelf", {"effect": "Speedy", "duration": 6.5}), ("Shoot", {})],
+        [shot(0, "Dawn Sword", 1200, 140, 900, 120, multi=True)],
         {"NumProjectiles": 3, "ArcGap": 14}),
     "Prism of the Dusk Veil": (22, 85, 0, [("WIS", 8), ("HP", 60), ("MP", 60)], "DuskVeil",
-        "Vesper's veil, cut into a prism. Your decoy is one of her copies: while it lasts it casts her "
-        "three weaving dusk bolts at the nearest enemy, 320 each, every second.",
-        [("Decoy", {"duration": 11, "speed": 1.3}), ("Teleport", {"maxDistance": 13})],
+        _nb("Vesper's veil, cut into a prism. Every decoy it leaves is one of her copies: while it lasts it "
+            "casts her three weaving dusk bolts at the nearest enemy, 320 each, once a second."),
+        [("Decoy", {"duration": 11, "speed": 1.3, "distance": 9}), ("Teleport", {"maxDistance": 13})],
         [shot(0, "Dusk Bolt", 320, 95, 1600, amplitude=WAVE[0], frequency=WAVE[1])], {}),
     "Cloak of the Planar Rift": (13, 100, 1.5, [("SPD", 7), ("DEX", 7)], "PlanarRift",
-        "The Planewalker's cloak, through the Between. Where you land, the ground bursts as when Aurel "
-        "lands, five sunsparks fly out (250 each, through any armour) and you are armored for 2 s.",
+        _nb("A step through the Between of up to 13 tiles, unseen for a while after. Where you land, the "
+            "ground bursts for 400 as when Aurel lands, ten sunsparks fly out (250 each, through any armour) "
+            "and you are armored for 2 s."),
         [("ConditionEffectSelf", {"effect": "Invisible", "duration": 5.5}), ("Teleport", {"maxDistance": 13})],
         [shot(0, "Sunspark", 250, 110, 700)], {}),
     "Vial of Cascading Dusk": (18, 90, 0, [("ATT", 3), ("WIS", 3)], "CascadeDusk",
-        "A splash of the dusk that never ends where it lands: 200, and 1,500 over 6 s; then four splashes "
-        "round it, each half that; then four more beyond, each half again.",
+        _nb("Thrown, it splashes where it lands for 200, and 1,500 more over 6 s. The dusk spreads: four "
+            "splashes round it for half that, then four more beyond for half again, each a shade darker."),
         [], [], {}),
 }
 
@@ -562,7 +574,9 @@ def objects(types, s8, s16, s32, c8, c32):
 
     # the family's gear, the Mysterious One's white bags (BehaviorDb.BlackBetween.cs): what each does
     # beyond its numbers is its <RelicPower> (Player.BetweenPowers.cs)
-    cyclone_arrow = projectile(types, s16, "Cyclone Arrow", bosses.cyclone(0).resize((16, 16)), SHEET16[0])
+    cyclone_arrow = projectile(types, s16, "Cyclone Arrow", small.whirl(), SHEET16[0])
+    # it whirls as it flies (the client spins a projectile by its Rotation)
+    sub(cyclone_arrow, "Rotation", 70)
     out.append(cyclone_arrow)
     for name, spec in ITEM_SPECS.items():
         out.append(gear_item(types, s8, name, spec))

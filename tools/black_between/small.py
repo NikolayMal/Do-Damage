@@ -327,16 +327,36 @@ def void_scar(seed):
     return _tile(f, seed)
 
 
+def whirl():
+    """The Cyclone Arrow (16x16): Aurel's tornado seen from above, three arms of gold and white
+    curling into a bright eye. Its object spins it (<Rotation>) as it flies."""
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    ramp = ["#fff6d0", "#ffe27a", "#ffd24a", "#d6981e", "#8a5a12"]
+    for arm in range(3):
+        for k in range(40):
+            t = k / 39
+            a = arm * 2 * math.pi / 3 + t * 2.6 * math.pi
+            r = 0.8 + t * 6.6
+            x, y = 7.5 + math.cos(a) * r, 7.5 + math.sin(a) * r
+            c = ramp[min(4, int(t * 5))]
+            put(img, x, y, c)
+            if t < 0.6:
+                put(img, x + 0.5, y + 0.5, c)
+    for dx, dy in ((0, 0), (1, 0), (0, 1), (1, 1)):
+        put(img, 7 + dx, 7 + dy, "#ffffff")
+    return img
+
+
 def unstable_essence():
-    """Unstable Essence (8x8): a cracked phial of the Between, its void swirling violet and gold."""
+    """Unstable Essence (8x8): a shard of the Between that won't hold still, spikes of violet
+    crystal flung out from a white-gold heart."""
+    rows = ["Y..P...Y", ".v.Vv.v.", "..vPVv..", "PVPWYVvV", ".uvVYvu.", "..vVvu..", ".u.vu.u.", "u..u...u"]
     img = _blank()
-    rows = ["...gg...", "..gYYg..", "..k22k..", ".k2v42k.", ".k4vy2k.", ".k2y42k.", "..k22k..", "...kk..."]
-    pal = {"g": "#a07418", "Y": "#ffe070", "k": "#1a0f36", "2": "#3a1d6a", "4": "#7a3ad0", "v": "#e0b0ff", "y": "#ffd24a"}
     for y, r in enumerate(rows):
+        assert len(r) == 8, r
         for x, ch in enumerate(r):
             if ch != ".":
-                put(img, x, y, pal[ch])
-    put(img, 2, 4, "#ffffff")
+                put(img, x, y, ITEM_PAL[ch])
     return img
 
 
@@ -376,25 +396,28 @@ def cosmic_anvil(frame):
     return img
 
 
-# the Mysterious One's family's gear (8x8 items): name -> (pixel rows, palette)
+# the Mysterious One's family's gear (8x8 items): name -> pixel rows, in one palette of ramps
+# (gold: Y highlight, G, g, o shadow; violet: P, V, v, u; night: n, k, K; W white, B sky, R rift)
 ITEM_PAL = {
-    "w": "#ffffff", "Y": "#fff0a8", "G": "#ffd24a", "g": "#a07418", "3": "#ece6d6", "k": "#1a1430",
-    "K": "#2e2648", "V": "#b040ff", "v": "#5f34a3", "X": "#f0e4ff", "q": "#4cc8ff", "2": "#3a1d6a",
-    "4": "#e0b0ff", "b": "#6a3a18",
+    "W": "#ffffff", "Y": "#fff3b0", "G": "#ffd24a", "g": "#d6981e", "o": "#8a5a12",
+    "P": "#f0d8ff", "V": "#c070ff", "v": "#8a3fe0", "u": "#4e2392",
+    "n": "#463a78", "k": "#2a2248", "K": "#17122c", "B": "#7fe6ff", "R": "#ff7ad9",
 }
 ITEMS = {
-    # Aurel's tornado in a quiver: gold and ivory, three bright arrowheads
-    "Quiver of the Solar Cyclone": [".....wY.", "....YwGY", "...gGGY.", "..gG3g..", ".gG3g...", "gG3g....", "G3g.....", ".g......"],
-    # three rings, one of each of them: Aurel's gold, Vesper's violet, the father's rift at the heart
-    "Trinity Trap": ["..VVYY..", ".V....Y.", "V..kk..Y", "V.kXqk.Y", "Y.kqXk.V", "Y..kk..V", ".Y....V.", "..YYVV.."],
-    # a winged gold helm, a sky gem at its brow
-    "Helm of the Dawn Blade": ["w.GGGG.w", "wwGYYGww", ".wGqGGw.", "..GGGG..", "..Gk.G..", "..GGGG..", "...gg...", "........"],
-    # a dusk crystal with a veiled figure in it
-    "Prism of the Dusk Veil": ["...v....", "..vVv...", ".vV4Vv..", "vV4XVVv.", ".vVVVv..", "..vVv...", "...v....", "........"],
-    # the night itself as a cloak, gold-edged, a rift at its clasp
-    "Cloak of the Planar Rift": ["..kkkk..", ".kGKKGk.", ".kKVYKk.", "kKKYVKKk", "kKKKKKKk", "kGKKKKGk", "kG.KK.Gk", "G......G"],
-    # a vial of the dusk, its stopper gold
-    "Vial of Cascading Dusk": ["...GG...", "...bb...", "..k22k..", ".k2VV2k.", ".k2V4Vk.", ".k2VV2k.", "..kkkk..", "........"],
+    # a gold quiver slung corner to corner, a violet strap round it, Aurel's tornado whirling out
+    # of its mouth
+    "Quiver of the Solar Cyclone": [".....YWY", "....oWGW", "...ogGY.", "..ogGYo.", ".oVVYo..", "ogGYo...", "oGYo....", ".oo....."],
+    # a sprung trap of gold jaws; inside, the three of them: Aurel's gold, Vesper's violet, their
+    # father's rift round a white star
+    "Trinity Trap": [".G.GG.G.", "GgYGGYgG", ".gVvRug.", "GVPWWRuG", "GvVWWuRG", ".gvVuRg.", "GgYGGYgG", ".G.GG.G."],
+    # a gold helm with white wings, a sky gem at its brow and a dark visor
+    "Helm of the Dawn Blade": ["W..YG..W", "WWGYGgWW", ".WGGBgW.", "..GYGg..", "..GKKg..", "..GKkg..", "..gGgo..", "...oo..."],
+    # a dusk crystal, lit from the left, a pale glint at its heart
+    "Prism of the Dusk Veil": ["...PV...", "..PVVv..", ".PVPVvu.", "PVPWVvuu", ".VVPvvu.", "..vVvu..", "...vu...", "........"],
+    # a hooded cloak of the night, gold-trimmed, the Between's rift at its heart
+    "Cloak of the Planar Rift": ["..kKKk..", ".kKnnKk.", ".KnVRnK.", "kKnRVnKk", "GKnnnnKG", "GKknnkKG", "gKkKKkKg", ".gK..Kg."],
+    # a round flask of the dusk under a gold stopper, its glass catching the light
+    "Vial of Cascading Dusk": ["...GG...", "...go...", "...nn...", "..nVVn..", ".nVPVvn.", ".nPVvun.", ".nvvuun.", "..nnnn.."],
 }
 
 

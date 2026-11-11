@@ -157,6 +157,10 @@ struct GroundMark {
     ms: i32,
     /// 0: a circle filling in; 1: the Mysterious One's rift opening out (pos2.y).
     style: u8,
+    /// The height it lies at (ours when it came) and so its floor, on stacked floors: drawn with
+    /// that floor's ground, not under a raised one.
+    z: f64,
+    level: u8,
 }
 
 /// How long a filled mark flashes before it goes, ms.
@@ -506,7 +510,9 @@ impl Particles {
             40 => {
                 let radius = (p2.0).clamp(0.2, 20.0);
                 let style = if p2.1 >= 0.5 { 1 } else { 0 };
-                self.marks.push(GroundMark { x: p1.0, y: p1.1, radius, color, start: now, ms: e.duration.clamp(1, 20_000), style });
+                let z = world.my_z();
+                let level = world.levels.as_ref().map_or(0, |l| ((z + 0.01) / l.height).floor().max(0.0) as u8);
+                self.marks.push(GroundMark { x: p1.0, y: p1.1, radius, color, start: now, ms: e.duration.clamp(1, 20_000), style, z, level });
             }
             // InspireEffect: the object flashes gold.
             17 if go.is_some() => {
@@ -888,14 +894,15 @@ impl Particles {
     /// Draw every particle: a square of colour with a dark edge.
     /// The ground marks, drawn on the ground under everything standing on it: a faint disc, the
     /// part filled so far, and the outline; a white flash once it's full.
-    pub fn draw_marks(&self, cam: &Camera, renderer: &mut Renderer) {
+    /// The marks on floor `level` (0 the map), after its ground.
+    pub fn draw_marks(&self, cam: &Camera, renderer: &mut Renderer, level: u8) {
         const SIDES: usize = 40;
-        for m in &self.marks {
+        for m in self.marks.iter().filter(|m| m.level == level) {
             let t = (self.now - m.start) as f64 / m.ms as f64;
             let fill = t.clamp(0.0, 1.0);
             let flash = t >= 1.0;
-            let at = |r: f64, a: f64| cam.to_screen(m.x + r * a.cos(), m.y + r * a.sin(), self.floor);
-            let centre = cam.to_screen(m.x, m.y, self.floor);
+            let at = |r: f64, a: f64| cam.to_screen(m.x + r * a.cos(), m.y + r * a.sin(), m.z);
+            let centre = cam.to_screen(m.x, m.y, m.z);
             let disc = |renderer: &mut Renderer, r: f64, rgb: u32, alpha: f32| {
                 for i in 0..SIDES {
                     let (a0, a1) = (2.0 * PI * i as f64 / SIDES as f64, 2.0 * PI * (i + 1) as f64 / SIDES as f64);
@@ -932,7 +939,7 @@ impl Particles {
     /// whole circle it will reach faintly marked from the start.
     fn draw_rift(&self, cam: &Camera, renderer: &mut Renderer, m: &GroundMark, fill: f64) {
         const SIDES: usize = 48;
-        let z = self.floor;
+        let z = m.z;
         let at = |r: f64, a: f64| cam.to_screen(m.x + r * a.cos(), m.y + r * a.sin(), z);
         let centre = cam.to_screen(m.x, m.y, z);
         let white = renderer.white();

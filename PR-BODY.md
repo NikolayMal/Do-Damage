@@ -93,7 +93,7 @@ From the bottom of `..Context-Txts/11082026/mystery-updates1.txt` and its four s
 
 ### Corruption: the Cosmic Anvil (updates 4, part 2)
 
-- The Mysterious One leaves the Cosmic Anvil when he fades. Its window (the Divine Workbench as the anvil, one tab) spends an Unstable Essence to corrupt a piece of Enthroned gear: damage, range, rate of fire (doubled) and stats each move by -3 to +2, between -6 and +6; a staff is reversed a tenth of the time (its shots fly from the far end of their range back to where they were fired). Corrupted gear has a purple edge and a Corruption section in its tooltip.
+- The Mysterious One leaves the Cosmic Anvil when he fades. Its window (the Divine Workbench as the anvil, one tab) spends an Unstable Essence to corrupt a piece of Enthroned gear: damage, range, rate of fire (doubled) and stats each move by 1 to 3, up or down at even odds (up 60% of the time for a value below 0), between -6 and +6 (first -3 to +2, changed in the final touch-ups); a staff is reversed a tenth of the time (its shots fly from the far end of their range back to where they were fired). Corrupted gear has a purple edge and a Corruption section in its tooltip.
 - **Message change:** `CORRUPT` (160) and `CORRUPT_RESULT` (161), client and server ship together. Item data gains `Corruption` and `Unique` (JSON fields, left out when empty; no migration).
 - Files: `Shared/resources/Corruption.cs`, `ItemData.cs`, `Imprints.cs` (`ImprintShot.Of`), `Player.Imprints.cs`, `CorruptHandler.cs`, `CorruptResult.cs`, `MessageIds.cs`, `BlackBetween.cs` (`PlaceOnDeath`), `BehaviorDb.BlackBetween.cs`; generator (anvil art and object); client `forge.rs`, `forge/corrupt.rs`, `forge/imprints.rs`, `hud.rs`, `npc.rs`, `main.rs`, `game.rs`, `bsk-data` `imprint.rs` (+ a test), `bsk-proto` `messages.rs`, `combat.rs`, ten language tables.
 - Checks: tests (server 169, client 82, data/world/proto); on the slot 3 stack the whole fight, the anvil window, three corruptions of an Enthroned Staff: the values, the purple edge in the window and the HUD, defense +15 from the stats value (screenshots). The reversed staff not seen (a tenth of the time).
@@ -117,12 +117,29 @@ From the bottom of `..Context-Txts/11082026/mystery-updates1.txt` and its four s
 - Redeploy: servers and client. Nobody is disconnected.
 - Not done: "when Aurel jumps the indicator is not there when she's cloned the first time" isn't reproduced. Both landings of his leap are marked (one mark each for him and his echo), and his twin tornado's lines are marked with his; the owner is asked which moment it was.
 
+### The Black Between: final touch-ups 1 (the owner's notes)
+
+- **Aurel** is armored through High Noon.
+- **Corruption's odds:** each value moves 1 to 3, up or down at even odds; one below 0 goes up 60% of the time (`Corruption.Roll`, `Up`, `UpFromRed`). Testing had shown values never climbing out of the red with the old -3 to +2.
+- **Art:** the six abilities redrawn at 8x8 with proper ramps (a gold quiver with the tornado whirling from its mouth, a gold-jawed trap holding the three colours, a winged gold helm, a lit dusk crystal, a gold-trimmed hooded cloak with the rift at its heart, a round flask under a gold stopper); the Unstable Essence a spiky shard star. The Cyclone Arrow is a new top-down whirl that spins as it flies (`<Rotation>`; the client can't animate a projectile's frames).
+- **Quiver:** the arrow (now 9 tiles a second for 1.6 s) throws two sunsparks to either side every 0.2 s as it flies and bursts (2,000 round it, eight sunsparks) where it hits an enemy or where it comes down (`BetweenShot`, from `PlayerShoot` on slot 1).
+- **Trinity Trap:** thrown (1 s), and each stage is a ground circle like the bosses' telegraphs, filling until it strikes: gold, violet, then the father's rift opening. **Fix:** the gear's blasts were `AreaBlast` effects, which clients always draw on the object sent with them (the player), so a stage showed at the player; they're now bursts at the place.
+- **Helm:** Berserk to allies and Speedy for its wearer (6.5 s, 7.5 tiles), as the Helm of the Tribune; heals 6% of each sword's damage (was 8%), shown as a green "+N" over the player.
+- **Prism:** every decoy casts (a timer of its own, `Decoy.NextCastAt`; before, one shared timer let only one cast); decoys travel 9 tiles at most.
+- **Cloak:** ten sunsparks (were five), from where the teleport lands (the target position; the player's own position hadn't moved yet when the power ran).
+- **Vial:** thrown (1 s); the first splash 2.5 tiles across, the next four 3 tiles at 3.5 tiles out, the last four 3 tiles at 6.5 tiles out, so they overlap; each ring a shade darker and bluer.
+- **Descriptions** rewritten for what each does now; a number and its unit are joined by a no-break space so the tooltip never splits "6 s" across lines (what made the vial's read as broken).
+- **Ground marks on raised floors (client):** marks were drawn only with the lowest floor, so on stacked floors (the Nexus islands) they sat under the raised ground. Each mark now keeps the height and floor it came at and is drawn with that floor (`particles.rs`, `view.rs`).
+- Redeploy: servers and client. Nobody is disconnected.
+
 ### Placed objects show (Oryx 3's and Oryx 5's gates)
 
 - `PlaceObject` set a square's object without an object id and never told the players round it to look again, so clients were never sent it: Oryx 5's Holy Gates (as they shut, and in his Last Judgement) and Oryx 3's gate stood in the way unseen. It now gives each one an id and refreshes players' squares (`UpdateTiles`, as `RemoveObject` does); removal already worked (clients drop a square's object by its id). Found with the Black Between's walls of light.
 - Redeploy: servers. The client needs nothing.
 
 ## Checks
+
+- Final touch-ups 1: `dotnet build`, the client built; on the slot 3 stack (`--shot`), each item used: the trap thrown in the Nexus and in the Black Between (the throw, the gold burst, Vesper's circle filling, on raised ground too), the vial's cascade (rings bursting, the next filling a shade bluer), the quiver's side sparks in flight and its burst on a duck, the helm's swords with Berserk and Speedy on, the prism's decoy (18 hits), the cloak (hits after the teleport). No errors in the world log. The helm's "+N" not seen (full health); the corruption odds not rolled in game.
 
 - The fixes after the gear: `dotnet build`; on the slot 3 stack Aurel spawned at the centre and smitten into his first Cyclone, its start and end logged (11.2 s for three dashes, so the old timer cut the last one), and screenshots of his leap marks and the Cyclone. The account server serves the new music and sounds (HTTP 200); they weren't heard (scripted clients open no sound output). The father's pet stasis, Vesper's silence and mines and the Sword Lanes' kit weren't played through.
 

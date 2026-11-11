@@ -19,6 +19,8 @@ namespace WorldServer.core.objects
 
         private Vector2 _direction;
         private bool _exploded = false;
+        // the Prism of the Dusk Veil's decoys: when this one casts next (Player.DecoyTick)
+        internal long NextCastAt;
 
         public Decoy(Player player, int duration, float angle, Position pos, float speed, float? distance = null, ushort objType = 0x0715) 
             : base(player.GameServer, objType, duration, true, true, true)

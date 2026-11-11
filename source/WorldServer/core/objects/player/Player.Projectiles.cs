@@ -86,6 +86,8 @@ namespace WorldServer.core.objects
             PlayerShootEffects(angle);
             if (slot == 0)
                 WispCaller();
+            else if (slot == 1)
+                BetweenShot(item, startingPosition, angle, projectileDesc);
             FameCounter.Shoot();
         }
 

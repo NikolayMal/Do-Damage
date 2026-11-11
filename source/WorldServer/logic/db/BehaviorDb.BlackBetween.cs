@@ -400,6 +400,8 @@ namespace WorldServer.logic
                             Cyclone("Noon Cyclone", "Noon Fight", 2)
                         ),
                         new State("High Noon",
+                            // armored to the end
+                            new ConditionEffectBehavior(ConditionEffectIndex.Armored),
                             new State("High Noon Fight",
                                 new SetAltTexture(0),
                                 new Taunt(0.6, "HIGH NOON!") { Bubble = false },
