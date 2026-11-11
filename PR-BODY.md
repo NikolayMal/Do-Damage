@@ -132,6 +132,12 @@ From the bottom of `..Context-Txts/11082026/mystery-updates1.txt` and its four s
 - **Ground marks on raised floors (client):** marks were drawn only with the lowest floor, so on stacked floors (the Nexus islands) they sat under the raised ground. Each mark now keeps the height and floor it came at and is drawn with that floor (`particles.rs`, `view.rs`).
 - Redeploy: servers and client. Nobody is disconnected.
 
+### The Black Between: a heal before each sickening phase; no lightning under the players
+
+- Before each sickening survival phase (Vesper's second Veil, Aurel's Sword Lanes, the father's Black Between and Supernova) the Mysterious One says "A heal, from your realm." (his herald says it while his children fight), and everyone on the platform is made invincible and healed to full (the usual "+N"), then the phase begins (`RealmHeal` in `BlackBetween.cs`; the father's two get a state of their own before them, `Black Heal` and `Nova Heal`, 1.8 s).
+- Aurel's divine lightning no longer strikes marks under the players (the paralysing circles that followed you); the ones scattered about the arena stay.
+- Redeploy: servers. Checks: on the slot 3 stack, Aurel driven into the Sword Lanes: the line in chat just before "Stand where my sword is not." The heal's "+N" not seen (the character was dead by then).
+
 ### Placed objects show (Oryx 3's and Oryx 5's gates)
 
 - `PlaceObject` set a square's object without an object id and never told the players round it to look again, so clients were never sent it: Oryx 5's Holy Gates (as they shut, and in his Last Judgement) and Oryx 3's gate stood in the way unseen. It now gives each one an id and refreshes players' squares (`UpdateTiles`, as `RemoveObject` does); removal already worked (clients drop a square's object by its id). Found with the Black Between's walls of light.

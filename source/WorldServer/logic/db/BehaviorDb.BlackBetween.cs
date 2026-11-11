@@ -324,7 +324,7 @@ namespace WorldServer.logic
                         new Shoot(0, 16, fixedAngle: 0, projectileIndex: 1, coolDown: 90000000),
                         new TimedTransition(2500, "Dawn")
                     ),
-                    S("Fight", DivineLightning(900, 1300),
+                    S("Fight", DivineLightning(900),
                         new State("Dawn",
                             new HpLessTransition(0.7, "Cyclone 1"),
                             new Prioritize(new StayCloseToSpawn(0.9, 11), new Follow(0.75, Sight, 3)),
@@ -334,7 +334,7 @@ namespace WorldServer.logic
                             CrescentRing(4200),
                             new LeapStrike(Sight, 2.5, 420, 1500, 6000, 3, echo: "Aurel's Echo")
                         ),
-                        Cyclone("Cyclone 1", "Radiance Chase", 3, Survival(false).Concat(DivineLightning(900, 1300)).ToArray()),
+                        Cyclone("Cyclone 1", "Radiance Chase", 3, Survival(false).Concat(DivineLightning(900)).ToArray()),
                         new State("Radiance",
                             new SetAltTexture(0),
                             new HpLessTransition(0.4, "Sword Rise"),
@@ -356,12 +356,13 @@ namespace WorldServer.logic
                         new State("Sword",
                             new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
                             new State("Sword Rise",
+                                new RealmHeal(2000),
                                 new ReturnToSpawn(1.5),
                                 new Flash(0xFFFFD24A, 0.25, 8),
                                 new Taunt(true, "Stand where my sword is not.") { Bubble = false },
                                 new TimedTransition(2000, "Sword Lanes")
                             ),
-                            S("Sword Lanes", Survival(true).Concat(DivineLightning(900, 1300)).ToArray(),
+                            S("Sword Lanes", Survival(true).Concat(DivineLightning(900)).ToArray(),
                                 new SetAltTexture(2),
                                 new SwordLanes(PlatformR, 5),
                                 // and he fights on from the middle meanwhile
@@ -494,7 +495,7 @@ namespace WorldServer.logic
                         new TimedTransition(15000, "Eclipse Heritage")
                     ),
                     new State("Eclipse",
-                        new HpLessTransition(0.4, "Black"),
+                        new HpLessTransition(0.4, "Black Heal"),
                         new State("Eclipse Heritage",
                             new Order(60, "Observatory Heart", "T3B Calm"),
                             new Prioritize(new StayCloseToSpawn(0.5, 4), new Wander(0.3)),
@@ -518,6 +519,13 @@ namespace WorldServer.logic
                             new TimedTransition(14000, "Eclipse Heritage")
                         )
                     ),
+                    // before each sickening phase: his heal, from their realm
+                    new State("Black Heal",
+                        new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                        new Order(60, "Observatory Heart", "T3B Calm"),
+                        new RealmHeal(1800),
+                        new TimedTransition(1800, "Black")
+                    ),
                     // he fires on them all the while they follow the path
                     S("Black", Survival(true),
                         new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
@@ -538,7 +546,7 @@ namespace WorldServer.logic
                         new TimedTransition(1500, "Children Heritage")
                     ),
                     new State("Children",
-                        new HpLessTransition(0.1, "Nova Gather"),
+                        new HpLessTransition(0.1, "Nova Heal"),
                         new Prioritize(new StayCloseToSpawn(0.6, 4), new Wander(0.3)),
                         EclipseRing(2600),
                         BlackHole(15000, 6000),
@@ -562,6 +570,12 @@ namespace WorldServer.logic
                             new TossObject("Spectral Aurel", 2, 0, coolDown: 90000000),
                             new TimedTransition(8000, "Children Heritage")
                         )
+                    ),
+                    new State("Nova Heal",
+                        new ConditionEffectBehavior(ConditionEffectIndex.Invulnerable),
+                        new Order(60, "Observatory Heart", "T3B Calm"),
+                        new RealmHeal(1800),
+                        new TimedTransition(1800, "Nova Gather")
                     ),
                     // back to the middle first, then his rift opens round him there
                     S("Nova Gather", Survival(true),
@@ -745,6 +759,8 @@ namespace WorldServer.logic
                 // everyone into the diamond as she gathers, a few seconds before the floor burns
                 // (and again as it does, for anyone who wandered out)
                 new State(name + " Gather",
+                    // before her last Veil (a sickening one), her father's heal
+                    new RealmHeal(last ? 3000 : 0),
                     new GatherIntoQuadrants(Diamond, PlatformR + 2),
                     new ReturnToSpawn(1.2),
                     new Flash(0xFFB040FF, 0.25, 6),
@@ -795,15 +811,13 @@ namespace WorldServer.logic
         private static Behavior EclipseRing(int coolDown) => new Shoot(0, 8, fixedAngle: 0, rotateAngle: 9, projectileIndex: 4, coolDown: coolDown);
         private static Behavior DuskVolleyFather(int coolDown) => new Shoot(Sight, 5, 12, projectileIndex: 0, predictive: 0.3, coolDown: coolDown);
 
-        // Aurel's divine lightning: gold marks all over the arena, four at a time, and every so often
-        // one on a player; a bolt from him strikes each as it fills, paralysing a moment
-        private static IStateChildren[] DivineLightning(int coolDown, int atPlayers) =>
+        // Aurel's divine lightning: gold marks all over the arena, four at a time; a bolt from him
+        // strikes each as it fills, paralysing a moment (none aimed under the players)
+        private static IStateChildren[] DivineLightning(int coolDown) =>
             new IStateChildren[]
             {
                 new Starfall(Starfall.Area.Scatter, PlatformR - 1, 1.3, 280, coolDown, perVolley: 4, color: Gold, lightning: true, fillMs: 1000,
                     effect: ConditionEffectIndex.Paralyzed, effectMs: 600),
-                new Starfall(Starfall.Area.Players, Sight, 1.3, 280, atPlayers, color: Gold, lightning: true, fillMs: 1000,
-                    coolDownOffset: 1200, effect: ConditionEffectIndex.Paralyzed, effectMs: 600),
             };
 
         // Aurel's Solar Cyclone: `passes` dashes across the whole arena, his sprite the Cyclone's,

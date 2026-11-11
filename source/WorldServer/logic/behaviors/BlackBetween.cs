@@ -1186,4 +1186,33 @@ namespace WorldServer.logic.behaviors
         protected override bool TickCore(Entity host, TickTime time, ref object state) =>
             CycloneDash.Finished.TryRemove(host.Id, out _);
     }
+
+    // Before each sickening survival phase: the Mysterious One (his herald while his children
+    // fight) says so, and everyone on the platform is made invincible for `invincibleMs` and healed
+    // to full; then the phase begins. Once, as the state starts (nothing for 0 ms).
+    internal class RealmHeal : Behavior
+    {
+        public const string Line = "A heal, from your realm.";
+        private readonly int _invincibleMs;
+
+        public RealmHeal(int invincibleMs) => _invincibleMs = invincibleMs;
+
+        protected override void OnStateEntry(Entity host, TickTime time, ref object state)
+        {
+            var world = host.World;
+            if (world == null || _invincibleMs <= 0)
+                return;
+            var speaker = host.ObjectDesc.IdName == "The Mysterious One" ? host
+                : host.GetNearestEntityByName(80, "Mysterious One Herald") ?? host.GetNearestEntityByName(80, "The Mysterious One") ?? host;
+            var name = speaker.ObjectDesc.DisplayId ?? speaker.ObjectDesc.IdName;
+            world.Broadcast(new Text { Name = "#" + name, ObjectId = speaker.Id, NumStars = -1, BubbleTime = 0, Recipient = "", Txt = Line });
+            foreach (var p in world.Players.Values.Where(p => p.DistTo(host) <= 40 && p.Health > 0))
+            {
+                p.ApplyConditionEffect(ConditionEffectIndex.Invincible, _invincibleMs);
+                Player.ActivateHealHp(p, p.Stats[0] - p.Health);
+            }
+        }
+
+        protected override void TickCore(Entity host, TickTime time, ref object state) { }
+    }
 }
