@@ -12,7 +12,7 @@ Keep each version short: changes go under `### ` group headings (Oryx 5, Arena, 
 on), one line per change players notice, summed up rather than item by item (the wiki has the
 details). Add to a group's line when a change adds to it, rather than adding another line.
 
-## Unreleased
+## 2.5.1 (2026-11-11)
 
 ### Oryx 4 and Oryx 5
 - Oryx's Inferno has a gate before the Pyre that opens only once his whole Infernal Court is dead:
