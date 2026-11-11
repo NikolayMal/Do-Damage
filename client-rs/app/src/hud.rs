@@ -2070,12 +2070,14 @@ pub(crate) fn draw_imprint_marks(ui: &mut Ui, imprints: [u32; 4], r: [f32; 4], s
     draw_item_marks(ui, imprints, false, r, s);
 }
 
-/// The purple that marks corrupted gear (the Cosmic Anvil): its edge's gold line turns this colour,
-/// and corrupted gear with no imprints has a band of it all round.
+/// The purple of corruption (the Cosmic Anvil) in words: its tooltip section and the anvil's.
 pub const CORRUPTED: u32 = 0xA040FF;
+/// The black that marks corrupted gear's slot: its edge's gold line turns this colour, and
+/// corrupted gear with no imprints has a band of it all round.
+pub const CORRUPTED_EDGE: u32 = 0x000000;
 
-/// `draw_imprint_marks`, for gear that may be corrupted: then its gold lines are purple, good
-/// corruption or bad, and with no imprints a purple band goes all round.
+/// `draw_imprint_marks`, for gear that may be corrupted: then its gold lines are black, good
+/// corruption or bad, and with no imprints a black band goes all round.
 pub(crate) fn draw_item_marks(ui: &mut Ui, imprints: [u32; 4], corrupted: bool, r: [f32; 4], s: f32) {
     use bsk_data::imprint::Kind;
     let mut colours: Vec<(u32, f32)> = Kind::ALL.into_iter().filter(|&k| imprints[k as usize] != 0).map(|k| (k.color(), 1.0)).collect();
@@ -2083,9 +2085,9 @@ pub(crate) fn draw_item_marks(ui: &mut Ui, imprints: [u32; 4], corrupted: bool, 
         if !corrupted {
             return;
         }
-        colours.push((CORRUPTED, 0.85));
+        colours.push((CORRUPTED_EDGE, 0.85));
     }
-    let edge = if corrupted { CORRUPTED } else { color::GOLD };
+    let edge = if corrupted { CORRUPTED_EDGE } else { color::GOLD };
     let gold = s.round().max(1.0);
     let band = (2.0 * s).round().max(2.0);
     let all = band + gold;
