@@ -2276,6 +2276,9 @@ impl App {
         let pressed = std::mem::take(&mut self.pressed);
         let scripted_fire = self.scripted_key(now) == Some(KeyCode::F23);
         let wants_fire_scripted = self.autofire || scripted_fire;
+        // the ability key held now: a held ability (the ninja stars) is thrown when it comes up
+        let ability_keys: Vec<KeyCode> = self.settings.key(options::Bind::Ability).into_iter().collect();
+        let ability_down = self.held(&ability_keys);
         let (mouse, script_aim) = (self.mouse, self.script_aim);
         let Some(loaded) = self.loaded.as_mut() else { return };
         let Loaded { renderer, sprites, data, redrawer, fonts, text, .. } = &mut **loaded;
@@ -3008,6 +3011,7 @@ impl App {
         let mut view_radius = None;
         let mut fire = None;
         let mut ability_at = None;
+        let mut ability_release = None;
         let mut ping = None;
         // Pings wait while a window has the mouse.
         let windows_open = self.game_menu
@@ -3075,6 +3079,10 @@ impl App {
                             let (x, y) = camera.to_world(mx, my);
                             let angle = game.camera_angle + (my - camera.cy).atan2(mx - camera.cx);
                             ability_at = Some((x, y, angle));
+                        }
+                        if game.ability_held() && !ability_down {
+                            let (x, y) = camera.to_world(mouse.0, mouse.1);
+                            ability_release = Some((x, y, game.camera_angle + (mouse.1 - camera.cy).atan2(mouse.0 - camera.cx)));
                         }
                         // The middle button: a ping, or the ping wheel.
                         if !self.pings.events.is_empty() {
@@ -3201,6 +3209,9 @@ impl App {
             }
             if let Some((x, y, angle)) = ability_at {
                 game.use_ability(now, x, y, angle, data);
+            }
+            if let Some((x, y, angle)) = ability_release {
+                game.release_ability(now, x, y, angle, data);
             }
             // a ping too soon after the last few (or to a server without pings) doesn't go
             if let Some(mark) = ping {

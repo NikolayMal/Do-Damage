@@ -734,6 +734,8 @@ GEAR_TUNING = {
                     "no_shop": True},
     # was 350-450, then 175-225 with 17 Defense and no cooldown (its 4 s stun could be kept up):
     # now half the damage, 7 Defense and a cooldown half a second under the stun
+    # (the owner, 2026-11-11) no invisibility: Berserk for the group and Armored stay
+    "Soul Mask": {"activates": [("ConditionEffectSelf", {"effect": "Invisible"}, None)]},
     "Sword Shield": {"damage": (88, 112), "stats": {DEF: 7}, "add_xml": ["<Cooldown>3.5</Cooldown>"]},
     # invulnerable 2 s (was 10), and its healing and damaging auras 6 s (were 15: the T8 seal's last 4.5)
     "Seal of the Fallen Angel": {"activates": [("ConditionEffectSelf", {"effect": "Invulnerable"}, {"duration": "2"}),

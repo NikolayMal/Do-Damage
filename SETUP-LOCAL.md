@@ -660,7 +660,9 @@ The remotes `upstream` (HaloCelsius) and `aurusenth` share no history with `main
   flash (`whitebag.rs`, `tools/make_white_bag_sound.py`), the black corruption edge, Options'
   balloon kinds (`speechBalloons`), others' damage numbers (`othersDamageNumbers`) and spells,
   auto-drink only from loot bags and with Potions of Oryx, no death spin for others' deaths,
-  searches cleared on a world change, a refused teleport's cooldown given back.
+  searches cleared on a world change, a refused teleport's cooldown given back; held abilities (the
+  ninja stars, `<MultiPhase/>`) send `END_USE` on release and throw; the quest cleared on a world
+  change. Data: no Soul Mask invisibility, no Speedy clear on the Tome of Purification.
 - **Discord account linking** (2026-11-11; `Shared/database/DiscordLinks.cs`,
   `App/Controllers/DiscordController.cs`, `AccountController` `discordCode` and `discordUnlink`,
   the `<Discord>` element of the character list's `<Account>`; `tools/discord/bot.py` and

@@ -26,6 +26,9 @@ details). Add to a group's line when a change adds to it, rather than adding ano
 - The Spider Den's Sword Shield: half the damage, 7 Defense (was 17) and a 3.5 second cooldown, half
   a second shorter than its stun.
 - Corrupted gear's edge is black.
+- The ninja stars work again: hold the ability key for their effect (Midnight Star's Speedy), let
+  go to throw the star. The Soul Mask no longer makes you invisible, and the Tome of Purification
+  no longer takes Speedy away.
 
 ### Pets
 - Ambrosia raises a Medium pet to Large at the Pen Keeper (it was 25 Shards of the Mad God); he
@@ -53,6 +56,8 @@ details). Add to a group's line when a change adds to it, rather than adding ano
   see your own; "Other players' shots" hides their spells too; Speech balloons is a list where you
   pick whose show (players, guild, party, whispers, monsters, townsfolk).
 - Viewing a Legend or a gravestone goes straight to its summary, without its death spin.
+- The quest arrow no longer leaves a stray picture (a building, a wall) at the edge of the screen
+  after you change worlds.
 - Searches in the vault, the Divine Forge and the Marketplace empty when you change worlds, and the
   character list's when you come back from playing.
 - Forging tiered gear under tier 10 no longer counts for quests, the Master Smith or the forge's

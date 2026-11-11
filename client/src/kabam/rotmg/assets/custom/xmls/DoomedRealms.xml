@@ -10060,7 +10060,6 @@
 		<MpCost>120</MpCost>
 		<Activate effect="Berserk" duration="6" range="7">ConditionEffectAura</Activate>
 		<Activate effect="Armored" duration="10">ConditionEffectSelf</Activate>
-		<Activate effect="Invisible" duration="6">ConditionEffectSelf</Activate>
 		<Cooldown>6</Cooldown>
 	</Object>
 	<Object type="0xD1FD" id="Soul Tipped Dirk">

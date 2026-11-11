@@ -134,6 +134,9 @@ pub struct Game {
     pub locked: std::collections::HashSet<String>,
     pub ignored: std::collections::HashSet<String>,
     next_teleport: i32,
+    /// A held ability (`MultiPhase`: the ninja stars) whose key is down: its item. Its release
+    /// (`release_ability`) throws it.
+    held_ability: Option<i32>,
     /// A teleport just asked for: when, and `next_teleport` before it, put back if the server
     /// refuses it (`teleport_refused`), so a teleport that never happened costs no cooldown.
     teleport_asked: Option<(i32, i32)>,
@@ -304,6 +307,9 @@ pub const DYING_FADE_MS: i32 = 700;
 
 /// `Player.MS_BETWEEN_TELEPORT`.
 const TELEPORT_COOLDOWN: i32 = 10_000;
+/// `UseItem`'s use types for a held ability (the server's `START_USE` and `END_USE`).
+const USE_START: u8 = 1;
+const USE_END: u8 = 2;
 /// How long after a teleport the server's refusal of it is looked for (ms).
 const TELEPORT_REFUSAL_MS: i32 = 3_000;
 
@@ -394,6 +400,7 @@ impl Game {
             locked: Default::default(),
             ignored: Default::default(),
             next_teleport: 0,
+            held_ability: None,
             teleport_asked: None,
             keys: Vec::new(),
             merchant_talk: Default::default(),
@@ -608,6 +615,10 @@ impl Game {
             Some(Event::MapInfo(info)) => {
                 self.remember_map();
                 self.maps_entered += 1;
+                self.held_ability = None;
+                // the last world's quest: its id is some other object here (a building, a wall),
+                // whose picture the quest arrow drew at the view's edge until a new quest came
+                self.quest = None;
                 self.white_bag_at = None;
                 self.map_key = (self.hello.game_id, info.name.clone(), info.width as i32, info.height as i32);
                 let mut world = World::new(info.width as i32, info.height as i32, &info.display_name, info.seed);
@@ -1378,6 +1389,23 @@ impl Game {
             self.sounds.push(("no_mana".into(), 1.0, false));
             return;
         }
+        // A held ability (the ninja stars): the key going down starts it (its effect while held,
+        // mana draining); letting go throws it (`release_ability`), as `Player.useAltWeapon` did.
+        if xml.has("MultiPhase") {
+            if self.held_ability.is_some() {
+                return;
+            }
+            self.held_ability = Some(item);
+            self.next_ability = now + (xml.number("Cooldown", 0.5) * 1000.0) as i32;
+            let msg = UseItem {
+                time: now,
+                slot_object: SlotObject { object_id: id, slot_id: 1, object_type: item },
+                item_use_pos: WorldPos { x: x as f32, y: y as f32 },
+                use_type: USE_START,
+            };
+            self.send(msg.into());
+            return;
+        }
         self.next_ability = now + (xml.number("Cooldown", 0.5) * 1000.0) as i32;
         let shoots = xml.children_named("Activate").any(|a| a.text.trim() == "Shoot");
         let msg = UseItem {
@@ -1400,6 +1428,43 @@ impl Game {
                 };
                 self.send(msg.into());
             }
+        }
+    }
+
+    /// Whether a held ability's key is down (`use_ability` started a `MultiPhase` one).
+    pub fn ability_held(&self) -> bool {
+        self.held_ability.is_some()
+    }
+
+    /// The held ability's key came up: it ends, and with the mana for it (`MpEndCost`) its
+    /// projectiles fly toward `angle` (`Player.useAltWeapon`'s release).
+    pub fn release_ability(&mut self, now: i32, x: f64, y: f64, angle: f64, data: &GameData) {
+        let Some(item) = self.held_ability.take() else { return };
+        let Some(me) = self.world.as_ref().and_then(|w| w.player()) else { return };
+        let (id, mp) = (me.id, me.stat_int(crate::hud::stat::MP).unwrap_or(0));
+        let Some(xml) = data.objects.get(&(item as u16)).map(|d| &d.xml) else { return };
+        let throws = mp >= xml.int("MpEndCost", 0) && xml.has("Projectile");
+        let msg = UseItem {
+            time: now,
+            slot_object: SlotObject { object_id: id, slot_id: 1, object_type: item },
+            item_use_pos: WorldPos { x: x as f32, y: y as f32 },
+            use_type: USE_END,
+        };
+        self.send(msg.into());
+        if !throws || self.session.map.as_ref().is_some_and(|m| m.disable_abilities) {
+            return;
+        }
+        let last_move = self.session.last_move_time().unwrap_or(now);
+        let Some(world) = &mut self.world else { return };
+        for p in world.shoot_ability(now, item, angle, last_move, data) {
+            let msg = PlayerShoot {
+                time: now,
+                bullet_id: p.bullet_id,
+                container_type: p.container_type as i32,
+                starting_pos: WorldPos { x: p.start_x as f32, y: p.start_y as f32 },
+                angle: p.angle as f32,
+            };
+            self.send(msg.into());
         }
     }
 
