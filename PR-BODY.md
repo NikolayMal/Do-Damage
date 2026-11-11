@@ -138,6 +138,11 @@ From the bottom of `..Context-Txts/11082026/mystery-updates1.txt` and its four s
 - Aurel's divine lightning no longer strikes marks under the players (the paralysing circles that followed you); the ones scattered about the arena stay.
 - Redeploy: servers. Checks: on the slot 3 stack, Aurel driven into the Sword Lanes: the line in chat just before "Stand where my sword is not." The heal's "+N" not seen (the character was dead by then).
 
+### The Black Between: the Constellation Path keeps clear of the Mysterious One
+
+- The path of the father's Black Between could run through the middle of the platform, where he stands for the whole phase, which made it impossible to follow. Its walk now stays in the ring between 5 tiles from the middle and 3.5 from the edge (its lit squares, three wide, at least 4 tiles from him), and when it's boxed in it turns any way still in that ring rather than towards the middle, and not straight back on itself (`ConstellationPath`, `clear`, `InRing`).
+- Redeploy: servers. Checks: the walk's rules simulated 2,000 times (never within 5 tiles of the middle, never doubling back in the phase's ~70 steps); on the slot 3 stack the phase begun (`--shot`): everyone put on the path's start south of the middle, the platform dark round it.
+
 ### Placed objects show (Oryx 3's and Oryx 5's gates)
 
 - `PlaceObject` set a square's object without an object id and never told the players round it to look again, so clients were never sent it: Oryx 5's Holy Gates (as they shut, and in his Last Judgement) and Oryx 3's gate stood in the way unseen. It now gives each one an id and refreshes players' squares (`UpdateTiles`, as `RemoveObject` does); removal already worked (clients drop a square's object by its id). Found with the Black Between's walls of light.

@@ -374,10 +374,14 @@ namespace WorldServer.logic.behaviors
         private readonly int _stepMs;
         private readonly int _ahead;
         private readonly int _behind;
+        // the circle round the middle the path keeps out of: the Mysterious One stands there through
+        // the phase, and a path through him can't be walked
+        private readonly double _clear;
 
         public ConstellationPath(string voidTile, string pathTile, double radius, int warnMs = 2500, int stepMs = 330,
-            int ahead = 6, int behind = 5)
+            int ahead = 6, int behind = 5, double clear = 4)
         {
+            _clear = clear;
             _voidTile = voidTile;
             _pathTile = pathTile;
             _radius = radius;
@@ -409,7 +413,8 @@ namespace WorldServer.logic.behaviors
             var c = host.SpawnPoint.Value;
             var (cx, cy) = ((int)c.X, (int)c.Y);
             // the path: a walk with momentum from a point south of the middle, turning now and then,
-            // and back towards the middle whenever it nears the edge; it doesn't cross its own recent steps
+            // kept in the ring between the clear circle round the middle (where he stands) and the
+            // edge; it doesn't cross its own recent steps
             var (x, y) = (cx, cy + (int)(_radius * 0.45));
             var dirs = new[] { (1, 0), (0, 1), (-1, 0), (0, -1) };
             var dir = Random.Next(4);
@@ -425,17 +430,24 @@ namespace WorldServer.logic.behaviors
                 {
                     var d = (dir + turn) % 4;
                     var (nx, ny) = (x + dirs[d].Item1, y + dirs[d].Item2);
-                    var far = Math.Sqrt((nx - cx) * (nx - cx) + (ny - cy) * (ny - cy));
-                    if (far > _radius - 3.5 || recent.Contains((nx, ny)) || !Strike.Walkable(host, nx + 0.5, ny + 0.5))
+                    if (!InRing(host, cx, cy, nx, ny) || recent.Contains((nx, ny)))
                         continue;
                     options.Add(d);
                 }
+                // boxed in: any way still in the ring, even back over a recent step (never towards
+                // him or off the edge); only if there's none, straight on
                 if (options.Count == 0)
                 {
-                    // turn towards the middle
-                    var back = Math.Abs(cx - x) > Math.Abs(cy - y) ? (cx > x ? 0 : 2) : (cy > y ? 1 : 3);
-                    options.Add(back);
+                    for (var d = 0; d < 4; d++)
+                        if (InRing(host, cx, cy, x + dirs[d].Item1, y + dirs[d].Item2))
+                            options.Add(d);
+                    // and not straight back the way it came, while there's another way
+                    var back = (dir + 2) % 4;
+                    if (options.Count > 1)
+                        options.Remove(back);
                 }
+                if (options.Count == 0)
+                    options.Add(dir);
                 dir = options[Random.Next(options.Count)];
                 (x, y) = (x + dirs[dir].Item1, y + dirs[dir].Item2);
             }
@@ -446,6 +458,14 @@ namespace WorldServer.logic.behaviors
             foreach (var player in host.World.Players.Values)
                 if (player.DistTo(c.X, c.Y) <= _radius + 3)
                     player.TeleportPosition(time, new Position(px + 0.5f + Random.Next(-1, 2), py + 0.5f + Random.Next(-1, 2)), true);
+        }
+
+        // a square the path may take: in the ring round the middle, its ground walkable, and not
+        // within the clear circle (a square or its neighbours, as the path is lit three wide)
+        private bool InRing(Entity host, int cx, int cy, int x, int y)
+        {
+            var far = Math.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
+            return far <= _radius - 3.5 && far >= _clear + 1 && Strike.Walkable(host, x + 0.5, y + 0.5);
         }
 
         protected override void TickCore(Entity host, TickTime time, ref object state)
